@@ -12,9 +12,11 @@ A desktop GUI tool for organising audio samples for the **Dirtywave M8** tracker
 - **Copy or Move** — choose to copy files (default, non-destructive) or move them
 - **Dry run mode** — default-on; logs every action without touching the filesystem
 - **M8 Friendly mode** — enforces Dirtywave M8's 127-character SD-card path limit by truncating stems (extension always preserved)
+- **Keep original names** — skip the folder-prefix rename and copy/move files with their original filenames
 - **Dark / Light theme** — toggle between a dark MD3 palette and a warm 60s/70s pastel theme
 - **Operation log** — colour-coded log panel (red = move, green = copy, yellow = dry run, cyan = done)
 - **Progress bar** — tracks processing in real time via a background thread
+- **HiDPI / 4K support** — DPI-aware rendering on Windows; scales cleanly at 125 %, 150 %, 200 %
 
 ### Supported formats
 
@@ -32,22 +34,24 @@ When you run the tool, each audio file is renamed using the pattern:
 
 For example, a file at `Drums/Kicks/kick_01.wav` becomes `Kicks_kick_01.wav` in the destination folder. This keeps a single flat folder usable on the M8 while preserving the context of where each sample came from.
 
+Enable **Keep original names** to skip this prefix and copy/move files as-is.
+
 ---
 
 ## Requirements
 
 - Python 3.8 or later
-- No third-party packages — uses only the standard library (`tkinter`, `shutil`, `threading`, `pathlib`)
+- No third-party packages — uses only the standard library (`tkinter`, `shutil`, `threading`, `pathlib`, `ctypes`)
 
 ---
 
 ## Running the app
 
 ```bash
-python DirtywaveHelperv04.py
+python main.py
 ```
 
-On Windows you can also double-click the file if `.py` is associated with Python.
+On Windows you can also double-click `main.py` if `.py` is associated with Python.
 
 ---
 
@@ -72,6 +76,7 @@ On Windows you can also double-click the file if `.py` is associated with Python
    | Move files | Off | Move instead of copy. Off = copy (safe). |
    | Dry run | **On** | Log actions without writing any files. Turn off to commit changes. |
    | M8 Friendly | Off | Truncate filenames so the full destination path is ≤ 127 characters. |
+   | Keep original names | Off | Skip the folder-prefix; files keep their original filenames. |
 
 5. **Click Run** (or press **Enter**)
    - The status bar and log panel update in real time.
@@ -107,7 +112,16 @@ Click the **☀ Light** / **☾ Dark** label in the top-right corner to switch t
 
 ```
 Dirtywave File Helper/
-└── DirtywaveHelperv04.py   # single-file application
+├── main.py          # entry point — DPI setup, creates root window, starts app
+├── state.py         # all shared mutable globals (widgets, vars, flags)
+├── theme.py         # colour constants, _apply_theme_colors(), setup_styles()
+├── builders.py      # all build_* UI functions, toggle_theme(), build_app()
+├── browser.py       # Deck A file browser — navigation and browse dialogs
+├── preview.py       # Deck B rename preview, hover tooltip, screen-aware positioning
+├── log_panel.py     # operation log helpers
+├── operations.py    # file copy/move worker and M8 path truncation
+├── dpi.py           # Windows DPI awareness and _px() scaling helper
+└── constants.py     # AUDIO_EXTS, MAX_PREVIEW_ROWS
 ```
 
 ---
