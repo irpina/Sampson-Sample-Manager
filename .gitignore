@@ -25,6 +25,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Claude
+CLAUDE.md
+
 # Binaries
 *.exe
 *.dll
