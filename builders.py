@@ -243,7 +243,7 @@ def build_status_bar(parent):
              font=("Segoe UI", 9), bg=theme.BG_SURF2, fg=theme.FG_MUTED,
              anchor="w").pack(side="left", fill="x", expand=True)
 
-    tk.Label(frame, text="v5",
+    tk.Label(frame, text="v0.10",
              font=("Segoe UI", 8), bg=theme.BG_SURF2, fg=theme.FG_DIM,
              anchor="e").pack(side="right", padx=14)
     return frame
