@@ -44,10 +44,10 @@ For example, a file at `Drums/Kicks/kick_01.wav` becomes `Kicks_kick_01.wav` in 
 ## Running the app
 
 ```bash
-python DirtywaveHelperv04.py
+python main.py
 ```
 
-On Windows you can also double-click the file if `.py` is associated with Python.
+On Windows you can also double-click `main.py` if `.py` is associated with Python.
 
 ---
 
@@ -107,7 +107,15 @@ Click the **☀ Light** / **☾ Dark** label in the top-right corner to switch t
 
 ```
 Dirtywave File Helper/
-└── DirtywaveHelperv04.py   # single-file application
+├── main.py          # entry point — creates root window and starts the app
+├── state.py         # all shared mutable globals (widgets, vars, flags)
+├── theme.py         # colour constants, _apply_theme_colors(), setup_styles()
+├── builders.py      # all build_* UI functions, toggle_theme(), build_app()
+├── browser.py       # Deck A file browser — navigation and browse dialogs
+├── preview.py       # Deck B rename preview and hover tooltip
+├── log_panel.py     # operation log helpers
+├── operations.py    # file copy/move worker and M8 path truncation
+└── constants.py     # AUDIO_EXTS, MAX_PREVIEW_ROWS
 ```
 
 ---
