@@ -538,6 +538,10 @@ def build_status_bar(parent):
     tk.Label(frame, textvariable=status_var,
              font=("Segoe UI", 9), bg=BG_SURF2, fg=FG_MUTED,
              anchor="w").pack(side="left", fill="x", expand=True)
+
+    tk.Label(frame, text="v4",
+             font=("Segoe UI", 8), bg=BG_SURF2, fg=FG_DIM,
+             anchor="e").pack(side="right", padx=14)
     return frame
 
 
