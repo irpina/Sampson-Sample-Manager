@@ -44,7 +44,7 @@ For example, a file at `Drums/Kicks/kick_01.wav` becomes `Kicks_kick_01.wav` in 
 ## Running the app
 
 ```bash
-python DirtywaveHelperv02.py
+python DirtywaveHelperv04.py
 ```
 
 On Windows you can also double-click the file if `.py` is associated with Python.
@@ -107,7 +107,7 @@ Click the **☀ Light** / **☾ Dark** label in the top-right corner to switch t
 
 ```
 Dirtywave File Helper/
-└── DirtywaveHelperv02.py   # single-file application
+└── DirtywaveHelperv04.py   # single-file application
 ```
 
 ---
