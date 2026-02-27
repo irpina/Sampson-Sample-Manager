@@ -300,9 +300,11 @@ def build_deck_b(parent):
     state.preview_tree.configure(yscrollcommand=vsb.set)
 
     # Tooltip: hovering over the "Will become" column shows the full filename
-    state.preview_tree.bind("<Motion>",          preview._show_tooltip)
-    state.preview_tree.bind("<Leave>",           preview._hide_tooltip)
-    state.preview_tree.bind("<ButtonRelease-1>", playback.on_tree_select)
+    state.preview_tree.bind("<Motion>",           preview._show_tooltip)
+    state.preview_tree.bind("<Leave>",            preview._hide_tooltip)
+    state.preview_tree.bind("<ButtonRelease-1>",  playback.on_tree_select)
+    state.preview_tree.bind("<KeyRelease-Up>",    playback.on_arrow_key)
+    state.preview_tree.bind("<KeyRelease-Down>",  playback.on_arrow_key)
 
     # Prevent the frame from resizing when preview content changes —
     # size is dictated entirely by the parent grid.
@@ -331,7 +333,7 @@ def build_status_bar(parent):
              font=("Segoe UI", 9), bg=theme.BG_SURF2, fg=theme.FG_MUTED,
              anchor="w").pack(side="left", fill="x", expand=True)
 
-    tk.Label(frame, text="v0.13",
+    tk.Label(frame, text="v0.14",
              font=("Segoe UI", 8), bg=theme.BG_SURF2, fg=theme.FG_DIM,
              anchor="e").pack(side="right", padx=14)
     return frame

@@ -59,24 +59,26 @@ def reset():
 
 
 def next_file():
-    """Stop and advance to the next file in the tree."""
+    """Stop, advance to the next file, and auto-play."""
     stop()
     items = _tree_items()
     if not items:
         return
     idx = min(_current_index + 1, len(items) - 1)
     _load_index(idx)
+    play()
 
 
 def prev_file():
-    """Stop and retreat to the previous file in the tree."""
+    """Stop, retreat to the previous file, and auto-play."""
     stop()
     idx = max(_current_index - 1, 0)
     _load_index(idx)
+    play()
 
 
 def on_tree_select(event):
-    """ButtonRelease-1 handler on the preview tree — select file by click."""
+    """ButtonRelease-1 handler on the preview tree — select and auto-play."""
     iid = state.preview_tree.identify_row(event.y)
     if not iid:
         return
@@ -84,6 +86,19 @@ def on_tree_select(event):
     if iid in items:
         stop()
         _load_index(items.index(iid))
+        play()
+
+
+def on_arrow_key(event):
+    """KeyRelease-Up/Down handler — play whichever row the arrow moved to."""
+    iid = state.preview_tree.focus()
+    if not iid:
+        return
+    items = _tree_items()
+    if iid in items:
+        stop()
+        _load_index(items.index(iid))
+        play()
 
 
 def _poll_playback():
