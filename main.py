@@ -14,7 +14,7 @@ if __name__ == "__main__":
     state._dpi_scale = _compute_dpi_scale()
     state.root.tk.call('tk', 'scaling', (state._dpi_scale * 96) / 72)
 
-    state.root.title("Dirtywave File Helper")
+    state.root.title("SAMPSON")
 
     from dpi import _px
     state.root.geometry(f"{_px(1100)}x{_px(720)}")
