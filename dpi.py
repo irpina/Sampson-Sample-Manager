@@ -52,5 +52,5 @@ def _px(n: int) -> int:
 
 # Minimum window dimensions (in pixels at 96 DPI baseline)
 MIN_WINDOW_WIDTH = 900
-MIN_WINDOW_HEIGHT = 650
+MIN_WINDOW_HEIGHT = 600
 MIN_ASPECT_RATIO = 1.38  # width/height - prevents extreme aspect ratios

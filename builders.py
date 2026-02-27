@@ -129,11 +129,31 @@ def build_deck_a(parent):
 
 # ── Centre — Options ─────────────────────────────────────────────────────────
 
+def _add_tooltip(widget, text):
+    """Add a hover tooltip to a widget."""
+    def on_enter(e):
+        x, y = widget.winfo_pointerxy()
+        tooltip = tk.Toplevel(widget)
+        tooltip.wm_overrideredirect(True)
+        tooltip.wm_geometry(f"+{x+10}+{y+10}")
+        lbl = tk.Label(tooltip, text=text, bg=theme.BG_SURF2, fg=theme.FG_ON_SURF,
+                      font=("Segoe UI", 9), padx=8, pady=4)
+        lbl.pack()
+        widget._tooltip = tooltip
+    def on_leave(e):
+        if hasattr(widget, '_tooltip'):
+            widget._tooltip.destroy()
+            delattr(widget, '_tooltip')
+    widget.bind("<Enter>", on_enter)
+    widget.bind("<Leave>", on_leave)
+
+
 def build_center(parent):
     frame = ctk.CTkFrame(parent, fg_color=theme.BG_SURFACE,
                          corner_radius=12,
                          border_width=1, border_color=theme.CARD_BORDER)
     frame.columnconfigure(0, weight=1)
+    frame.columnconfigure(1, weight=1)
 
     state.move_var        = tk.BooleanVar(value=False)
     state.dry_var         = tk.BooleanVar(value=True)
@@ -141,56 +161,71 @@ def build_center(parent):
     state.profile_var     = tk.StringVar(value="Generic")
     state.struct_mode_var = tk.StringVar(value="flat")
 
-    # ── File options ──────────────────────────────────────────────────────────
+    # ── File options (compact side-by-side layout) ────────────────────────────
     _cb_kw = dict(
         fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
         checkmark_color=theme.BG_ROOT,
         border_color=theme.OUTLINE_VAR,
         text_color=theme.FG_ON_SURF,
         corner_radius=4,
+        font=("Segoe UI", 10),
     )
-    ctk.CTkCheckBox(frame, text="Move files  (copy by default)",
-                    variable=state.move_var, **_cb_kw).grid(
-        row=0, column=0, sticky="w", padx=16, pady=(16, 2))
+    # Row 0: Move files | Dry run (side by side)
+    cb_move = ctk.CTkCheckBox(frame, text="Move files",
+                              variable=state.move_var, **_cb_kw)
+    cb_move.grid(row=0, column=0, sticky="w", padx=(16, 8), pady=(16, 4))
+    _add_tooltip(cb_move, "Move files instead of copying (copy by default)")
 
-    ctk.CTkCheckBox(frame, text="Dry run  (no changes written)",
-                    variable=state.dry_var, **_cb_kw).grid(
-        row=1, column=0, sticky="w", padx=16)
+    cb_dry = ctk.CTkCheckBox(frame, text="Dry run",
+                             variable=state.dry_var, **_cb_kw)
+    cb_dry.grid(row=0, column=1, sticky="w", padx=(8, 16), pady=(16, 4))
+    _add_tooltip(cb_dry, "Preview changes without writing any files")
 
-    ctk.CTkCheckBox(frame, text="Keep original names  (no prefix)",
-                    variable=state.no_rename_var, **_cb_kw).grid(
-        row=2, column=0, sticky="w", padx=16, pady=(2, 0))
+    # Row 1: Keep names (full width)
+    cb_rename = ctk.CTkCheckBox(frame, text="Keep original names",
+                                variable=state.no_rename_var, **_cb_kw)
+    cb_rename.grid(row=1, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 4))
+    _add_tooltip(cb_rename, "Don't add parent folder prefix to filenames")
 
     ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=3, column=0, sticky="ew", padx=16, pady=(10, 8))
+        row=2, column=0, columnspan=2, sticky="ew", padx=16, pady=(8, 6))
 
-    # ── Folder structure ──────────────────────────────────────────────────────
-    ctk.CTkLabel(frame, text="Folder structure",
+    # ── Folder structure (compact horizontal layout) ──────────────────────────
+    ctk.CTkLabel(frame, text="Output structure",
                  font=("Segoe UI", 9), text_color=theme.FG_MUTED,
-                 anchor="center").grid(row=4, column=0, sticky="ew", padx=16, pady=(0, 2))
+                 anchor="center").grid(row=3, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
 
     _rb_kw = dict(
         fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
         border_color=theme.OUTLINE_VAR,
         text_color=theme.FG_ON_SURF,
+        font=("Segoe UI", 10),
     )
-    for row, (val, label) in enumerate([
-        ("flat",   "Flat — all files together"),
-        ("mirror", "Mirror source tree"),
-        ("parent", "One folder per parent"),
-    ], start=5):
-        ctk.CTkRadioButton(frame, text=label,
-                           variable=state.struct_mode_var, value=val,
-                           **_rb_kw).grid(
-            row=row, column=0, sticky="w", padx=24, pady=2)
+    struct_frame = ctk.CTkFrame(frame, fg_color="transparent")
+    struct_frame.grid(row=4, column=0, columnspan=2, sticky="ew", padx=12)
+
+    rb_flat = ctk.CTkRadioButton(struct_frame, text="Flat", variable=state.struct_mode_var,
+                                  value="flat", **_rb_kw)
+    rb_flat.pack(side="left", padx=4)
+    _add_tooltip(rb_flat, "All files together in one folder")
+
+    rb_mirror = ctk.CTkRadioButton(struct_frame, text="Mirror", variable=state.struct_mode_var,
+                                    value="mirror", **_rb_kw)
+    rb_mirror.pack(side="left", padx=4)
+    _add_tooltip(rb_mirror, "Preserve source folder hierarchy")
+
+    rb_parent = ctk.CTkRadioButton(struct_frame, text="By parent", variable=state.struct_mode_var,
+                                    value="parent", **_rb_kw)
+    rb_parent.pack(side="left", padx=4)
+    _add_tooltip(rb_parent, "One folder per parent directory")
 
     ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=8, column=0, sticky="ew", padx=16, pady=(10, 8))
+        row=5, column=0, columnspan=2, sticky="ew", padx=16, pady=(8, 6))
 
     # ── Hardware profile ──────────────────────────────────────────────────────
-    ctk.CTkLabel(frame, text="Hardware profile",
+    ctk.CTkLabel(frame, text="Target device",
                  font=("Segoe UI", 9), text_color=theme.FG_MUTED,
-                 anchor="center").grid(row=9, column=0, sticky="ew", padx=16, pady=(0, 4))
+                 anchor="center").grid(row=6, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
 
     ctk.CTkOptionMenu(frame, variable=state.profile_var,
                       values=constants.PROFILE_NAMES,
@@ -199,14 +234,14 @@ def build_center(parent):
                       dropdown_fg_color=theme.BG_SURF1,
                       dropdown_text_color=theme.FG_ON_SURF,
                       dropdown_hover_color=theme.CYAN_CONT,
-                      corner_radius=8).grid(row=10, column=0, sticky="ew", padx=16)
+                      corner_radius=8).grid(row=7, column=0, columnspan=2, sticky="ew", padx=16)
 
-    # Row 11 is the expanding spacer — pushes transport/Run/Clear to the bottom
-    frame.rowconfigure(11, weight=1)
+    # Row 8 is the expanding spacer
+    frame.rowconfigure(8, weight=1)
 
     # ── Transport controls ────────────────────────────────────────────────────
     transport_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    transport_frame.grid(row=12, column=0, pady=(20, 10))
+    transport_frame.grid(row=9, column=0, columnspan=2, pady=(20, 10))
 
     _tr_kw = dict(
         width=_px(36), corner_radius=8,
@@ -228,29 +263,29 @@ def build_center(parent):
     state.transport_next_btn.configure(state="disabled")
 
     ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=13, column=0, sticky="ew", padx=16, pady=(0, 14))
+        row=10, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ctk.CTkButton(frame, text="Run",
                                    font=("Segoe UI", 12, "bold"),
                                    fg_color=theme.CYAN, text_color=theme.BG_ROOT,
                                    hover_color=theme.CYAN_CONT, corner_radius=8,
                                    command=operations.run_tool)
-    state.run_btn.grid(row=14, column=0, padx=16, sticky="ew")
+    state.run_btn.grid(row=11, column=0, columnspan=2, padx=16, sticky="ew")
 
     ctk.CTkButton(frame, text="Clear log",
                   fg_color="transparent", text_color=theme.FG_MUTED,
                   hover_color=theme.BG_SURF2, border_width=1,
                   border_color=theme.OUTLINE_VAR, corner_radius=8,
-                  command=log_panel.clear_log).grid(row=15, column=0, padx=16, pady=(10, 16))
+                  command=log_panel.clear_log).grid(row=12, column=0, columnspan=2, padx=16, pady=(10, 16))
 
     # Ensure critical UI elements don't collapse on resize
-    # Row 11 is the expanding spacer - it can shrink
-    # Rows 9-10 (profile), 12 (transport), 14-15 (buttons) need minimum height
-    frame.rowconfigure(9, weight=0, minsize=_px(20))
-    frame.rowconfigure(10, weight=0, minsize=_px(40))
+    # Row 8 is the expanding spacer - it can shrink
+    # Rows 6-7 (profile), 9 (transport), 11-12 (buttons) need minimum height
+    frame.rowconfigure(6, weight=0, minsize=_px(20))
+    frame.rowconfigure(7, weight=0, minsize=_px(40))
+    frame.rowconfigure(9, weight=0, minsize=_px(50))
+    frame.rowconfigure(11, weight=0, minsize=_px(45))
     frame.rowconfigure(12, weight=0, minsize=_px(50))
-    frame.rowconfigure(14, weight=0, minsize=_px(45))
-    frame.rowconfigure(15, weight=0, minsize=_px(50))
 
     return frame
 
@@ -449,8 +484,8 @@ def build_app():
     root_frame.columnconfigure(0, weight=3, minsize=_px(280), uniform="decks")
     root_frame.columnconfigure(1, weight=2, minsize=_px(180))
     root_frame.columnconfigure(2, weight=3, minsize=_px(280), uniform="decks")
-    root_frame.rowconfigure(1, weight=3, minsize=_px(420))
-    root_frame.rowconfigure(3, weight=1, minsize=_px(120))
+    root_frame.rowconfigure(1, weight=3, minsize=_px(380))
+    root_frame.rowconfigure(3, weight=1, minsize=_px(100))
 
     build_header(root_frame).grid(row=0, column=0, columnspan=3, sticky="ew")
     tk.Frame(root_frame, bg=theme.OUTLINE_VAR, height=1).grid(
