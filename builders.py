@@ -20,9 +20,23 @@ def build_header(parent):
     frame = ctk.CTkFrame(parent, fg_color=theme.BG_SURF2, corner_radius=0, height=_px(52))
     frame.pack_propagate(False)
 
-    ctk.CTkLabel(frame, text="SAMPSON",
-                 font=("Segoe UI", 15, "bold"),
-                 text_color=theme.FG_ON_SURF).pack(side="left", padx=20, pady=12)
+    # Logo image using tkinter (no PIL required)
+    try:
+        logo_tk = tk.PhotoImage(file="sampsontransparent2.png")
+        # Subsample to fit header (reduce size by factor based on DPI)
+        # Original is ~1125px wide, target ~150-200px at 96 DPI
+        factor = max(1, logo_tk.width() // _px(150))
+        if factor > 1:
+            logo_tk = logo_tk.subsample(factor, factor)
+        logo_lbl = tk.Label(frame, image=logo_tk, bg=theme.BG_SURF2)
+        logo_lbl.image = logo_tk  # Keep reference
+        logo_lbl.pack(side="left", padx=(_px(16), _px(8)), pady=_px(6))
+    except Exception:
+        # Fallback to text if image fails
+        ctk.CTkLabel(frame, text="SAMPSON",
+                     font=("Segoe UI", 15, "bold"),
+                     text_color=theme.FG_ON_SURF).pack(side="left", padx=20, pady=12)
+    
     ctk.CTkLabel(frame, text="Universal Audio Sample Manager",
                  font=("Segoe UI", 9),
                  text_color=theme.FG_DIM).pack(side="left", padx=2)
