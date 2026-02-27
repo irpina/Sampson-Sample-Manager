@@ -51,8 +51,9 @@ def build_deck_a(parent):
     frame.rowconfigure(3, weight=1)
 
     # Strip: transparent so card's rounded corners show through
-    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0)
+    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0, height=_px(28))
     strip.grid(row=0, column=0, sticky="ew")
+    strip.grid_propagate(False)
     ctk.CTkFrame(strip, fg_color=theme.CYAN, width=_px(3), corner_radius=0).pack(side="left", fill="y")
     ctk.CTkLabel(strip, text="A", font=("Segoe UI", 11, "bold"),
                  text_color=theme.CYAN).pack(side="left", padx=(10, 4), pady=8)
@@ -255,8 +256,9 @@ def build_deck_b(parent):
     frame.rowconfigure(3, weight=1)
 
     # Strip: transparent so card's rounded corners show through
-    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0)
+    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0, height=_px(28))
     strip.grid(row=0, column=0, columnspan=2, sticky="ew")
+    strip.grid_propagate(False)
     ctk.CTkFrame(strip, fg_color=theme.AMBER, width=_px(3), corner_radius=0).pack(side="left", fill="y")
     ctk.CTkLabel(strip, text="B", font=("Segoe UI", 11, "bold"),
                  text_color=theme.AMBER).pack(side="left", padx=(10, 4), pady=8)
