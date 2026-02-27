@@ -16,13 +16,22 @@ from dpi import _px
 
 # ── Header ───────────────────────────────────────────────────────────────────
 
+def _get_logo_path():
+    """Get path to logo file, handling both dev and PyInstaller bundles."""
+    import sys
+    if hasattr(sys, '_MEIPASS'):
+        return Path(sys._MEIPASS) / "sampsontransparent2.png"
+    return Path("sampsontransparent2.png")
+
+
 def build_header(parent):
     frame = ctk.CTkFrame(parent, fg_color=theme.BG_SURF2, corner_radius=0, height=_px(52))
     frame.pack_propagate(False)
 
     # Logo image using tkinter (no PIL required)
     try:
-        logo_tk = tk.PhotoImage(file="sampsontransparent2.png")
+        logo_path = _get_logo_path()
+        logo_tk = tk.PhotoImage(file=str(logo_path))
         # Subsample to fit header (reduce size by factor based on DPI)
         # Original is ~1125px wide, target ~150-200px at 96 DPI
         factor = max(1, logo_tk.width() // _px(150))
