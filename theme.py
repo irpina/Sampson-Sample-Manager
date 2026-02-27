@@ -247,8 +247,9 @@ def setup_styles():
         bordercolor=OUTLINE_VAR, lightcolor=OUTLINE_VAR, darkcolor=OUTLINE_VAR,
         insertcolor=CYAN,
         selectbackground=CYAN_CONT, selectforeground=ON_CYAN_CONT,
-        font=("Segoe UI", 9), padding=(6, 4),
     )
+    # Note: font and padding must NOT be set here — TCombobox ignores them
+    # in the clam theme and it causes the widget to silently fail to render.
     style.map("Dark.TCombobox",
         fieldbackground=[("readonly", BG_SURF2), ("disabled", BG_SURF1)],
         foreground=[("readonly", FG_ON_SURF), ("disabled", FG_DIM)],

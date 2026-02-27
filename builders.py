@@ -171,6 +171,7 @@ def build_center(parent):
     ttk.Combobox(frame, textvariable=state.profile_var,
                  values=constants.PROFILE_NAMES,
                  style="Dark.TCombobox",
+                 font=("Segoe UI", 9),
                  state="readonly", width=14).grid(
         row=10, column=0, sticky="ew", padx=16)
 
