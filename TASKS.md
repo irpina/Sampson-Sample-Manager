@@ -177,6 +177,30 @@ Make the actual file operations match the preview.
 
 ---
 
+## UI Polish (Post-CTK Migration)
+
+---
+
+### Task 8: Fix spacing between player controls and profile selector
+
+The transport controls (◀ ▶ ▶▶) are too close to the Hardware profile dropdown.
+Add more padding between these elements in `build_center()`.
+
+- [ ] `builders.py` — increase `pady` on the transport frame or add separator
+
+---
+
+### Task 9: Fix center panel resizing on window resize
+
+When the application window is resized larger, the center panel doesn't expand properly
+and the "Clear log" button gets cut off/blocked by other elements.
+
+- [ ] `builders.py` — review `build_center()` row weights and expand behavior
+- [ ] Ensure the center panel grows appropriately when window is resized
+- [ ] Verify "Clear log" button remains accessible at all window sizes
+
+---
+
 ## Later (separate tasks)
 
 ---
