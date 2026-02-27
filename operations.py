@@ -84,16 +84,17 @@ def run_tool():
         state._status_dot.configure(fg=theme.CYAN)
     state.progress_var.set(0)
     state.status_var.set("Collecting files\u2026")
-    path_limit = constants.PROFILES[state.profile_var.get()]["path_limit"]
+    path_limit  = constants.PROFILES[state.profile_var.get()]["path_limit"]
+    struct_mode = state.struct_mode_var.get()
     threading.Thread(
         target=_run_worker,
         args=(source, dest, state.move_var.get(), state.dry_var.get(),
-              path_limit, state.no_rename_var.get()),
+              path_limit, state.no_rename_var.get(), struct_mode),
         daemon=True,
     ).start()
 
 
-def _run_worker(source, dest, move_files, dry, path_limit, no_rename):
+def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode):
     files = [f for f in source.rglob("*")
              if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
     total = len(files)
@@ -110,18 +111,19 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename):
     prefix = "[DRY] " if dry else ""
 
     for i, f in enumerate(files, 1):
-        new_name = f.name if no_rename else f"{f.parent.name}_{f.name}"
-        if path_limit is not None:
-            new_name = _apply_path_limit(new_name, str(dest), path_limit)
-        target = dest / new_name
-        msg    = f"{prefix}{label}: {f.name}  \u2192  {new_name}"
+        new_name, rel_sub = _compute_output(f, source, dest,
+                                            no_rename, struct_mode, path_limit)
+        sub_dir = dest / rel_sub if rel_sub else dest
+        target  = sub_dir / new_name
+        dest_display = f"{rel_sub}/{new_name}" if rel_sub else new_name
+        msg = f"{prefix}{label}: {f.name}  \u2192  {dest_display}"
 
         state.root.after(0, lambda m=msg: log(m))
         state.root.after(0, lambda pct=int(i / total * 100): state.progress_var.set(pct))
         state.root.after(0, lambda s=f"Processing {i} / {total}\u2026": state.status_var.set(s))
 
         if not dry:
-            dest.mkdir(parents=True, exist_ok=True)
+            sub_dir.mkdir(parents=True, exist_ok=True)
             if move_files:
                 shutil.move(str(f), str(target))
             else:
