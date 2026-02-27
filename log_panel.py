@@ -25,7 +25,7 @@ def setup_log_tags():
     state.log_text.tag_configure("move",  foreground=theme.C_MOVE)
     state.log_text.tag_configure("copy",  foreground=theme.C_COPY)
     state.log_text.tag_configure("dry",   foreground=theme.C_DRY)
-    state.log_text.tag_configure("done",  foreground=theme.C_DONE, font=("Consolas", 9, "bold"))
+    state.log_text.tag_configure("done",  foreground=theme.C_DONE, font=(theme.FONT_MONO, 9, "bold"))
 
 
 def clear_log():
