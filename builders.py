@@ -206,7 +206,7 @@ def build_center(parent):
 
     # ── Transport controls ────────────────────────────────────────────────────
     transport_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    transport_frame.grid(row=12, column=0, pady=(0, 6))
+    transport_frame.grid(row=12, column=0, pady=(20, 10))
 
     _tr_kw = dict(
         width=_px(36), corner_radius=8,
@@ -241,7 +241,12 @@ def build_center(parent):
                   fg_color="transparent", text_color=theme.FG_MUTED,
                   hover_color=theme.BG_SURF2, border_width=1,
                   border_color=theme.OUTLINE_VAR, corner_radius=8,
-                  command=log_panel.clear_log).grid(row=15, column=0, padx=16, pady=(10, 16))
+                  command=log_panel.clear_log).grid(row=15, column=0, padx=16, pady=(10, 16), sticky="s")
+
+    # Ensure bottom rows don't get squashed on resize
+    frame.rowconfigure(12, weight=0, minsize=_px(50))
+    frame.rowconfigure(14, weight=0, minsize=_px(45))
+    frame.rowconfigure(15, weight=0, minsize=_px(45))
 
     return frame
 
