@@ -21,7 +21,7 @@ if __name__ == "__main__":
     state.root.title("SAMPSON")
 
     from dpi import _px
-    state.root.geometry(f"{_px(1100)}x{_px(720)}")
+    state.root.geometry(f"{_px(1100)}x{_px(780)}")
     state.root.minsize(_px(900), _px(600))
     state.root.configure(fg_color=theme.BG_ROOT)
     theme.setup_styles()
