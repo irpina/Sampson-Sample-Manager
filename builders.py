@@ -18,10 +18,10 @@ def build_header(parent):
     frame = tk.Frame(parent, bg=theme.BG_SURF2, height=_px(52))
     frame.pack_propagate(False)
 
-    tk.Label(frame, text="Dirtywave File Helper",
+    tk.Label(frame, text="SAMPSON",
              font=("Segoe UI", 15, "bold"),
              bg=theme.BG_SURF2, fg=theme.FG_ON_SURF).pack(side="left", padx=20, pady=12)
-    tk.Label(frame, text="Audio Sample Organiser",
+    tk.Label(frame, text="Universal Audio Sample Manager",
              font=("Segoe UI", 9),
              bg=theme.BG_SURF2, fg=theme.FG_DIM).pack(side="left", padx=2)
 
