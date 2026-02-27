@@ -6,7 +6,7 @@ import state
 import theme
 import constants
 from dpi import _px
-from operations import _m8_truncate
+from operations import _apply_path_limit
 
 
 # ── Tooltip ─────────────────────────────────────────────────────────────────
@@ -115,10 +115,12 @@ def _populate_preview(files):
             new_name = f.name
         else:
             new_name = f"{f.parent.name}_{f.name}"
-        if state.m8_var and state.m8_var.get():
-            d = state.dest_var.get().strip() if state.dest_var else ""
-            if d:
-                new_name = _m8_truncate(new_name, d)
+        if state.profile_var:
+            limit = constants.PROFILES[state.profile_var.get()]["path_limit"]
+            if limit is not None:
+                d = state.dest_var.get().strip() if state.dest_var else ""
+                if d:
+                    new_name = _apply_path_limit(new_name, d, limit)
         tag = "odd" if i % 2 else "even"
         state.preview_tree.insert("", "end", values=(f.name, new_name), tags=(tag,))
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
