@@ -115,21 +115,24 @@ def build_deck_a(parent):
     state.nav_path_var.trace_add("write",
         lambda *_: _nav_lbl.configure(text=state.nav_path_var.get()))
 
-    # File browser
+    # File browser (ttk.Treeview with checkbox column)
     browser_wrap = ctk.CTkFrame(frame, fg_color=theme.BG_SURF2, corner_radius=6)
     browser_wrap.grid(row=3, column=0, sticky="nsew", padx=12, pady=(4, 0))
     browser_wrap.columnconfigure(0, weight=1)
     browser_wrap.rowconfigure(0, weight=1)
-    state.dir_browser = tk.Listbox(
-        browser_wrap,
-        bg=theme.BG_SURF2, fg=theme.FG_ON_SURF,
-        selectbackground=theme.CYAN_CONT, selectforeground=theme.ON_CYAN_CONT,
-        font=("Segoe UI", 10), bd=0, relief="flat",
-        activestyle="none", highlightthickness=0,
-    )
+    state.dir_browser = ttk.Treeview(browser_wrap, style="Browser.Treeview",
+        columns=("chk", "name", "path", "itype"),
+        show="", selectmode="browse")
+    state.dir_browser.heading("chk",   text="")
+    state.dir_browser.heading("name",  text="")
+    state.dir_browser.heading("path",  text="")
+    state.dir_browser.heading("itype", text="")
+    state.dir_browser.column("chk",   width=_px(28), minwidth=_px(28), stretch=False, anchor="center")
+    state.dir_browser.column("name",  stretch=True)
+    state.dir_browser.column("path",  width=0, minwidth=0, stretch=False)
+    state.dir_browser.column("itype", width=0, minwidth=0, stretch=False)
     state.dir_browser.grid(row=0, column=0, sticky="nsew")
-    state.dir_browser.bind("<ButtonPress-1>",   browser.on_browser_press)
-    state.dir_browser.bind("<ButtonRelease-1>", browser.on_browser_release)
+    state.dir_browser.bind("<ButtonRelease-1>", browser.on_browser_click)
     bsb = ctk.CTkScrollbar(browser_wrap, orientation="vertical",
                             command=state.dir_browser.yview,
                             button_color=theme.FG_MUTED,
@@ -137,14 +140,23 @@ def build_deck_a(parent):
     bsb.grid(row=0, column=1, sticky="ns")
     state.dir_browser.configure(yscrollcommand=bsb.set)
 
-    # File count
+    # File count row + Select/Deselect All buttons
+    count_row = ctk.CTkFrame(frame, fg_color="transparent")
+    count_row.grid(row=4, column=0, sticky="ew", padx=12, pady=(4, 8))
     state.src_count_var = tk.StringVar(value="0 audio files")
-    _src_lbl = ctk.CTkLabel(frame, text="0 audio files",
-                             font=("Segoe UI", 9), text_color=theme.CYAN,
-                             anchor="w")
-    _src_lbl.grid(row=4, column=0, sticky="w", padx=12, pady=(6, 10))
+    _src_lbl = ctk.CTkLabel(count_row, text="0 audio files",
+                             font=("Segoe UI", 9), text_color=theme.CYAN, anchor="w")
+    _src_lbl.pack(side="left")
     state.src_count_var.trace_add("write",
         lambda *_: _src_lbl.configure(text=state.src_count_var.get()))
+    ctk.CTkButton(count_row, text="\u2610 All", width=_px(64),
+                  fg_color=theme.BG_SURF2, text_color=theme.FG_MUTED,
+                  hover_color=theme.CYAN_CONT, corner_radius=6,
+                  command=browser.deselect_all_visible).pack(side="right")
+    ctk.CTkButton(count_row, text="\u2611 All", width=_px(64),
+                  fg_color=theme.BG_SURF2, text_color=theme.FG_MUTED,
+                  hover_color=theme.CYAN_CONT, corner_radius=6,
+                  command=browser.select_all_visible).pack(side="right", padx=(0, 4))
 
     frame.grid_propagate(False)
     return frame
@@ -411,7 +423,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.2.0",
+    ctk.CTkLabel(frame, text="v0.2.1",
                  font=("Segoe UI", 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 

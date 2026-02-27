@@ -22,9 +22,8 @@ dir_browser       = None
 nav_path_var      = None
 _status_dot       = None
 
-_browser_items     = []
-_browser_press_idx = None   # listbox index held during mouse press; None if not pressing
-_preview_after     = None
+_selected_folders = set()   # absolute paths of checked folders in Deck A browser
+_preview_after    = None
 _is_dark           = True   # current theme state
 _dpi_scale         = 1.0    # pixels-per-96-dpi-pixel; set once at startup
 profile_var        = None   # tk.StringVar — key into constants.PROFILES; default "Generic"
