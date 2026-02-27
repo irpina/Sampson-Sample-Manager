@@ -124,4 +124,4 @@ def _update_transport_state():
         (state.transport_next_btn, can_next),
     ]:
         if btn:
-            btn.state(["!disabled"] if enabled else ["disabled"])
+            btn.configure(state="normal" if enabled else "disabled")
