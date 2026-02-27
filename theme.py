@@ -126,81 +126,7 @@ def setup_styles():
     style = ttk.Style(state.root)
     style.theme_use("clam")
 
-    # ── Entries ──
-    _e = dict(
-        fieldbackground=BG_SURF2, foreground=FG_ON_SURF,
-        insertcolor=CYAN,
-        bordercolor=OUTLINE_VAR, lightcolor=OUTLINE_VAR, darkcolor=OUTLINE_VAR,
-        relief="flat", padding=(10, 8), font=("Segoe UI", 10),
-    )
-    style.configure("TEntry", **_e)
-    style.map("TEntry", bordercolor=[("focus", CYAN)], lightcolor=[("focus", CYAN)])
-    style.configure("B.TEntry", **_e)
-    style.map("B.TEntry", bordercolor=[("focus", AMBER)], lightcolor=[("focus", AMBER)])
-
-    # ── Buttons ──
-    style.configure("Filled.TButton",
-        background=CYAN, foreground="#001e2b" if state._is_dark else "#f5f0e8",
-        bordercolor=CYAN, lightcolor=CYAN, darkcolor=CYAN,
-        relief="flat", padding=(20, 10), font=("Segoe UI", 12, "bold"),
-    )
-    style.map("Filled.TButton",
-        background=[("active", ON_CYAN_CONT), ("pressed", CYAN_CONT), ("disabled", BG_SURF2)],
-        foreground=[("active", "#001e2b" if state._is_dark else "#1a4030"), ("disabled", FG_DIM)],
-    )
-
-    style.configure("TonalA.TButton",
-        background=CYAN_CONT, foreground=ON_CYAN_CONT,
-        bordercolor=CYAN_CONT, lightcolor=CYAN_CONT, darkcolor=CYAN_CONT,
-        relief="flat", padding=(12, 7), font=("Segoe UI", 9, "bold"),
-    )
-    style.map("TonalA.TButton",
-        background=[("active", "#005f6a" if state._is_dark else "#b0d8c4"), ("pressed", CYAN_CONT)],
-        foreground=[("active", "#c8f8ff" if state._is_dark else "#0f2e22")],
-    )
-
-    style.configure("TonalB.TButton",
-        background=AMBER_CONT, foreground=ON_AMBER_CONT,
-        bordercolor=AMBER_CONT, lightcolor=AMBER_CONT, darkcolor=AMBER_CONT,
-        relief="flat", padding=(12, 7), font=("Segoe UI", 9, "bold"),
-    )
-    style.map("TonalB.TButton",
-        background=[("active", "#4e3000" if state._is_dark else "#f0c8b0"), ("pressed", AMBER_CONT)],
-        foreground=[("active", "#ffe8cc" if state._is_dark else "#3a1008")],
-    )
-
-    style.configure("Outlined.TButton",
-        background=BG_SURFACE, foreground=FG_MUTED,
-        bordercolor=OUTLINE_VAR, lightcolor=OUTLINE_VAR, darkcolor=OUTLINE_VAR,
-        relief="flat", padding=(10, 5), font=("Segoe UI", 9),
-    )
-    style.map("Outlined.TButton",
-        background=[("active", BG_SURF1)],
-        foreground=[("active", FG_ON_SURF)],
-    )
-
-    style.configure("Icon.TButton",
-        background=BG_SURF2, foreground=FG_MUTED,
-        bordercolor=BG_SURF2, lightcolor=BG_SURF2, darkcolor=BG_SURF2,
-        relief="flat", padding=(5, 3), font=("Segoe UI", 10),
-    )
-    style.map("Icon.TButton",
-        background=[("active", OUTLINE_VAR)],
-        foreground=[("active", FG_ON_SURF)],
-    )
-
-    # ── Checkbutton ──
-    style.configure("Dark.TCheckbutton",
-        background=BG_SURFACE, foreground=FG_ON_SURF,
-        indicatorbackground=BG_SURF2, indicatorforeground=CYAN,
-        font=("Segoe UI", 10), padding=(6, 4),
-    )
-    style.map("Dark.TCheckbutton",
-        indicatorbackground=[("selected", CYAN), ("!selected", BG_SURF2)],
-        background=[("active", BG_SURFACE)],
-    )
-
-    # ── Preview Treeview ──
+    # ── Preview Treeview (ttk — no CTK equivalent) ──
     style.configure("Preview.Treeview",
         background=BG_SURF2, foreground=FG_ON_SURF,
         fieldbackground=BG_SURF2,
@@ -220,43 +146,9 @@ def setup_styles():
         background=[("active", BG_SURF1)],
     )
 
-    # ── Progressbar ──
+    # ── Progressbar (ttk — kept to avoid touching operations.py) ──
     style.configure("MD3.Horizontal.TProgressbar",
         troughcolor=BG_SURF2, background=CYAN,
         bordercolor=BG_SURF2, lightcolor=CYAN, darkcolor=CYAN,
         thickness=4,
     )
-
-    # ── Scrollbars ──
-    for ori in ("Vertical", "Horizontal"):
-        n = f"Dark.{ori}.TScrollbar"
-        style.configure(n,
-            background=OUTLINE_VAR, troughcolor=BG_SURF2,
-            bordercolor=BG_SURF2, lightcolor=OUTLINE_VAR, darkcolor=OUTLINE_VAR,
-            arrowcolor=FG_MUTED, relief="flat",
-        )
-        style.map(n, background=[("active", FG_MUTED), ("pressed", CYAN)])
-
-    style.configure("Dark.TSeparator", background=OUTLINE_VAR)
-
-    # ── Combobox ──
-    style.configure("Dark.TCombobox",
-        fieldbackground=BG_SURF2, background=BG_SURF2,
-        foreground=FG_ON_SURF,
-        arrowcolor=CYAN,
-        bordercolor=OUTLINE_VAR, lightcolor=OUTLINE_VAR, darkcolor=OUTLINE_VAR,
-        insertcolor=CYAN,
-        selectbackground=CYAN_CONT, selectforeground=ON_CYAN_CONT,
-    )
-    # Note: font and padding must NOT be set here — TCombobox ignores them
-    # in the clam theme and it causes the widget to silently fail to render.
-    style.map("Dark.TCombobox",
-        fieldbackground=[("readonly", BG_SURF2), ("disabled", BG_SURF1)],
-        foreground=[("readonly", FG_ON_SURF), ("disabled", FG_DIM)],
-        bordercolor=[("focus", CYAN)],
-        arrowcolor=[("disabled", FG_DIM)],
-        selectbackground=[("readonly", BG_SURF2)],
-        selectforeground=[("readonly", FG_ON_SURF)],
-    )
-    # Dropdown popup styling is applied in builders.py via _style_combobox_dropdown().
-    # option_add("*TCombobox*Listbox.*") is unreliable on Windows and is not used here.

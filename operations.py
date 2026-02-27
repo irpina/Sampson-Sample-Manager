@@ -78,10 +78,10 @@ def run_tool():
             "Please select a valid destination folder in Deck B.", parent=state.root)
         return
 
-    state.run_btn.state(["disabled"])
+    state.run_btn.configure(state="disabled")
     state.run_btn.configure(text="Running\u2026")
     if state._status_dot:
-        state._status_dot.configure(fg=theme.CYAN)
+        state._status_dot.configure(text_color=theme.CYAN)
     state.progress_var.set(0)
     state.status_var.set("Collecting files\u2026")
     path_limit  = constants.PROFILES[state.profile_var.get()]["path_limit"]
@@ -102,9 +102,9 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     if total == 0:
         state.root.after(0, lambda: state.status_var.set("No audio files found."))
         state.root.after(0, lambda: state.run_btn.configure(text="Run"))
-        state.root.after(0, lambda: state.run_btn.state(["!disabled"]))
+        state.root.after(0, lambda: state.run_btn.configure(state="normal"))
         if state._status_dot:
-            state.root.after(0, lambda: state._status_dot.configure(fg=theme.FG_DIM))
+            state.root.after(0, lambda: state._status_dot.configure(text_color=theme.FG_DIM))
         return
 
     label  = "MOVE" if move_files else "COPY"
@@ -133,6 +133,6 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     state.root.after(0, lambda: log("Done."))
     state.root.after(0, lambda: state.status_var.set(f"Complete \u2014 {total} file{s} processed."))
     state.root.after(0, lambda: state.run_btn.configure(text="Run"))
-    state.root.after(0, lambda: state.run_btn.state(["!disabled"]))
+    state.root.after(0, lambda: state.run_btn.configure(state="normal"))
     if state._status_dot:
-        state.root.after(0, lambda: state._status_dot.configure(fg=theme.C_COPY))
+        state.root.after(0, lambda: state._status_dot.configure(text_color=theme.C_COPY))
