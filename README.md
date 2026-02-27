@@ -1,22 +1,30 @@
 # SAMPSON
 
-A desktop GUI tool for organising audio samples for the **Dirtywave M8** tracker (and similar devices). It lets you browse a source library, preview how files will be renamed, then copy or move them into a flat destination folder — all without leaving the app.
+**Universal Audio Sample Manager** — a Windows desktop app for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, preview exactly how they'll be renamed and structured, then copy or move them in one click.
+
+> Pre-built Windows exe available on the [Releases](https://github.com/irpina/Splice-Sample-Flattener/releases) page — no Python required.
 
 ---
 
 ## Features
 
-- **Two-deck layout** — Deck A (source) and Deck B (destination) mirror the M8's workflow
-- **Inline file browser** — navigate your source library by clicking folders; audio files are listed with a ♪ icon
-- **Live rename preview** — instantly shows how each file will be renamed before you commit
-- **Copy or Move** — choose to copy files (default, non-destructive) or move them
+- **Audio playback** — click any file in the preview to hear it instantly; navigate with ◀ ▶ ▶▶ transport controls or arrow keys
+- **Hardware profiles** — path-limit enforcement for specific devices:
+  - **Generic** — no limit
+  - **M8** — 127-character SD path limit (Dirtywave M8)
+  - **MPC One** — 255-character limit
+  - **SP-404mkII** — 255-character limit
+- **Folder structure modes** — choose how files land in the destination:
+  - **Flat** — all files together in one folder
+  - **Mirror** — preserve the full source directory tree
+  - **One folder per parent** — group by immediate parent folder name
+- **Rename pattern** — files are prefixed with their parent folder name (`Kicks_kick_01.wav`), keeping context in a flat folder. Disable with **Keep original names**.
+- **Live preview** — Deck B shows every file alongside its renamed form before you commit; hover for a full-path tooltip
+- **Copy or Move** — copy (default, non-destructive) or move
 - **Dry run mode** — default-on; logs every action without touching the filesystem
-- **M8 Friendly mode** — enforces Dirtywave M8's 127-character SD-card path limit by truncating stems (extension always preserved)
-- **Keep original names** — skip the folder-prefix rename and copy/move files with their original filenames
-- **Dark / Light theme** — toggle between a dark MD3 palette and a warm 60s/70s pastel theme
-- **Operation log** — colour-coded log panel (red = move, green = copy, yellow = dry run, cyan = done)
-- **Progress bar** — tracks processing in real time via a background thread
-- **HiDPI / 4K support** — DPI-aware rendering on Windows; scales cleanly at 125 %, 150 %, 200 %
+- **Operation log** — colour-coded (red = move, green = copy, yellow = dry run, cyan = done)
+- **Dark / Light theme** — MD3 near-black palette or warm 60s/70s pastels; toggle preserves your session
+- **HiDPI / 4K support** — DPI-aware on Windows; scales cleanly at 125 %, 150 %, 200 %
 
 ### Supported formats
 
@@ -24,34 +32,20 @@ A desktop GUI tool for organising audio samples for the **Dirtywave M8** tracker
 
 ---
 
-## How it works
+## Download
 
-When you run the tool, each audio file is renamed using the pattern:
-
-```
-{parent_folder_name}_{original_filename}
-```
-
-For example, a file at `Drums/Kicks/kick_01.wav` becomes `Kicks_kick_01.wav` in the destination folder. This keeps a single flat folder usable on the M8 while preserving the context of where each sample came from.
-
-Enable **Keep original names** to skip this prefix and copy/move files as-is.
+Grab the latest `SAMPSON.exe` from the [Releases](https://github.com/irpina/Splice-Sample-Flattener/releases) page and run it — no installation or Python needed.
 
 ---
 
-## Requirements
-
-- Python 3.8 or later
-- No third-party packages — uses only the standard library (`tkinter`, `shutil`, `threading`, `pathlib`, `ctypes`)
-
----
-
-## Running the app
+## Running from source
 
 ```bash
+pip install pygame-ce
 python main.py
 ```
 
-On Windows you can also double-click `main.py` if `.py` is associated with Python.
+Requires Python 3.10+. All UI is standard-library tkinter; `pygame-ce` is the only third-party dependency (audio playback).
 
 ---
 
@@ -60,51 +54,55 @@ On Windows you can also double-click `main.py` if `.py` is associated with Pytho
 1. **Set the source (Deck A)**
    - Click **Browse** or type a path into the source field.
    - The file browser populates with subfolders and audio files.
-   - Click a folder to navigate into it; click **↑** or the `..` entry to go up.
+   - Click a folder to navigate into it; click **↑** or `..` to go up.
 
 2. **Set the destination (Deck B)**
-   - Click **Browse** or type a path into the destination field.
-   - The destination should be a folder on your M8's SD card (or any target folder).
+   - Click **Browse** or type a path.
 
-3. **Check the preview**
-   - Deck B's table shows every audio file found in the current source directory tree alongside its renamed form.
+3. **Preview and listen (Deck B)**
+   - The table shows every audio file found alongside its renamed form.
+   - **Click any row** to hear the file. Use **◀ ▶ ▶▶** buttons or **↑ / ↓** arrow keys to navigate and auto-play.
    - Hover over a name in the **Will become** column for a full-path tooltip.
 
 4. **Configure options (centre panel)**
+
    | Option | Default | Description |
    |--------|---------|-------------|
    | Move files | Off | Move instead of copy. Off = copy (safe). |
-   | Dry run | **On** | Log actions without writing any files. Turn off to commit changes. |
-   | M8 Friendly | Off | Truncate filenames so the full destination path is ≤ 127 characters. |
-   | Keep original names | Off | Skip the folder-prefix; files keep their original filenames. |
+   | Dry run | **On** | Log actions without writing files. Turn off to commit. |
+   | Keep original names | Off | Skip the folder-prefix; keep original filenames. |
+   | Folder structure | Flat | How files are arranged in the destination. |
+   | Hardware profile | Generic | Enforces device-specific path length limits. |
 
 5. **Click Run** (or press **Enter**)
    - The status bar and log panel update in real time.
-   - The Run button re-enables when processing is complete.
-   - Use **Clear log** to reset the log panel between runs.
+   - Use **Clear log** to reset between runs.
 
 ---
 
-## M8 path limit
+## How renaming works
 
-The Dirtywave M8 enforces a **127-character** maximum for file paths on its SD card. When **M8 Friendly** is enabled the tool calculates:
+By default, each file is prefixed with the name of its immediate parent folder:
 
 ```
-available_stem_chars = 127 − len(destination_path) − 1 − len(extension)
+Source:       Drums/Kicks/kick_01.wav
+Destination:  Kicks_kick_01.wav
 ```
 
-and silently truncates the filename stem to fit, always keeping the file extension intact.
+This keeps a flat destination usable on hardware samplers while preserving context. Enable **Keep original names** to skip the prefix entirely.
+
+When a hardware profile with a path limit is selected, the filename stem is silently truncated so the full destination path fits within the device's limit — the extension is always preserved.
 
 ---
 
 ## Theming
 
-Click the **☀ Light** / **☾ Dark** label in the top-right corner to switch themes. The current source, destination, and browser position are preserved across the toggle.
+Click **☀ Light** / **☾ Dark** in the top-right corner to switch themes. Source, destination, and browser position are all restored after the toggle.
 
-| Theme | Deck A accent | Deck B accent | Surfaces |
-|-------|--------------|--------------|---------|
-| Dark  | Cyan `#4dd0e1` | Amber `#ffb74d` | Near-black neutrals |
-| Light | Avocado sage green | Terracotta / burnt orange | Warm parchment |
+| Theme | Deck A accent | Deck B accent |
+|-------|--------------|--------------|
+| Dark  | Cyan `#4dd0e1` | Amber `#ffb74d` |
+| Light | Avocado sage | Terracotta |
 
 ---
 
@@ -114,14 +112,15 @@ Click the **☀ Light** / **☾ Dark** label in the top-right corner to switch t
 SAMPSON/
 ├── main.py          # entry point — DPI setup, creates root window, starts app
 ├── state.py         # all shared mutable globals (widgets, vars, flags)
-├── theme.py         # colour constants, _apply_theme_colors(), setup_styles()
-├── builders.py      # all build_* UI functions, toggle_theme(), build_app()
-├── browser.py       # Deck A file browser — navigation and browse dialogs
-├── preview.py       # Deck B rename preview, hover tooltip, screen-aware positioning
-├── log_panel.py     # operation log helpers
-├── operations.py    # file copy/move worker and M8 path truncation
+├── constants.py     # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
 ├── dpi.py           # Windows DPI awareness and _px() scaling helper
-└── constants.py     # AUDIO_EXTS, MAX_PREVIEW_ROWS
+├── theme.py         # colour constants, _apply_theme_colors(), setup_styles()
+├── log_panel.py     # operation log helpers
+├── operations.py    # file copy/move worker, _compute_output(), path truncation
+├── browser.py       # Deck A file browser — navigation and browse dialogs
+├── preview.py       # Deck B rename preview, hover tooltip, background scan
+├── playback.py      # audio playback via pygame-ce, transport controls
+└── builders.py      # all build_* UI functions, toggle_theme(), build_app()
 ```
 
 ---
@@ -129,5 +128,6 @@ SAMPSON/
 ## Limitations
 
 - Preview is capped at **500 rows** for performance; the file count still reflects the full total.
-- The file browser only shows non-hidden subfolders and audio files (no other file types).
-- Destination collisions are not handled — if a renamed file already exists at the target, `shutil` will overwrite it silently.
+- The file browser only shows non-hidden subfolders and audio files.
+- Destination collisions are not handled — if a renamed file already exists at the target it will be overwritten silently.
+- Windows only (DPI awareness and PyInstaller packaging are Windows-targeted; the source may run on macOS/Linux with minor adjustments).
