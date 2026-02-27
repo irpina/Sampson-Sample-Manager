@@ -238,3 +238,28 @@ def setup_styles():
         style.map(n, background=[("active", FG_MUTED), ("pressed", CYAN)])
 
     style.configure("Dark.TSeparator", background=OUTLINE_VAR)
+
+    # ── Combobox ──
+    style.configure("Dark.TCombobox",
+        fieldbackground=BG_SURF2, background=BG_SURF2,
+        foreground=FG_ON_SURF,
+        arrowcolor=CYAN,
+        bordercolor=OUTLINE_VAR, lightcolor=OUTLINE_VAR, darkcolor=OUTLINE_VAR,
+        insertcolor=CYAN,
+        selectbackground=CYAN_CONT, selectforeground=ON_CYAN_CONT,
+        font=("Segoe UI", 9), padding=(6, 4),
+    )
+    style.map("Dark.TCombobox",
+        fieldbackground=[("readonly", BG_SURF2), ("disabled", BG_SURF1)],
+        foreground=[("readonly", FG_ON_SURF), ("disabled", FG_DIM)],
+        bordercolor=[("focus", CYAN)],
+        arrowcolor=[("disabled", FG_DIM)],
+        selectbackground=[("readonly", BG_SURF2)],
+        selectforeground=[("readonly", FG_ON_SURF)],
+    )
+    # Dropdown list colours — only reachable via option_add
+    state.root.option_add("*TCombobox*Listbox.background",       BG_SURF2)
+    state.root.option_add("*TCombobox*Listbox.foreground",       FG_ON_SURF)
+    state.root.option_add("*TCombobox*Listbox.selectBackground", CYAN_CONT)
+    state.root.option_add("*TCombobox*Listbox.selectForeground", ON_CYAN_CONT)
+    state.root.option_add("*TCombobox*Listbox.font",             "Segoe UI 9")

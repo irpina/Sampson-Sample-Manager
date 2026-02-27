@@ -148,7 +148,7 @@ def build_center(parent):
     # ── Folder structure ──────────────────────────────────────────────────────
     tk.Label(frame, text="Folder structure",
              font=("Segoe UI", 9), bg=theme.BG_SURFACE, fg=theme.FG_MUTED,
-             anchor="w").grid(row=4, column=0, sticky="w", padx=16, pady=(0, 2))
+             anchor="center").grid(row=4, column=0, sticky="ew", padx=16, pady=(0, 2))
 
     for row, (val, label) in enumerate([
         ("flat",   "Flat — all files together"),
@@ -158,7 +158,7 @@ def build_center(parent):
         ttk.Radiobutton(frame, text=label,
                         variable=state.struct_mode_var, value=val,
                         style="Dark.TCheckbutton").grid(
-            row=row, column=0, sticky="w", padx=24, pady=1)
+            row=row, column=0, sticky="ew", padx=24, pady=1)
 
     ttk.Separator(frame, orient="horizontal", style="Dark.TSeparator").grid(
         row=8, column=0, sticky="ew", padx=16, pady=(10, 8))
@@ -166,12 +166,13 @@ def build_center(parent):
     # ── Hardware profile ──────────────────────────────────────────────────────
     tk.Label(frame, text="Hardware profile",
              font=("Segoe UI", 9), bg=theme.BG_SURFACE, fg=theme.FG_MUTED,
-             anchor="w").grid(row=9, column=0, sticky="w", padx=16, pady=(0, 4))
+             anchor="center").grid(row=9, column=0, sticky="ew", padx=16, pady=(0, 4))
 
     ttk.Combobox(frame, textvariable=state.profile_var,
                  values=constants.PROFILE_NAMES,
+                 style="Dark.TCombobox",
                  state="readonly", width=14).grid(
-        row=10, column=0, sticky="w", padx=16)
+        row=10, column=0, sticky="ew", padx=16)
 
     # Row 11 is the expanding spacer — pushes Run/Clear to the bottom
     frame.rowconfigure(11, weight=1)
