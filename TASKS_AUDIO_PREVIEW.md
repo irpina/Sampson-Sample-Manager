@@ -305,7 +305,7 @@ Run separator. The spacer row stays above them, so transport floats just above R
 - [ ] `builders.py` — `build_status_bar()`: bump version `"v0.11"` → `"v0.12"`
 
 - [ ] Test the packaged exe:
-  - `pyinstaller --onefile --windowed --name "DirtywaveFileHelper" main.py`
+  - `pyinstaller --onefile --windowed --name "SAMPSON" main.py`
   - Verify pygame audio plays in the exe, not just in the dev interpreter
   - If DLLs are missing, add `--collect-data pygame` to the pyinstaller command
     and update the `.spec` file accordingly

@@ -1,4 +1,7 @@
-# Dirtywave File Helper — Sample Utility Expansion Tasks
+# SAMPSON — Sample Utility Expansion Tasks
+
+> **The project is henceforth known as SAMPSON.**
+> Rename completed 2026-02-26 — see Task 7.
 
 Expanding from an M8-specific organiser to a universal audio sample manager.
 Work incrementally — each task can be committed independently.
@@ -193,13 +196,12 @@ Play a selected file directly from the browser without leaving the app.
 
 ---
 
-### Task 7: App rename
+### Task 7: App rename ✓ DONE
 
-Rename from "Dirtywave File Helper" to a device-neutral name when branding is decided.
+Renamed to **SAMPSON** on 2026-02-26.
 
-- `main.py` — `state.root.title()`
-- `builders.py` — `build_header()` title label
-- `DirtywaveFileHelper.spec` — `name` field + output exe name
-- `README.md` — all references
-
-> Deferred until the new name is chosen. No functional changes.
+- [x] `main.py` — `state.root.title("SAMPSON")`
+- [x] `builders.py` — `build_header()` title label → `"SAMPSON"`; subtitle → `"Universal Audio Sample Manager"`
+- [x] `DirtywaveFileHelper.spec` — `name='SAMPSON'`
+- [x] `README.md` — all references updated
+- [x] `TASKS_AUDIO_PREVIEW.md` — exe name updated

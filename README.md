@@ -1,4 +1,4 @@
-# Dirtywave File Helper
+# SAMPSON
 
 A desktop GUI tool for organising audio samples for the **Dirtywave M8** tracker (and similar devices). It lets you browse a source library, preview how files will be renamed, then copy or move them into a flat destination folder — all without leaving the app.
 
@@ -111,7 +111,7 @@ Click the **☀ Light** / **☾ Dark** label in the top-right corner to switch t
 ## Project structure
 
 ```
-Dirtywave File Helper/
+SAMPSON/
 ├── main.py          # entry point — DPI setup, creates root window, starts app
 ├── state.py         # all shared mutable globals (widgets, vars, flags)
 ├── theme.py         # colour constants, _apply_theme_colors(), setup_styles()
