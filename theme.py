@@ -1,7 +1,20 @@
+import sys as _sys
 import tkinter.ttk as ttk
 
 import state
 from dpi import _px
+
+# ── Platform-aware font selection ─────────────────────────────────────────
+# "DejaVu Sans" and "DejaVu Sans Mono" ship with virtually every Linux distro.
+if _sys.platform == "win32":
+    FONT_UI   = "Segoe UI"
+    FONT_MONO = "Consolas"
+elif _sys.platform == "darwin":
+    FONT_UI   = "SF Pro Display"
+    FONT_MONO = "Menlo"
+else:
+    FONT_UI   = "DejaVu Sans"
+    FONT_MONO = "DejaVu Sans Mono"
 
 # ── Color constants (dark theme defaults) ──────────────────────────────────
 # These are module-level variables mutated by _apply_theme_colors().
@@ -131,7 +144,7 @@ def setup_styles():
         background=BG_SURF2, foreground=FG_ON_SURF,
         fieldbackground=BG_SURF2,
         bordercolor=OUTLINE_VAR, lightcolor=BG_SURF2, darkcolor=BG_SURF2,
-        font=("Segoe UI", 10), rowheight=_px(26),
+        font=(FONT_UI, 10), rowheight=_px(26),
     )
     style.configure("Browser.Treeview.Heading", relief="flat", padding=0)
     style.map("Browser.Treeview",
@@ -144,12 +157,12 @@ def setup_styles():
         background=BG_SURF2, foreground=FG_ON_SURF,
         fieldbackground=BG_SURF2,
         bordercolor=OUTLINE_VAR, lightcolor=OUTLINE_VAR, darkcolor=OUTLINE_VAR,
-        font=("Consolas", 9), rowheight=_px(24),
+        font=(FONT_MONO, 9), rowheight=_px(24),
     )
     style.configure("Preview.Treeview.Heading",
         background=BG_SURF2, foreground=AMBER,
         bordercolor=OUTLINE_VAR, lightcolor=OUTLINE_VAR, darkcolor=OUTLINE_VAR,
-        font=("Segoe UI", 9, "bold"), relief="flat", padding=6,
+        font=(FONT_UI, 9, "bold"), relief="flat", padding=6,
     )
     style.map("Preview.Treeview",
         background=[("selected", AMBER_CONT)],

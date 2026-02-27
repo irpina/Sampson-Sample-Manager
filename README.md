@@ -2,9 +2,9 @@
   <img src="sampsontransparent2.png" alt="SAMPSON Logo" width="400">
 </p>
 
-**Universal Audio Sample Manager** — a Windows desktop app for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, preview exactly how they'll be renamed and structured, then copy or move them in one click.
+**Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, preview exactly how they'll be renamed and structured, then copy or move them in one click.
 
-> Pre-built Windows exe available on the [Releases](https://github.com/irpina/Splice-Sample-Flattener/releases) page — no Python required.
+> Pre-built binaries (Windows .exe and Linux binary) available on the [Releases](https://github.com/irpina/Splice-Sample-Flattener/releases) page — no Python required.
 
 ---
 
@@ -26,7 +26,7 @@
 - **Dry run mode** — default-on; logs every action without touching the filesystem
 - **Operation log** — colour-coded (red = move, green = copy, yellow = dry run, cyan = done)
 - **Dark / Light theme** — MD3 near-black palette or warm 60s/70s pastels; toggle preserves your session
-- **HiDPI / 4K support** — DPI-aware on Windows; scales cleanly at 125 %, 150 %, 200 %
+- **HiDPI / 4K support** — DPI-aware on Windows; scales via system settings on Linux/macOS
 
 ### Supported formats
 

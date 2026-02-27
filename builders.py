@@ -43,17 +43,17 @@ def build_header(parent):
     except Exception:
         # Fallback to text if image fails
         ctk.CTkLabel(frame, text="SAMPSON",
-                     font=("Segoe UI", 15, "bold"),
+                     font=(theme.FONT_UI, 15, "bold"),
                      text_color=theme.FG_ON_SURF).pack(side="left", padx=20, pady=12)
     
     ctk.CTkLabel(frame, text="Universal Audio Sample Manager",
-                 font=("Segoe UI", 9),
+                 font=(theme.FONT_UI, 9),
                  text_color=theme.FG_DIM).pack(side="left", padx=2)
 
     toggle_icon = "☀" if state._is_dark else "☾"
     toggle_tip  = "Light" if state._is_dark else "Dark"
     lbl = ctk.CTkLabel(frame, text=f"{toggle_icon}  {toggle_tip}",
-                       font=("Segoe UI", 9),
+                       font=(theme.FONT_UI, 9),
                        text_color=theme.FG_MUTED,
                        cursor="hand2")
     lbl.pack(side="right", padx=12)
@@ -78,11 +78,11 @@ def build_deck_a(parent):
     strip.grid(row=0, column=0, sticky="ew")
     strip.grid_propagate(False)
     tk.Frame(strip, bg=theme.CYAN, width=_px(3), height=_px(14)).pack(side="left")
-    tk.Label(strip, text="A", font=("Segoe UI", 11, "bold"),
+    tk.Label(strip, text="A", font=(theme.FONT_UI, 11, "bold"),
                  bg=theme.BG_SURF1, fg=theme.CYAN).pack(side="left", padx=(10, 4))
-    tk.Label(strip, text="·", font=("Segoe UI", 9),
+    tk.Label(strip, text="·", font=(theme.FONT_UI, 9),
                  bg=theme.BG_SURF1, fg=theme.FG_DIM).pack(side="left", padx=(0, 4))
-    tk.Label(strip, text="SOURCE", font=("Segoe UI", 8),
+    tk.Label(strip, text="SOURCE", font=(theme.FONT_UI, 8),
                  bg=theme.BG_SURF1, fg=theme.FG_MUTED).pack(side="left")
 
     # Source path row
@@ -109,7 +109,7 @@ def build_deck_a(parent):
                   command=browser.nav_up).grid(row=0, column=0, padx=(4, 6), pady=4)
     state.nav_path_var = tk.StringVar(value="—")
     _nav_lbl = ctk.CTkLabel(nav_bar, text="—",
-                             font=("Consolas", 8), text_color=theme.FG_DIM,
+                             font=(theme.FONT_MONO, 8), text_color=theme.FG_DIM,
                              anchor="w")
     _nav_lbl.grid(row=0, column=1, sticky="ew", padx=(0, 6))
     state.nav_path_var.trace_add("write",
@@ -145,7 +145,7 @@ def build_deck_a(parent):
     count_row.grid(row=4, column=0, sticky="ew", padx=12, pady=(4, 8))
     state.src_count_var = tk.StringVar(value="0 audio files")
     _src_lbl = ctk.CTkLabel(count_row, text="0 audio files",
-                             font=("Segoe UI", 9), text_color=theme.CYAN, anchor="w")
+                             font=(theme.FONT_UI, 9), text_color=theme.CYAN, anchor="w")
     _src_lbl.pack(side="left")
     state.src_count_var.trace_add("write",
         lambda *_: _src_lbl.configure(text=state.src_count_var.get()))
@@ -172,7 +172,7 @@ def _add_tooltip(widget, text):
         tooltip.wm_overrideredirect(True)
         tooltip.wm_geometry(f"+{x+10}+{y+10}")
         lbl = tk.Label(tooltip, text=text, bg=theme.BG_SURF2, fg=theme.FG_ON_SURF,
-                      font=("Segoe UI", 9), padx=8, pady=4)
+                      font=(theme.FONT_UI, 9), padx=8, pady=4)
         lbl.pack()
         widget._tooltip = tooltip
     def on_leave(e):
@@ -203,7 +203,7 @@ def build_center(parent):
         border_color=theme.OUTLINE_VAR,
         text_color=theme.FG_ON_SURF,
         corner_radius=4,
-        font=("Segoe UI", 10),
+        font=(theme.FONT_UI, 10),
     )
     # Row 0: Move files | Dry run (side by side)
     cb_move = ctk.CTkCheckBox(frame, text="Move files",
@@ -227,14 +227,14 @@ def build_center(parent):
 
     # ── Folder structure (compact horizontal layout) ──────────────────────────
     ctk.CTkLabel(frame, text="Output structure",
-                 font=("Segoe UI", 9), text_color=theme.FG_MUTED,
+                 font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
                  anchor="center").grid(row=3, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
 
     _rb_kw = dict(
         fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
         border_color=theme.OUTLINE_VAR,
         text_color=theme.FG_ON_SURF,
-        font=("Segoe UI", 10),
+        font=(theme.FONT_UI, 10),
     )
     struct_frame = ctk.CTkFrame(frame, fg_color="transparent")
     struct_frame.grid(row=4, column=0, columnspan=2, sticky="ew", padx=12)
@@ -259,7 +259,7 @@ def build_center(parent):
 
     # ── Hardware profile ──────────────────────────────────────────────────────
     ctk.CTkLabel(frame, text="Target device",
-                 font=("Segoe UI", 9), text_color=theme.FG_MUTED,
+                 font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
                  anchor="center").grid(row=6, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
 
     ctk.CTkOptionMenu(frame, variable=state.profile_var,
@@ -301,7 +301,7 @@ def build_center(parent):
         row=10, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ctk.CTkButton(frame, text="Run",
-                                   font=("Segoe UI", 12, "bold"),
+                                   font=(theme.FONT_UI, 12, "bold"),
                                    fg_color=theme.CYAN, text_color=theme.BG_ROOT,
                                    hover_color=theme.CYAN_CONT, corner_radius=8,
                                    command=operations.run_tool)
@@ -339,11 +339,11 @@ def build_deck_b(parent):
     strip.grid(row=0, column=0, columnspan=2, sticky="ew")
     strip.grid_propagate(False)
     tk.Frame(strip, bg=theme.AMBER, width=_px(3), height=_px(14)).pack(side="left")
-    tk.Label(strip, text="B", font=("Segoe UI", 11, "bold"),
+    tk.Label(strip, text="B", font=(theme.FONT_UI, 11, "bold"),
                  bg=theme.BG_SURF1, fg=theme.AMBER).pack(side="left", padx=(10, 4))
-    tk.Label(strip, text="·", font=("Segoe UI", 9),
+    tk.Label(strip, text="·", font=(theme.FONT_UI, 9),
                  bg=theme.BG_SURF1, fg=theme.FG_DIM).pack(side="left", padx=(0, 4))
-    tk.Label(strip, text="DESTINATION", font=("Segoe UI", 8),
+    tk.Label(strip, text="DESTINATION", font=(theme.FONT_UI, 8),
                  bg=theme.BG_SURF1, fg=theme.FG_MUTED).pack(side="left")
 
     # Dest path row
@@ -363,7 +363,7 @@ def build_deck_b(parent):
     # Preview count
     state.preview_count_var = tk.StringVar(value="Navigate source to see preview")
     _prev_lbl = ctk.CTkLabel(frame, text="Navigate source to see preview",
-                              font=("Segoe UI", 9), text_color=theme.AMBER,
+                              font=(theme.FONT_UI, 9), text_color=theme.AMBER,
                               anchor="w")
     _prev_lbl.grid(row=2, column=0, columnspan=2, sticky="w", padx=12, pady=(8, 4))
     state.preview_count_var.trace_add("write",
@@ -411,20 +411,20 @@ def build_status_bar(parent):
                     style="MD3.Horizontal.TProgressbar",
                     mode="determinate", length=_px(160)).pack(side="left", padx=(16, 10), pady=12)
 
-    state._status_dot = ctk.CTkLabel(frame, text="●", font=("Segoe UI", 8),
+    state._status_dot = ctk.CTkLabel(frame, text="●", font=(theme.FONT_UI, 8),
                                       text_color=theme.FG_DIM)
     state._status_dot.pack(side="left", padx=(0, 6))
 
     state.status_var = tk.StringVar(value="Ready")
     _status_lbl = ctk.CTkLabel(frame, text="Ready",
-                                font=("Segoe UI", 9), text_color=theme.FG_MUTED,
+                                font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
                                 anchor="w")
     _status_lbl.pack(side="left", fill="x", expand=True)
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.2.2",
-                 font=("Segoe UI", 8), text_color=theme.FG_DIM,
+    ctk.CTkLabel(frame, text="v0.2.3",
+                 font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
     return frame
@@ -440,12 +440,12 @@ def build_log_panel(parent):
     frame.rowconfigure(1, weight=1)
 
     ctk.CTkLabel(frame, text="Operation log",
-                 font=("Segoe UI", 9),
+                 font=(theme.FONT_UI, 9),
                  text_color=theme.FG_DIM, anchor="w").grid(
         row=0, column=0, columnspan=2, sticky="w", padx=14, pady=(6, 2))
 
     state.log_text = tk.Text(frame, bg=theme.BG_SURF2, fg=theme.FG_ON_SURF,
-                             font=("Consolas", 9), bd=0, relief="flat",
+                             font=(theme.FONT_MONO, 9), bd=0, relief="flat",
                              insertbackground=theme.CYAN, selectbackground=theme.CYAN_CONT,
                              state="disabled", wrap="none", height=8)
     state.log_text.grid(row=1, column=0, sticky="nsew", padx=(14, 0), pady=(0, 10))

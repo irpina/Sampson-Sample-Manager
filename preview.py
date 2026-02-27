@@ -58,7 +58,7 @@ def _show_tooltip(event):
     wrap = min(_px(700), int(state.root.winfo_screenwidth() * 0.80))
     tk.Label(
         state._tooltip_win, text=text,
-        font=("Consolas", 9),
+        font=(theme.FONT_MONO, 9),
         bg=theme.BG_SURF2, fg=theme.FG_ON_SURF,
         highlightthickness=1, highlightbackground=theme.OUTLINE_VAR,
         padx=_px(8), pady=_px(4),
