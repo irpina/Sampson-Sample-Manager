@@ -195,9 +195,9 @@ Add more padding between these elements in `build_center()`.
 When the application window is resized larger, the center panel doesn't expand properly
 and the "Clear log" button gets cut off/blocked by other elements.
 
-- [x] `builders.py` — added `sticky="s"` to Clear log button
-- [x] Added `minsize` constraints to rows 12, 14, 15 to prevent squashing
-- [x] Verified bottom elements stay accessible during resize
+- [x] `builders.py` — removed problematic `minsize` constraints that caused clipping
+- [x] `main.py` — increased default window height from 720px to 780px
+- [x] Verified bottom elements stay accessible at startup and during resize
 
 ---
 
