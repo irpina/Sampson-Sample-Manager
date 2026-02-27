@@ -122,14 +122,14 @@ def build_center(parent):
                      highlightthickness=1,
                      highlightbackground=theme.CARD_BORDER)
     frame.columnconfigure(0, weight=1)
-    # Row 5 is the expanding spacer — pushes Run/Clear to the bottom
-    frame.rowconfigure(5, weight=1)
 
-    state.move_var      = tk.BooleanVar(value=False)
-    state.dry_var       = tk.BooleanVar(value=True)
-    state.no_rename_var = tk.BooleanVar(value=False)
-    state.profile_var   = tk.StringVar(value="Generic")
+    state.move_var        = tk.BooleanVar(value=False)
+    state.dry_var         = tk.BooleanVar(value=True)
+    state.no_rename_var   = tk.BooleanVar(value=False)
+    state.profile_var     = tk.StringVar(value="Generic")
+    state.struct_mode_var = tk.StringVar(value="flat")
 
+    # ── File options ──────────────────────────────────────────────────────────
     ttk.Checkbutton(frame, text="Move files  (copy by default)",
                     variable=state.move_var, style="Dark.TCheckbutton").grid(
         row=0, column=0, sticky="w", padx=16, pady=(16, 2))
@@ -145,30 +145,46 @@ def build_center(parent):
     ttk.Separator(frame, orient="horizontal", style="Dark.TSeparator").grid(
         row=3, column=0, sticky="ew", padx=16, pady=(10, 8))
 
+    # ── Folder structure ──────────────────────────────────────────────────────
+    tk.Label(frame, text="Folder structure",
+             font=("Segoe UI", 9), bg=theme.BG_SURFACE, fg=theme.FG_MUTED,
+             anchor="w").grid(row=4, column=0, sticky="w", padx=16, pady=(0, 2))
+
+    for row, (val, label) in enumerate([
+        ("flat",   "Flat — all files together"),
+        ("mirror", "Mirror source tree"),
+        ("parent", "One folder per parent"),
+    ], start=5):
+        ttk.Radiobutton(frame, text=label,
+                        variable=state.struct_mode_var, value=val,
+                        style="Dark.TCheckbutton").grid(
+            row=row, column=0, sticky="w", padx=24, pady=1)
+
+    ttk.Separator(frame, orient="horizontal", style="Dark.TSeparator").grid(
+        row=8, column=0, sticky="ew", padx=16, pady=(10, 8))
+
+    # ── Hardware profile ──────────────────────────────────────────────────────
     tk.Label(frame, text="Hardware profile",
              font=("Segoe UI", 9), bg=theme.BG_SURFACE, fg=theme.FG_MUTED,
-             anchor="w").grid(row=4, column=0, sticky="w", padx=16, pady=(0, 4))
+             anchor="w").grid(row=9, column=0, sticky="w", padx=16, pady=(0, 4))
 
     ttk.Combobox(frame, textvariable=state.profile_var,
                  values=constants.PROFILE_NAMES,
                  state="readonly", width=14).grid(
-        row=5, column=0, sticky="w", padx=16)
+        row=10, column=0, sticky="w", padx=16)
 
-    # row 5 also has the combobox but the frame row weight lets it expand below;
-    # the real spacer effect comes from the combobox not filling vertically —
-    # we add a dedicated spacer row just below it.
-    frame.rowconfigure(6, weight=1)
-    frame.rowconfigure(5, weight=0)
+    # Row 11 is the expanding spacer — pushes Run/Clear to the bottom
+    frame.rowconfigure(11, weight=1)
 
     ttk.Separator(frame, orient="horizontal", style="Dark.TSeparator").grid(
-        row=7, column=0, sticky="ew", padx=16, pady=(0, 14))
+        row=12, column=0, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ttk.Button(frame, text="Run", style="Filled.TButton",
                                command=operations.run_tool)
-    state.run_btn.grid(row=8, column=0, padx=16, sticky="ew")
+    state.run_btn.grid(row=13, column=0, padx=16, sticky="ew")
 
     ttk.Button(frame, text="Clear log", style="Outlined.TButton",
-               command=log_panel.clear_log).grid(row=9, column=0, padx=16, pady=(10, 16))
+               command=log_panel.clear_log).grid(row=14, column=0, padx=16, pady=(10, 16))
 
     return frame
 
@@ -210,14 +226,16 @@ def build_deck_b(parent):
              font=("Segoe UI", 9), bg=theme.BG_SURF1, fg=theme.AMBER,
              anchor="w").grid(row=2, column=0, columnspan=2, sticky="w", padx=12, pady=(8, 4))
 
-    # Treeview
+    # Treeview — "subfolder" column is hidden in flat mode, shown otherwise
     state.preview_tree = ttk.Treeview(frame, style="Preview.Treeview",
-                                      columns=("original", "renamed"),
+                                      columns=("original", "renamed", "subfolder"),
                                       show="headings", selectmode="none")
-    state.preview_tree.heading("original", text="Original name")
-    state.preview_tree.heading("renamed",  text="Will become")
-    state.preview_tree.column("original", width=_px(160), anchor="w", minwidth=_px(80))
-    state.preview_tree.column("renamed",  width=_px(200), anchor="w", minwidth=_px(80))
+    state.preview_tree.heading("original",  text="Original name")
+    state.preview_tree.heading("renamed",   text="Will become")
+    state.preview_tree.heading("subfolder", text="Subfolder")
+    state.preview_tree.column("original",  width=_px(160), anchor="w", minwidth=_px(80))
+    state.preview_tree.column("renamed",   width=_px(200), anchor="w", minwidth=_px(80))
+    state.preview_tree.column("subfolder", width=0,        anchor="w", minwidth=0, stretch=False)
     state.preview_tree.grid(row=3, column=0, sticky="nsew", padx=(12, 0), pady=(0, 12))
 
     vsb = ttk.Scrollbar(frame, orient="vertical", command=state.preview_tree.yview,
@@ -305,10 +323,11 @@ def toggle_theme():
     """
     preview._hide_tooltip()
 
-    saved_source  = state.source_var.get()     if state.source_var     else ""
-    saved_dest    = state.dest_var.get()       if state.dest_var       else ""
-    saved_active  = state.active_dir_var.get() if state.active_dir_var else ""
-    saved_profile = state.profile_var.get()    if state.profile_var    else "Generic"
+    saved_source      = state.source_var.get()      if state.source_var      else ""
+    saved_dest        = state.dest_var.get()        if state.dest_var        else ""
+    saved_active      = state.active_dir_var.get()  if state.active_dir_var  else ""
+    saved_profile     = state.profile_var.get()     if state.profile_var     else "Generic"
+    saved_struct_mode = state.struct_mode_var.get() if state.struct_mode_var else "flat"
 
     state._is_dark = not state._is_dark
     theme._apply_theme_colors(state._is_dark)
@@ -322,6 +341,8 @@ def toggle_theme():
 
     if saved_profile:
         state.profile_var.set(saved_profile)
+    if saved_struct_mode:
+        state.struct_mode_var.set(saved_struct_mode)
     if saved_dest:
         state.dest_var.set(saved_dest)
     if saved_source:
@@ -367,6 +388,7 @@ def build_app():
     log_panel.setup_log_tags()
     state.active_dir_var.trace_add("write", preview.on_active_dir_changed)
     state.source_var.trace_add("write", browser.on_source_var_changed)
-    state.no_rename_var.trace_add("write", lambda *_: preview.refresh_preview())
-    state.profile_var.trace_add("write",   lambda *_: preview.refresh_preview())
+    state.no_rename_var.trace_add("write",   lambda *_: preview.refresh_preview())
+    state.profile_var.trace_add("write",    lambda *_: preview.refresh_preview())
+    state.struct_mode_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.root.bind("<Return>", lambda _e: operations.run_tool())
