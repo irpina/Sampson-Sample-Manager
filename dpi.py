@@ -48,3 +48,9 @@ def _compute_dpi_scale() -> float:
 def _px(n: int) -> int:
     """Scale a pixel value by the current DPI factor (minimum 1)."""
     return max(1, int(n * state._dpi_scale))
+
+
+# Minimum window dimensions (in pixels at 96 DPI baseline)
+MIN_WINDOW_WIDTH = 900
+MIN_WINDOW_HEIGHT = 650
+MIN_ASPECT_RATIO = 1.38  # width/height - prevents extreme aspect ratios

@@ -243,6 +243,15 @@ def build_center(parent):
                   border_color=theme.OUTLINE_VAR, corner_radius=8,
                   command=log_panel.clear_log).grid(row=15, column=0, padx=16, pady=(10, 16))
 
+    # Ensure critical UI elements don't collapse on resize
+    # Row 11 is the expanding spacer - it can shrink
+    # Rows 9-10 (profile), 12 (transport), 14-15 (buttons) need minimum height
+    frame.rowconfigure(9, weight=0, minsize=_px(20))
+    frame.rowconfigure(10, weight=0, minsize=_px(40))
+    frame.rowconfigure(12, weight=0, minsize=_px(50))
+    frame.rowconfigure(14, weight=0, minsize=_px(45))
+    frame.rowconfigure(15, weight=0, minsize=_px(50))
+
     return frame
 
 
@@ -440,8 +449,8 @@ def build_app():
     root_frame.columnconfigure(0, weight=3, minsize=_px(280), uniform="decks")
     root_frame.columnconfigure(1, weight=2, minsize=_px(180))
     root_frame.columnconfigure(2, weight=3, minsize=_px(280), uniform="decks")
-    root_frame.rowconfigure(1, weight=3)
-    root_frame.rowconfigure(3, weight=1)
+    root_frame.rowconfigure(1, weight=3, minsize=_px(420))
+    root_frame.rowconfigure(3, weight=1, minsize=_px(120))
 
     build_header(root_frame).grid(row=0, column=0, columnspan=3, sticky="ew")
     tk.Frame(root_frame, bg=theme.OUTLINE_VAR, height=1).grid(

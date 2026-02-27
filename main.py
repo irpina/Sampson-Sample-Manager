@@ -3,7 +3,7 @@ import customtkinter as ctk
 
 import state
 import theme
-from dpi import _enable_dpi_awareness, _compute_dpi_scale
+from dpi import _enable_dpi_awareness, _compute_dpi_scale, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT
 from builders import build_app
 
 if __name__ == "__main__":
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     from dpi import _px
     state.root.geometry(f"{_px(1100)}x{_px(780)}")
-    state.root.minsize(_px(900), _px(600))
+    state.root.minsize(_px(MIN_WINDOW_WIDTH), _px(MIN_WINDOW_HEIGHT))
     state.root.configure(fg_color=theme.BG_ROOT)
     theme.setup_styles()
     build_app()
