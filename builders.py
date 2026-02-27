@@ -51,16 +51,16 @@ def build_deck_a(parent):
     frame.rowconfigure(3, weight=1)
 
     # Strip: transparent so card's rounded corners show through
-    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0, height=_px(14))
+    strip = tk.Frame(frame, bg=theme.BG_SURF1, height=_px(14))
     strip.grid(row=0, column=0, sticky="ew")
     strip.grid_propagate(False)
-    ctk.CTkFrame(strip, fg_color=theme.CYAN, width=_px(3), corner_radius=0).pack(side="left", fill="y")
-    ctk.CTkLabel(strip, text="A", font=("Segoe UI", 11, "bold"),
-                 text_color=theme.CYAN).pack(side="left", padx=(10, 4), pady=8)
-    ctk.CTkLabel(strip, text="·", font=("Segoe UI", 9),
-                 text_color=theme.FG_DIM).pack(side="left", padx=(0, 4))
-    ctk.CTkLabel(strip, text="SOURCE", font=("Segoe UI", 8),
-                 text_color=theme.FG_MUTED).pack(side="left")
+    tk.Frame(strip, bg=theme.CYAN, width=_px(3), height=_px(14)).pack(side="left")
+    tk.Label(strip, text="A", font=("Segoe UI", 11, "bold"),
+                 bg=theme.BG_SURF1, fg=theme.CYAN).pack(side="left", padx=(10, 4))
+    tk.Label(strip, text="·", font=("Segoe UI", 9),
+                 bg=theme.BG_SURF1, fg=theme.FG_DIM).pack(side="left", padx=(0, 4))
+    tk.Label(strip, text="SOURCE", font=("Segoe UI", 8),
+                 bg=theme.BG_SURF1, fg=theme.FG_MUTED).pack(side="left")
 
     # Source path row
     path_row = ctk.CTkFrame(frame, fg_color="transparent")
@@ -256,16 +256,16 @@ def build_deck_b(parent):
     frame.rowconfigure(3, weight=1)
 
     # Strip: transparent so card's rounded corners show through
-    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0, height=_px(14))
+    strip = tk.Frame(frame, bg=theme.BG_SURF1, height=_px(14))
     strip.grid(row=0, column=0, columnspan=2, sticky="ew")
     strip.grid_propagate(False)
-    ctk.CTkFrame(strip, fg_color=theme.AMBER, width=_px(3), corner_radius=0).pack(side="left", fill="y")
-    ctk.CTkLabel(strip, text="B", font=("Segoe UI", 11, "bold"),
-                 text_color=theme.AMBER).pack(side="left", padx=(10, 4), pady=8)
-    ctk.CTkLabel(strip, text="·", font=("Segoe UI", 9),
-                 text_color=theme.FG_DIM).pack(side="left", padx=(0, 4))
-    ctk.CTkLabel(strip, text="DESTINATION", font=("Segoe UI", 8),
-                 text_color=theme.FG_MUTED).pack(side="left")
+    tk.Frame(strip, bg=theme.AMBER, width=_px(3), height=_px(14)).pack(side="left")
+    tk.Label(strip, text="B", font=("Segoe UI", 11, "bold"),
+                 bg=theme.BG_SURF1, fg=theme.AMBER).pack(side="left", padx=(10, 4))
+    tk.Label(strip, text="·", font=("Segoe UI", 9),
+                 bg=theme.BG_SURF1, fg=theme.FG_DIM).pack(side="left", padx=(0, 4))
+    tk.Label(strip, text="DESTINATION", font=("Segoe UI", 8),
+                 bg=theme.BG_SURF1, fg=theme.FG_MUTED).pack(side="left")
 
     # Dest path row
     path_row = ctk.CTkFrame(frame, fg_color="transparent")
