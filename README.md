@@ -1,4 +1,6 @@
-# SAMPSON
+<p align="center">
+  <img src="sampsontransparent2.png" alt="SAMPSON Logo" width="400">
+</p>
 
 **Universal Audio Sample Manager** — a Windows desktop app for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, preview exactly how they'll be renamed and structured, then copy or move them in one click.
 
