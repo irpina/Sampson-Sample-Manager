@@ -201,6 +201,49 @@ and the "Clear log" button gets cut off/blocked by other elements.
 
 ---
 
+### Task 10: macOS Compatibility (Blocked — No Mac Available)
+
+Port SAMPSON to run natively on macOS. The codebase is architecturally cross-platform;
+the main work is DPI detection and PyInstaller packaging.
+
+#### Phase 1: Core Compatibility
+- [ ] `dpi.py` — Refactor for cross-platform DPI detection
+  - Detect macOS (`sys.platform == "darwin"`)
+  - Use `NSScreen` via PyObjC or tkinter's `tk.call('tk', 'scaling')`
+  - Handle macOS default 72 DPI vs Windows 96
+- [ ] `SAMPSON_mac.spec` — Create macOS PyInstaller spec
+  - Use `BUNDLE` instead of `EXE` for .app generation
+  - Set `bundle_identifier='com.irpina.sampson'`
+  - Add `info_plist` for app metadata
+- [ ] `requirements.txt` — Create dependency manifest
+  - `pygame-ce>=2.5`
+  - `customtkinter>=5.2`
+- [ ] Test basic functionality on macOS (needs Mac hardware)
+
+#### Phase 2: Polish
+- [ ] `theme.py` — macOS font fallbacks (no "Segoe UI" on Mac)
+  - Use `-apple-system` font family on macOS
+- [ ] `builders.py` — macOS appearance detection (dark/light)
+  - Query `NSAppearance` if needed
+- [ ] Update README with macOS install/build instructions
+
+#### Phase 3: Distribution (Optional)
+- [ ] Code signing certificate for macOS
+- [ ] DMG creation with `create-dmg`
+- [ ] Apple notarization for Gatekeeper
+- [ ] GitHub Actions workflow for automated macOS builds
+
+**Dependencies Status:**
+| Package | macOS Support |
+|---------|---------------|
+| `pygame-ce` | ✅ Native support |
+| `customtkinter` | ✅ Pure Python |
+| `tkinter` | ✅ Bundled with Python |
+
+**Estimated Effort:** 1-2 days (with Mac hardware for testing)
+
+---
+
 ## Later (separate tasks)
 
 ---
