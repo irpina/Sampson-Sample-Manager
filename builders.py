@@ -115,6 +115,35 @@ def build_deck_a(parent):
     return frame
 
 
+def _style_combobox_dropdown(cb):
+    """Style the TCombobox dropdown listbox directly via Tcl.
+
+    option_add("*TCombobox*Listbox.*") is unreliable on Windows.
+    ttk::combobox::PopdownWindow creates/returns the popup toplevel so we can
+    configure its inner listbox (.f.l) before it is ever shown.
+    Uses BG_SURF1 (slightly darker than the field's BG_SURF2) to accentuate
+    that the popup is a separate layer.
+    """
+    try:
+        popdown = cb.tk.call("ttk::combobox::PopdownWindow", cb)
+        lb = str(popdown) + ".f.l"
+        bg  = theme.BG_SURF1
+        fg  = theme.FG_ON_SURF
+        sbg = theme.CYAN_CONT
+        sfg = theme.ON_CYAN_CONT
+        cb.tk.eval(
+            f'{lb} configure'
+            f' -background "{bg}"'
+            f' -foreground "{fg}"'
+            f' -selectbackground "{sbg}"'
+            f' -selectforeground "{sfg}"'
+            f' -font {{"Segoe UI" 9}}'
+            f' -borderwidth 0 -highlightthickness 0'
+        )
+    except Exception:
+        pass  # non-fatal — dropdown falls back to system defaults
+
+
 # ── Centre — Options ─────────────────────────────────────────────────────────
 
 def build_center(parent):
@@ -168,12 +197,13 @@ def build_center(parent):
              font=("Segoe UI", 9), bg=theme.BG_SURFACE, fg=theme.FG_MUTED,
              anchor="center").grid(row=9, column=0, sticky="ew", padx=16, pady=(0, 4))
 
-    ttk.Combobox(frame, textvariable=state.profile_var,
-                 values=constants.PROFILE_NAMES,
-                 style="Dark.TCombobox",
-                 font=("Segoe UI", 9),
-                 state="readonly", width=14).grid(
-        row=10, column=0, sticky="ew", padx=16)
+    _profile_cb = ttk.Combobox(frame, textvariable=state.profile_var,
+                               values=constants.PROFILE_NAMES,
+                               style="Dark.TCombobox",
+                               font=("Segoe UI", 9),
+                               state="readonly", width=14)
+    _profile_cb.grid(row=10, column=0, sticky="ew", padx=16)
+    frame.after(0, lambda: _style_combobox_dropdown(_profile_cb))
 
     # Row 11 is the expanding spacer — pushes Run/Clear to the bottom
     frame.rowconfigure(11, weight=1)
@@ -276,7 +306,7 @@ def build_status_bar(parent):
              font=("Segoe UI", 9), bg=theme.BG_SURF2, fg=theme.FG_MUTED,
              anchor="w").pack(side="left", fill="x", expand=True)
 
-    tk.Label(frame, text="v0.11",
+    tk.Label(frame, text="v0.12",
              font=("Segoe UI", 8), bg=theme.BG_SURF2, fg=theme.FG_DIM,
              anchor="e").pack(side="right", padx=14)
     return frame

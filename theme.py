@@ -258,9 +258,5 @@ def setup_styles():
         selectbackground=[("readonly", BG_SURF2)],
         selectforeground=[("readonly", FG_ON_SURF)],
     )
-    # Dropdown list colours — only reachable via option_add
-    state.root.option_add("*TCombobox*Listbox.background",       BG_SURF2)
-    state.root.option_add("*TCombobox*Listbox.foreground",       FG_ON_SURF)
-    state.root.option_add("*TCombobox*Listbox.selectBackground", CYAN_CONT)
-    state.root.option_add("*TCombobox*Listbox.selectForeground", ON_CYAN_CONT)
-    state.root.option_add("*TCombobox*Listbox.font",             "Segoe UI 9")
+    # Dropdown popup styling is applied in builders.py via _style_combobox_dropdown().
+    # option_add("*TCombobox*Listbox.*") is unreliable on Windows and is not used here.
