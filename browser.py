@@ -13,6 +13,7 @@ def navigate_to(path_str):
         return
 
     state.dir_browser.delete(*state.dir_browser.get_children())
+    state._selected_folders.clear()
     state.nav_path_var.set(str(p))
 
     parent = p.parent
