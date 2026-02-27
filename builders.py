@@ -7,6 +7,7 @@ import theme
 import constants
 import browser
 import preview
+import playback
 import log_panel
 import operations
 from dpi import _px
@@ -205,18 +206,39 @@ def build_center(parent):
     _profile_cb.grid(row=10, column=0, sticky="ew", padx=16)
     frame.after(0, lambda: _style_combobox_dropdown(_profile_cb))
 
-    # Row 11 is the expanding spacer — pushes Run/Clear to the bottom
+    # Row 11 is the expanding spacer — pushes transport/Run/Clear to the bottom
     frame.rowconfigure(11, weight=1)
 
+    # ── Transport controls ────────────────────────────────────────────────────
+    transport_frame = tk.Frame(frame, bg=theme.BG_SURFACE)
+    transport_frame.grid(row=12, column=0, pady=(0, 6))
+
+    state.transport_prev_btn = ttk.Button(
+        transport_frame, text="◀", style="Icon.TButton",
+        command=playback.prev_file, width=3)
+    state.transport_prev_btn.pack(side="left", padx=4)
+    state.transport_prev_btn.state(["disabled"])
+
+    state.transport_play_btn = ttk.Button(
+        transport_frame, text="▶", style="Icon.TButton",
+        command=playback.play, width=3)
+    state.transport_play_btn.pack(side="left", padx=4)
+
+    state.transport_next_btn = ttk.Button(
+        transport_frame, text="▶▶", style="Icon.TButton",
+        command=playback.next_file, width=3)
+    state.transport_next_btn.pack(side="left", padx=4)
+    state.transport_next_btn.state(["disabled"])
+
     ttk.Separator(frame, orient="horizontal", style="Dark.TSeparator").grid(
-        row=12, column=0, sticky="ew", padx=16, pady=(0, 14))
+        row=13, column=0, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ttk.Button(frame, text="Run", style="Filled.TButton",
                                command=operations.run_tool)
-    state.run_btn.grid(row=13, column=0, padx=16, sticky="ew")
+    state.run_btn.grid(row=14, column=0, padx=16, sticky="ew")
 
     ttk.Button(frame, text="Clear log", style="Outlined.TButton",
-               command=log_panel.clear_log).grid(row=14, column=0, padx=16, pady=(10, 16))
+               command=log_panel.clear_log).grid(row=15, column=0, padx=16, pady=(10, 16))
 
     return frame
 
@@ -260,14 +282,16 @@ def build_deck_b(parent):
 
     # Treeview — "subfolder" column is hidden in flat mode, shown otherwise
     state.preview_tree = ttk.Treeview(frame, style="Preview.Treeview",
-                                      columns=("original", "renamed", "subfolder"),
-                                      show="headings", selectmode="none")
+                                      columns=("original", "renamed", "subfolder", "srcpath"),
+                                      show="headings", selectmode="browse")
     state.preview_tree.heading("original",  text="Original name")
     state.preview_tree.heading("renamed",   text="Will become")
     state.preview_tree.heading("subfolder", text="Subfolder")
     state.preview_tree.column("original",  width=_px(160), anchor="w", minwidth=_px(80))
     state.preview_tree.column("renamed",   width=_px(200), anchor="w", minwidth=_px(80))
     state.preview_tree.column("subfolder", width=0,        anchor="w", minwidth=0, stretch=False)
+    state.preview_tree.column("srcpath",  width=0,        anchor="w", minwidth=0, stretch=False)
+    state.preview_tree.heading("srcpath", text="")
     state.preview_tree.grid(row=3, column=0, sticky="nsew", padx=(12, 0), pady=(0, 12))
 
     vsb = ttk.Scrollbar(frame, orient="vertical", command=state.preview_tree.yview,
@@ -276,8 +300,9 @@ def build_deck_b(parent):
     state.preview_tree.configure(yscrollcommand=vsb.set)
 
     # Tooltip: hovering over the "Will become" column shows the full filename
-    state.preview_tree.bind("<Motion>", preview._show_tooltip)
-    state.preview_tree.bind("<Leave>",  preview._hide_tooltip)
+    state.preview_tree.bind("<Motion>",          preview._show_tooltip)
+    state.preview_tree.bind("<Leave>",           preview._hide_tooltip)
+    state.preview_tree.bind("<ButtonRelease-1>", playback.on_tree_select)
 
     # Prevent the frame from resizing when preview content changes —
     # size is dictated entirely by the parent grid.
@@ -306,7 +331,7 @@ def build_status_bar(parent):
              font=("Segoe UI", 9), bg=theme.BG_SURF2, fg=theme.FG_MUTED,
              anchor="w").pack(side="left", fill="x", expand=True)
 
-    tk.Label(frame, text="v0.12",
+    tk.Label(frame, text="v0.13",
              font=("Segoe UI", 8), bg=theme.BG_SURF2, fg=theme.FG_DIM,
              anchor="e").pack(side="right", padx=14)
     return frame
@@ -354,6 +379,7 @@ def toggle_theme():
     down all widgets, rebuilds with the new theme, then restores paths.
     """
     preview._hide_tooltip()
+    playback.stop()
 
     saved_source      = state.source_var.get()      if state.source_var      else ""
     saved_dest        = state.dest_var.get()        if state.dest_var        else ""
@@ -419,6 +445,7 @@ def build_app():
 
     log_panel.setup_log_tags()
     state.active_dir_var.trace_add("write", preview.on_active_dir_changed)
+    state.active_dir_var.trace_add("write", lambda *_: playback.reset())
     state.source_var.trace_add("write", browser.on_source_var_changed)
     state.no_rename_var.trace_add("write",   lambda *_: preview.refresh_preview())
     state.profile_var.trace_add("write",    lambda *_: preview.refresh_preview())

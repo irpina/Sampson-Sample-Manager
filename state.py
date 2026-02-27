@@ -32,3 +32,9 @@ struct_mode_var    = None   # tk.StringVar — "flat" | "mirror" | "parent"
 no_rename_var      = None
 _tooltip_win       = None   # active hover tooltip Toplevel (or None)
 _tooltip_item      = None   # item_id currently shown in tooltip
+
+_playback_file     = None   # Path of file currently loaded (or None)
+_is_playing        = False  # True while pygame.mixer is playing
+transport_prev_btn = None   # ttk.Button refs for enable/disable
+transport_play_btn = None
+transport_next_btn = None
