@@ -51,7 +51,7 @@ def build_deck_a(parent):
     frame.rowconfigure(3, weight=1)
 
     # Strip: transparent so card's rounded corners show through
-    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0, height=_px(28))
+    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0, height=_px(20))
     strip.grid(row=0, column=0, sticky="ew")
     strip.grid_propagate(False)
     ctk.CTkFrame(strip, fg_color=theme.CYAN, width=_px(3), corner_radius=0).pack(side="left", fill="y")
@@ -256,7 +256,7 @@ def build_deck_b(parent):
     frame.rowconfigure(3, weight=1)
 
     # Strip: transparent so card's rounded corners show through
-    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0, height=_px(28))
+    strip = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0, height=_px(20))
     strip.grid(row=0, column=0, columnspan=2, sticky="ew")
     strip.grid_propagate(False)
     ctk.CTkFrame(strip, fg_color=theme.AMBER, width=_px(3), corner_radius=0).pack(side="left", fill="y")
