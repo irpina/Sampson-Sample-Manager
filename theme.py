@@ -126,6 +126,19 @@ def setup_styles():
     style = ttk.Style(state.root)
     style.theme_use("clam")
 
+    # ── Browser Treeview (Deck A folder/file list) ──
+    style.configure("Browser.Treeview",
+        background=BG_SURF2, foreground=FG_ON_SURF,
+        fieldbackground=BG_SURF2,
+        bordercolor=OUTLINE_VAR, lightcolor=BG_SURF2, darkcolor=BG_SURF2,
+        font=("Segoe UI", 10), rowheight=_px(26),
+    )
+    style.configure("Browser.Treeview.Heading", relief="flat", padding=0)
+    style.map("Browser.Treeview",
+        background=[("selected", CYAN_CONT)],
+        foreground=[("selected", ON_CYAN_CONT)],
+    )
+
     # ── Preview Treeview (ttk — no CTK equivalent) ──
     style.configure("Preview.Treeview",
         background=BG_SURF2, foreground=FG_ON_SURF,

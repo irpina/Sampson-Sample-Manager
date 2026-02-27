@@ -102,14 +102,25 @@ def refresh_preview():
 
 def _scan_thread(path_str):
     source_root = Path(path_str)
-    files = [f for f in source_root.rglob("*")
-             if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
+    if state._selected_folders:
+        files = []
+        for folder_path in state._selected_folders:
+            p = Path(folder_path)
+            if p.is_dir():
+                files += [f for f in p.rglob("*")
+                          if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
+    else:
+        files = []   # empty selection → _populate_preview shows appropriate message
     state.root.after(0, lambda: _populate_preview(files, source_root))
 
 
 def _populate_preview(files, source_root):
     state.preview_tree.delete(*state.preview_tree.get_children())
     total = len(files)
+    if total == 0 and not state._selected_folders:
+        state.preview_count_var.set("No folders selected")
+        state.src_count_var.set("0 audio files")
+        return
     shown = min(total, constants.MAX_PREVIEW_ROWS)
 
     no_rename   = state.no_rename_var.get()   if state.no_rename_var  else False

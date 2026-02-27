@@ -4,6 +4,7 @@ from tkinter import filedialog
 import state
 import theme
 import constants
+import preview
 
 
 def navigate_to(path_str):
@@ -11,22 +12,23 @@ def navigate_to(path_str):
     if not p.is_dir():
         return
 
-    state.dir_browser.delete(0, "end")
-    state._browser_items = []
+    state.dir_browser.delete(*state.dir_browser.get_children())
     state.nav_path_var.set(str(p))
 
     parent = p.parent
     if parent != p:
-        state.dir_browser.insert("end", "   \u2191  ..")
-        state._browser_items.append(("up", "..", str(parent)))
-        state.dir_browser.itemconfigure(0, fg=theme.FG_DIM)
+        state.dir_browser.insert("", "end",
+            values=("", "  \u2191  ..", str(parent), "up"),
+            tags=("up",))
 
     try:
-        subdirs = sorted(d for d in p.iterdir() if d.is_dir() and not d.name.startswith("."))
+        subdirs = sorted(d for d in p.iterdir()
+                         if d.is_dir() and not d.name.startswith("."))
         for d in subdirs:
-            state.dir_browser.insert("end", f"   \u25b6  {d.name}")
-            state._browser_items.append(("folder", d.name, str(d)))
-            state.dir_browser.itemconfigure(len(state._browser_items) - 1, fg=theme.ON_CYAN_CONT)
+            state._selected_folders.add(str(d))   # default: checked on first load
+            state.dir_browser.insert("", "end",
+                values=("\u2611", f"  \u25b6  {d.name}", str(d), "folder"),
+                tags=("folder",))
     except PermissionError:
         pass
 
@@ -34,59 +36,62 @@ def navigate_to(path_str):
         audio = sorted(f for f in p.iterdir()
                        if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS)
         for f in audio:
-            state.dir_browser.insert("end", f"   \u266a  {f.name}")
-            state._browser_items.append(("file", f.name, str(f)))
-            state.dir_browser.itemconfigure(len(state._browser_items) - 1, fg=theme.FG_VARIANT)
+            state.dir_browser.insert("", "end",
+                values=("", f"  \u266a  {f.name}", str(f), "file"),
+                tags=("file",))
     except PermissionError:
         pass
 
+    state.dir_browser.tag_configure("folder", foreground=theme.ON_CYAN_CONT)
+    state.dir_browser.tag_configure("file",   foreground=theme.FG_VARIANT)
+    state.dir_browser.tag_configure("up",     foreground=theme.FG_DIM)
+
     state.active_dir_var.set(path_str)
+    # active_dir_var trace fires preview.on_active_dir_changed() automatically
 
 
-def on_browser_press(event):
-    """
-    Mouse-button-down on the file browser.
-
-    Highlights the item under the cursor and darkens the listbox background
-    slightly to give tactile press feedback. Navigation is deferred to
-    on_browser_release so the user sees a response before anything happens.
-    """
-    idx = state.dir_browser.nearest(event.y)
-    if 0 <= idx < len(state._browser_items) and state._browser_items[idx][0] in ("folder", "up"):
-        state._browser_press_idx = idx
-        state.dir_browser.selection_clear(0, "end")
-        state.dir_browser.selection_set(idx)
-        press_bg = "#222028" if state._is_dark else "#cdc7ba"
-        state.dir_browser.configure(bg=press_bg)
-    else:
-        state._browser_press_idx = None
-
-
-def on_browser_release(event):
-    """
-    Mouse-button-up on the file browser.
-
-    Restores the normal background colour, then navigates into the folder
-    that was pressed (if any). Only navigates if the release occurs over
-    the same item that was pressed — prevents accidental navigation when
-    the user drags off an item.
-    """
-    state.dir_browser.configure(bg=theme.BG_SURF2)
-
-    if state._browser_press_idx is None:
+def on_browser_click(event):
+    item = state.dir_browser.identify_row(event.y)
+    col  = state.dir_browser.identify_column(event.x)
+    if not item:
         return
+    itype = state.dir_browser.set(item, "itype")
+    path  = state.dir_browser.set(item, "path")
 
-    pressed = state._browser_press_idx
-    state._browser_press_idx = None
-
-    release_idx = state.dir_browser.nearest(event.y)
-    if release_idx != pressed:
-        return
-
-    if pressed < len(state._browser_items):
-        item_type, _name, path = state._browser_items[pressed]
-        if item_type in ("folder", "up"):
+    if col == "#1":   # checkbox column
+        if itype == "folder":
+            _toggle_folder(item, path)
+    else:             # name column — navigate
+        if itype in ("folder", "up"):
             navigate_to(path)
+
+
+def _toggle_folder(item, path):
+    if path in state._selected_folders:
+        state._selected_folders.discard(path)
+        state.dir_browser.set(item, "chk", "\u2610")
+    else:
+        state._selected_folders.add(path)
+        state.dir_browser.set(item, "chk", "\u2611")
+    preview.on_active_dir_changed()
+
+
+def select_all_visible():
+    for item in state.dir_browser.get_children():
+        if state.dir_browser.set(item, "itype") == "folder":
+            path = state.dir_browser.set(item, "path")
+            state._selected_folders.add(path)
+            state.dir_browser.set(item, "chk", "\u2611")
+    preview.on_active_dir_changed()
+
+
+def deselect_all_visible():
+    for item in state.dir_browser.get_children():
+        if state.dir_browser.set(item, "itype") == "folder":
+            path = state.dir_browser.set(item, "path")
+            state._selected_folders.discard(path)
+            state.dir_browser.set(item, "chk", "\u2610")
+    preview.on_active_dir_changed()
 
 
 def nav_up():
