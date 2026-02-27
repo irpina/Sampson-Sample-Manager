@@ -78,6 +78,11 @@ def run_tool():
             "Please select a valid destination folder in Deck B.", parent=state.root)
         return
 
+    if not state._selected_folders:
+        messagebox.showwarning("No selection",
+            "Please check at least one folder in Deck A.", parent=state.root)
+        return
+
     state.run_btn.configure(state="disabled")
     state.run_btn.configure(text="Running\u2026")
     if state._status_dot:
@@ -95,8 +100,12 @@ def run_tool():
 
 
 def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode):
-    files = [f for f in source.rglob("*")
-             if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
+    files = []
+    for folder_path in state._selected_folders:
+        p = Path(folder_path)
+        if p.is_dir():
+            files += [f for f in p.rglob("*")
+                      if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
     total = len(files)
 
     if total == 0:
