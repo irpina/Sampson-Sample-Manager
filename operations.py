@@ -9,19 +9,18 @@ import constants
 from log_panel import log
 
 
-def _m8_truncate(new_name: str, dest_path_str: str) -> str:
+def _apply_path_limit(new_name: str, dest_path_str: str, limit: int) -> str:
     """
-    Truncate new_name so that the full destination path stays within 127 chars.
+    Truncate new_name so that the full destination path stays within `limit` chars.
 
-    The Dirtywave M8 has a 127-character limit for file paths on its SD card.
     The extension is always preserved; only the stem is shortened.
     """
     full = str(Path(dest_path_str) / new_name)
-    if len(full) <= 127:
+    if len(full) <= limit:
         return new_name
     p     = Path(new_name)
     ext   = p.suffix
-    avail = 127 - len(str(Path(dest_path_str))) - 1 - len(ext)
+    avail = limit - len(str(Path(dest_path_str))) - 1 - len(ext)
     if avail < 1:
         avail = 1
     return p.stem[:avail] + ext
@@ -46,15 +45,16 @@ def run_tool():
         state._status_dot.configure(fg=theme.CYAN)
     state.progress_var.set(0)
     state.status_var.set("Collecting files\u2026")
+    path_limit = constants.PROFILES[state.profile_var.get()]["path_limit"]
     threading.Thread(
         target=_run_worker,
         args=(source, dest, state.move_var.get(), state.dry_var.get(),
-              state.m8_var.get(), state.no_rename_var.get()),
+              path_limit, state.no_rename_var.get()),
         daemon=True,
     ).start()
 
 
-def _run_worker(source, dest, move_files, dry, m8_friendly, no_rename):
+def _run_worker(source, dest, move_files, dry, path_limit, no_rename):
     files = [f for f in source.rglob("*")
              if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
     total = len(files)
@@ -72,8 +72,8 @@ def _run_worker(source, dest, move_files, dry, m8_friendly, no_rename):
 
     for i, f in enumerate(files, 1):
         new_name = f.name if no_rename else f"{f.parent.name}_{f.name}"
-        if m8_friendly:
-            new_name = _m8_truncate(new_name, str(dest))
+        if path_limit is not None:
+            new_name = _apply_path_limit(new_name, str(dest), path_limit)
         target = dest / new_name
         msg    = f"{prefix}{label}: {f.name}  \u2192  {new_name}"
 

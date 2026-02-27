@@ -4,6 +4,7 @@ import tkinter.ttk as ttk
 
 import state
 import theme
+import constants
 import browser
 import preview
 import log_panel
@@ -121,13 +122,13 @@ def build_center(parent):
                      highlightthickness=1,
                      highlightbackground=theme.CARD_BORDER)
     frame.columnconfigure(0, weight=1)
-    # Row 4 is the expanding spacer — pushes Run/Clear to the bottom
-    frame.rowconfigure(4, weight=1)
+    # Row 5 is the expanding spacer — pushes Run/Clear to the bottom
+    frame.rowconfigure(5, weight=1)
 
     state.move_var      = tk.BooleanVar(value=False)
     state.dry_var       = tk.BooleanVar(value=True)
-    state.m8_var        = tk.BooleanVar(value=False)
     state.no_rename_var = tk.BooleanVar(value=False)
+    state.profile_var   = tk.StringVar(value="Generic")
 
     ttk.Checkbutton(frame, text="Move files  (copy by default)",
                     variable=state.move_var, style="Dark.TCheckbutton").grid(
@@ -137,25 +138,37 @@ def build_center(parent):
                     variable=state.dry_var, style="Dark.TCheckbutton").grid(
         row=1, column=0, sticky="w", padx=16)
 
-    ttk.Checkbutton(frame, text="M8 Friendly  (\u2264127 char paths)",
-                    variable=state.m8_var, style="Dark.TCheckbutton").grid(
-        row=2, column=0, sticky="w", padx=16, pady=(2, 0))
-
     ttk.Checkbutton(frame, text="Keep original names  (no prefix)",
                     variable=state.no_rename_var, style="Dark.TCheckbutton").grid(
-        row=3, column=0, sticky="w", padx=16, pady=(2, 0))
-
-    # row 4 expands — spacer pushes controls below it to the bottom
+        row=2, column=0, sticky="w", padx=16, pady=(2, 0))
 
     ttk.Separator(frame, orient="horizontal", style="Dark.TSeparator").grid(
-        row=5, column=0, sticky="ew", padx=16, pady=(0, 14))
+        row=3, column=0, sticky="ew", padx=16, pady=(10, 8))
+
+    tk.Label(frame, text="Hardware profile",
+             font=("Segoe UI", 9), bg=theme.BG_SURFACE, fg=theme.FG_MUTED,
+             anchor="w").grid(row=4, column=0, sticky="w", padx=16, pady=(0, 4))
+
+    ttk.Combobox(frame, textvariable=state.profile_var,
+                 values=constants.PROFILE_NAMES,
+                 state="readonly", width=14).grid(
+        row=5, column=0, sticky="w", padx=16)
+
+    # row 5 also has the combobox but the frame row weight lets it expand below;
+    # the real spacer effect comes from the combobox not filling vertically —
+    # we add a dedicated spacer row just below it.
+    frame.rowconfigure(6, weight=1)
+    frame.rowconfigure(5, weight=0)
+
+    ttk.Separator(frame, orient="horizontal", style="Dark.TSeparator").grid(
+        row=7, column=0, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ttk.Button(frame, text="Run", style="Filled.TButton",
                                command=operations.run_tool)
-    state.run_btn.grid(row=6, column=0, padx=16, sticky="ew")
+    state.run_btn.grid(row=8, column=0, padx=16, sticky="ew")
 
     ttk.Button(frame, text="Clear log", style="Outlined.TButton",
-               command=log_panel.clear_log).grid(row=7, column=0, padx=16, pady=(10, 16))
+               command=log_panel.clear_log).grid(row=9, column=0, padx=16, pady=(10, 16))
 
     return frame
 
@@ -292,9 +305,10 @@ def toggle_theme():
     """
     preview._hide_tooltip()
 
-    saved_source = state.source_var.get()     if state.source_var     else ""
-    saved_dest   = state.dest_var.get()       if state.dest_var       else ""
-    saved_active = state.active_dir_var.get() if state.active_dir_var else ""
+    saved_source  = state.source_var.get()     if state.source_var     else ""
+    saved_dest    = state.dest_var.get()       if state.dest_var       else ""
+    saved_active  = state.active_dir_var.get() if state.active_dir_var else ""
+    saved_profile = state.profile_var.get()    if state.profile_var    else "Generic"
 
     state._is_dark = not state._is_dark
     theme._apply_theme_colors(state._is_dark)
@@ -306,6 +320,8 @@ def toggle_theme():
     theme.setup_styles()
     build_app()
 
+    if saved_profile:
+        state.profile_var.set(saved_profile)
     if saved_dest:
         state.dest_var.set(saved_dest)
     if saved_source:
@@ -352,4 +368,5 @@ def build_app():
     state.active_dir_var.trace_add("write", preview.on_active_dir_changed)
     state.source_var.trace_add("write", browser.on_source_var_changed)
     state.no_rename_var.trace_add("write", lambda *_: preview.refresh_preview())
+    state.profile_var.trace_add("write",   lambda *_: preview.refresh_preview())
     state.root.bind("<Return>", lambda _e: operations.run_tool())
