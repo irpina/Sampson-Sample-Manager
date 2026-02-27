@@ -128,7 +128,7 @@ def _populate_preview(files, source_root):
             f, source_root, dest_path, no_rename, struct_mode, path_limit)
         tag = "odd" if i % 2 else "even"
         state.preview_tree.insert("", "end",
-                                  values=(f.name, new_name, rel_sub),
+                                  values=(f.name, new_name, rel_sub, str(f)),
                                   tags=(tag,))
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)
