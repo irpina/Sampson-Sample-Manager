@@ -119,12 +119,16 @@ def _populate_preview(files, source_root):
     dest_path   = Path(state.dest_var.get().strip()) \
                   if (state.dest_var and state.dest_var.get().strip()) else source_root
 
+    # Show Subfolder column only when not in flat mode
+    sub_width = 0 if struct_mode == "flat" else _px(140)
+    state.preview_tree.column("subfolder", width=sub_width, minwidth=0, stretch=False)
+
     for i, f in enumerate(files[:shown]):
         new_name, rel_sub = _compute_output(
             f, source_root, dest_path, no_rename, struct_mode, path_limit)
         tag = "odd" if i % 2 else "even"
         state.preview_tree.insert("", "end",
-                                  values=(f.name, new_name),
+                                  values=(f.name, new_name, rel_sub),
                                   tags=(tag,))
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)

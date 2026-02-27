@@ -28,6 +28,7 @@ _preview_after     = None
 _is_dark           = True   # current theme state
 _dpi_scale         = 1.0    # pixels-per-96-dpi-pixel; set once at startup
 profile_var        = None   # tk.StringVar — key into constants.PROFILES; default "Generic"
+struct_mode_var    = None   # tk.StringVar — "flat" | "mirror" | "parent"
 no_rename_var      = None
 _tooltip_win       = None   # active hover tooltip Toplevel (or None)
 _tooltip_item      = None   # item_id currently shown in tooltip
