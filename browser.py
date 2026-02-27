@@ -29,6 +29,10 @@ def navigate_to(path_str):
             state.dir_browser.insert("", "end",
                 values=("\u2611", f"  \u25b6  {d.name}", str(d), "folder"),
                 tags=("folder",))
+        if not subdirs:
+            # Leaf directory — no subdirs to select, include the dir itself so its
+            # direct audio files are picked up by the preview and Run scans.
+            state._selected_folders.add(path_str)
     except PermissionError:
         pass
 
