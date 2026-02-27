@@ -6,7 +6,7 @@ import state
 import theme
 import constants
 from dpi import _px
-from operations import _apply_path_limit
+from operations import _compute_output
 
 
 # ── Tooltip ─────────────────────────────────────────────────────────────────
@@ -101,28 +101,31 @@ def refresh_preview():
 
 
 def _scan_thread(path_str):
-    files = [f for f in Path(path_str).rglob("*")
+    source_root = Path(path_str)
+    files = [f for f in source_root.rglob("*")
              if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
-    state.root.after(0, lambda: _populate_preview(files))
+    state.root.after(0, lambda: _populate_preview(files, source_root))
 
 
-def _populate_preview(files):
+def _populate_preview(files, source_root):
     state.preview_tree.delete(*state.preview_tree.get_children())
     total = len(files)
     shown = min(total, constants.MAX_PREVIEW_ROWS)
+
+    no_rename   = state.no_rename_var.get()   if state.no_rename_var  else False
+    struct_mode = state.struct_mode_var.get() if state.struct_mode_var else "flat"
+    path_limit  = constants.PROFILES[state.profile_var.get()]["path_limit"] \
+                  if state.profile_var else None
+    dest_path   = Path(state.dest_var.get().strip()) \
+                  if (state.dest_var and state.dest_var.get().strip()) else source_root
+
     for i, f in enumerate(files[:shown]):
-        if state.no_rename_var and state.no_rename_var.get():
-            new_name = f.name
-        else:
-            new_name = f"{f.parent.name}_{f.name}"
-        if state.profile_var:
-            limit = constants.PROFILES[state.profile_var.get()]["path_limit"]
-            if limit is not None:
-                d = state.dest_var.get().strip() if state.dest_var else ""
-                if d:
-                    new_name = _apply_path_limit(new_name, d, limit)
+        new_name, rel_sub = _compute_output(
+            f, source_root, dest_path, no_rename, struct_mode, path_limit)
         tag = "odd" if i % 2 else "even"
-        state.preview_tree.insert("", "end", values=(f.name, new_name), tags=(tag,))
+        state.preview_tree.insert("", "end",
+                                  values=(f.name, new_name),
+                                  tags=(tag,))
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)
 
