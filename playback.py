@@ -79,6 +79,7 @@ def prev_file():
 
 def on_tree_select(event):
     """ButtonRelease-1 handler on the preview tree — select and auto-play."""
+    state.preview_tree.focus_set()
     iid = state.preview_tree.identify_row(event.y)
     if not iid:
         return
@@ -91,6 +92,7 @@ def on_tree_select(event):
 
 def on_arrow_key(event):
     """KeyRelease-Up/Down handler — play whichever row the arrow moved to."""
+    state.preview_tree.focus_set()
     iid = state.preview_tree.focus()
     if not iid:
         return
