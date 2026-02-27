@@ -26,6 +26,45 @@ def _apply_path_limit(new_name: str, dest_path_str: str, limit: int) -> str:
     return p.stem[:avail] + ext
 
 
+def _compute_output(f: Path, source_root: Path, dest: Path,
+                    no_rename: bool, struct_mode: str,
+                    path_limit) -> tuple:
+    """
+    Return (new_filename, rel_subfolder) for a single source file.
+
+    new_filename  — the final filename written to disk
+    rel_subfolder — subfolder relative to dest where the file lands:
+                    ""            flat mode  (file goes directly in dest/)
+                    "Kicks"       parent mode (file goes in dest/Kicks/)
+                    "Kicks/808"   mirror mode (file goes in dest/Kicks/808/)
+
+    struct_mode is one of "flat", "mirror", "parent".
+    path_limit is int | None (from the active hardware profile).
+    """
+    # Filename
+    new_name = f.name if no_rename else f"{f.parent.name}_{f.name}"
+
+    # Subfolder
+    if struct_mode == "mirror":
+        try:
+            rel_sub = str(f.parent.relative_to(source_root))
+        except ValueError:
+            rel_sub = ""
+        if rel_sub == ".":
+            rel_sub = ""
+    elif struct_mode == "parent":
+        rel_sub = f.parent.name if f.parent != source_root else ""
+    else:                          # "flat" or unrecognised
+        rel_sub = ""
+
+    # Path limit
+    effective_dest = str(Path(dest) / rel_sub) if rel_sub else str(dest)
+    if path_limit is not None:
+        new_name = _apply_path_limit(new_name, effective_dest, path_limit)
+
+    return new_name, rel_sub
+
+
 def run_tool():
     source = Path(state.active_dir_var.get().strip()) if state.active_dir_var.get().strip() else None
     dest   = Path(state.dest_var.get().strip())
