@@ -201,46 +201,33 @@ and the "Clear log" button gets cut off/blocked by other elements.
 
 ---
 
-### Task 10: macOS Compatibility (Blocked — No Mac Available)
+### Task 10: macOS Compatibility + Audio Conversion
 
-Port SAMPSON to run natively on macOS. The codebase is architecturally cross-platform;
-the main work is DPI detection and PyInstaller packaging.
+**Status:** Planned — See `TASKS_MACOS_CONVERSION.md` for full specification
 
-#### Phase 1: Core Compatibility
-- [ ] `dpi.py` — Refactor for cross-platform DPI detection
-  - Detect macOS (`sys.platform == "darwin"`)
-  - Use `NSScreen` via PyObjC or tkinter's `tk.call('tk', 'scaling')`
-  - Handle macOS default 72 DPI vs Windows 96
-- [ ] `SAMPSON_mac.spec` — Create macOS PyInstaller spec
-  - Use `BUNDLE` instead of `EXE` for .app generation
-  - Set `bundle_identifier='com.irpina.sampson'`
-  - Add `info_plist` for app metadata
-- [ ] `requirements.txt` — Create dependency manifest
-  - `pygame-ce>=2.5`
-  - `customtkinter>=5.2`
-- [ ] Test basic functionality on macOS (needs Mac hardware)
+Two major features to be implemented together:
 
-#### Phase 2: Polish
-- [ ] `theme.py` — macOS font fallbacks (no "Segoe UI" on Mac)
-  - Use `-apple-system` font family on macOS
-- [ ] `builders.py` — macOS appearance detection (dark/light)
-  - Query `NSAppearance` if needed
-- [ ] Update README with macOS install/build instructions
+1. **macOS Support** — Native macOS app bundle with DPI handling and fonts
+2. **Audio Conversion** — Convert samples to device-compatible formats
 
-#### Phase 3: Distribution (Optional)
-- [ ] Code signing certificate for macOS
-- [ ] DMG creation with `create-dmg`
-- [ ] Apple notarization for Gatekeeper
-- [ ] GitHub Actions workflow for automated macOS builds
+**Overview:**
+- Port SAMPSON from Windows-only to true cross-platform
+- Add audio conversion using pydub + ffmpeg (WAV/AIFF, sample rate, bit depth)
+- Extended hardware profiles for Elektron devices with conversion presets
 
-**Dependencies Status:**
-| Package | macOS Support |
-|---------|---------------|
-| `pygame-ce` | ✅ Native support |
-| `customtkinter` | ✅ Pure Python |
-| `tkinter` | ✅ Bundled with Python |
+**Key Files:**
+| File | Purpose |
+|------|---------|
+| `TASKS_MACOS_CONVERSION.md` | **Complete task specification with code snippets** |
+| `PLAN_MACOS_AND_CONVERSION.md` | Architecture overview and device research |
 
-**Estimated Effort:** 1-2 days (with Mac hardware for testing)
+**Blockers:**
+- macOS testing requires physical Mac hardware (Retina + non-Retina)
+- Audio conversion testing requires ffmpeg installation
+
+**Estimated Effort:** 10-14 days total
+- macOS support: 3-5 days (needs Mac hardware)
+- Audio conversion: 7-9 days (can develop on any platform)
 
 ---
 

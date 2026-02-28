@@ -1,129 +1,194 @@
-# CLAUDE Session Summary — CTK Migration & v0.2.0 Release
+# SAMPSON Development Session Summary
 
 **Date:** 2026-02-27  
-**Status:** ✅ Complete — v0.2.0 Released
+**Completed:** Audio Conversion Feature (Phase 2)  
+**Version:** v0.2.4 → v0.3.0
 
 ---
 
-## Major Accomplishments
+## 🎯 What Was Implemented
 
-### 1. Migrated to CustomTkinter (CTK) ✓
-- **Purpose:** Modern, scalable UI with native dark/light theme support
-- **Files modified:** `main.py`, `builders.py`, `playback.py`
-- **Key changes:**
-  - Replaced `tk.Frame`/`ttk.Frame` with `ctk.CTkFrame`
-  - Replaced `tk.Button`/`ttk.Button` with `ctk.CTkButton`
-  - Updated widget styling to use CTK color system
-  - Removed manual `withdraw()`/`deiconify()` pattern (CTK handles this)
-  - Fixed `playback.py` button state API (`configure(state="normal")` vs ttk's `.state()`)
+### Audio Conversion Feature
+Full audio format conversion system with hardware device presets.
 
-### 2. UI/UX Improvements ✓
-- **Compact center panel:** Side-by-side checkboxes/radios with hover tooltips
-  - "Move files" | "Dry run" (row 0)
-  - "Flat" | "Mirror" | "By parent" radio buttons (horizontal layout)
-- **Header:** Reduced strip height from 28px → 14px for SOURCE/DESTINATION bars
-- **Resize behavior:** Added `minsize` constraints to prevent UI collapse
-- **Transport controls:** Added spacing between profile selector and playback buttons
+**Features:**
+- Convert between WAV and AIFF formats
+- Change sample rates: 44.1kHz, 48kHz, 96kHz (or keep original)
+- Change bit depth: 16-bit, 24-bit, 32-bit (or keep original)
+- Convert channels: mono/stereo (or keep original)
+- Auto-apply device presets when selecting hardware profiles
 
-### 3. Logo Integration ✓
-- **File:** `sampsontransparent2.png` (1125x223px transparent PNG)
-- **Implementation:** 
-  - Embedded in executable via PyInstaller spec
-  - `_get_logo_path()` helper handles both dev and bundled modes
-  - Uses `tk.PhotoImage` (no PIL dependency)
-  - Scales to ~150px width maintaining aspect ratio
-
-### 4. v0.2.0 Release ✓
-- **GitHub Release:** https://github.com/irpina/Sampson-Sample-Manager/releases/tag/v0.2.0
-- **Asset:** Single `SAMPSON.exe` (25.5 MB) — logo embedded, no external files needed
-- **Version bump:** `v0.15` → `v0.2.0` in `builders.py` status bar
+**New Hardware Profiles:**
+- Elektron Digitakt → 48kHz, 16-bit, mono WAV
+- Elektron Analog Rytm → 48kHz, 16-bit WAV
+- Elektron Syntakt → 48kHz, 16-bit WAV
+- M8 → 44.1kHz, 16-bit WAV (existing)
 
 ---
 
-## Files Changed
+## 📁 Files Changed
 
-| File | Change |
+### New Files
+| File | Purpose |
+|------|---------|
+| `conversion.py` | Audio conversion engine using pydub + ffmpeg |
+| `requirements.txt` | Dependency manifest with imageio-ffmpeg |
+| `PLAN_MACOS_AND_CONVERSION.md` | Architecture planning document |
+| `TASKS_MACOS_CONVERSION.md` | Detailed task specification |
+| `PLAN_FFMPEG_BUNDLING.md` | FFmpeg bundling strategy |
+| `PLAN_CROSS_PLATFORM_NOTES.md` | Cross-platform implementation notes |
+| `AGENTS.md` | Project guide for AI agents |
+
+### Modified Files
+| File | Changes |
+|------|---------|
+| `constants.py` | Extended PROFILES with conversion presets for Elektron devices |
+| `state.py` | Added conversion option variables (6 new state vars) |
+| `builders.py` | Added conversion UI panel with 4 dropdowns, profile preset handler |
+| `operations.py` | Integrated conversion into file worker thread |
+| `preview.py` | Shows `[c]` indicator for files that will be converted |
+| `README.md` | Updated features, dependencies, removed manual ffmpeg install instructions |
+| `TASKS.md` | Updated Task 10 reference to new task files |
+| `SAMPSON.spec` | Added imageio-ffmpeg data collection for PyInstaller |
+
+### Deleted Files
+| File | Reason |
 |------|--------|
-| `main.py` | Removed withdraw/deiconify, use constants for min window size |
-| `builders.py` | Full CTK migration, compact layout, logo display, tooltip helper |
-| `playback.py` | Fixed CTkButton state API, added focus handlers |
-| `state.py` | Added `_dpi_scale` usage throughout |
-| `SAMPSON.spec` | Added logo PNG to datas for bundling |
-| `dpi.py` | Added `MIN_WINDOW_WIDTH/HEIGHT` constants |
-| `theme.py` | No changes (already color-only) |
+| `TASKS_AUDIO_PREVIEW.md` | Feature completed, code is documentation |
 
 ---
 
-## What Was NOT Done (Reverted)
+## 🔧 Technical Implementation
 
-### MIDI Learn System
-- **Status:** ❌ Implemented then reverted per user request
-- **Commit:** `b8d62a9` (rolled back to `26ad900`)
-- **Rationale:** User changed mind, wanted simpler UI
-- **If needed in future:** See git history for `midi_learn.py` module
-
----
-
-## macOS Compatibility
-
-**Status:** Planned but blocked (no Mac hardware for testing)
-- **Task:** Documented in TASKS.md as "Task 10"
-- **Known blockers:**
-  - `dpi.py` uses Windows-only `ctypes.windll`
-  - Need macOS PyInstaller spec (`BUNDLE` vs `EXE`)
-  - Font fallbacks needed (no "Segoe UI" on Mac)
-
----
-
-## Current Architecture
-
+### Dependencies
 ```
-SAMPSON/
-├── main.py              # Entry, DPI init, CTK root window
-├── builders.py          # All UI construction, logo display
-├── state.py             # Global state, widget refs
-├── playback.py          # Audio + transport control logic
-├── operations.py        # File operations worker
-├── browser.py           # Source file browser
-├── preview.py           # Destination preview tree
-├── constants.py         # Audio exts, hardware profiles
-├── theme.py             # Color constants
-├── log_panel.py         # Operation log
-├── dpi.py               # Windows DPI + _px() scaling
-├── SAMPSON.spec         # PyInstaller spec with logo
-└── sampsontransparent2.png  # Logo asset
+pygame-ce>=2.5.0          # Audio playback (existing)
+customtkinter>=5.2.0      # UI framework (existing)
+pydub>=0.25.1             # Audio conversion (new)
+imageio-ffmpeg>=0.6.0     # Bundled ffmpeg binary (new)
+audioop-lts>=0.2.0        # Python 3.13+ compatibility (new)
 ```
 
+### FFmpeg/FFprobe Discovery
+The `conversion.py` module implements a three-tier discovery system:
+
+1. **imageio-ffmpeg bundled binary** (preferred, works on all platforms)
+2. **System PATH** (user override)
+3. **Platform-specific locations** (fallback)
+
+**Important for Windows:** imageio-ffmpeg bundles ffmpeg but NOT ffprobe. For Windows development, ffprobe.exe was manually copied to:
+```
+%USERPROFILE%\AppData\Roaming\Python\Python314\site-packages\imageio_ffmpeg\binaries\
+```
+
+For PyInstaller builds, ffprobe must be explicitly included.
+
+### UI Integration
+- Conversion panel added to center deck (between hardware profile and transport controls)
+- 4 dropdowns: Format, Sample rate, Bit depth, Channels
+- "Convert files" checkbox to enable/disable
+- Auto-apply device preset on profile change
+- Shows `[c]` indicator in preview for converted files
+
+### Thread Safety
+- File operations run in daemon thread (`operations._run_worker`)
+- PATH environment variable set explicitly in `convert_file()` for subprocess calls
+- Error messages passed back to UI via `state._last_conversion_error`
+
 ---
 
-## Key Technical Notes
+## ⚠️ Known Issues / Limitations
 
-1. **CTK Font Handling:** Uses `font=("Segoe UI", size)` — this is Windows-specific. macOS will need fallbacks.
+### Windows + imageio-ffmpeg
+- **ffprobe not bundled** - must be manually copied or bundled separately
+- Current workaround: Copied from winget ffmpeg installation
 
-2. **Logo Loading:** Uses `sys._MEIPASS` check for PyInstaller bundles:
-   ```python
-   if hasattr(sys, '_MEIPASS'):
-       return Path(sys._MEIPASS) / "sampsontransparent2.png"
-   return Path("sampsontransparent2.png")
-   ```
-
-3. **DPI Scaling:** All pixel values go through `_px()` which multiplies by `state._dpi_scale` (1.0 at 96 DPI, 1.25 at 120 DPI, etc.)
-
-4. **Tooltips:** Custom `_add_tooltip()` helper in `builders.py` uses `tk.Toplevel` with `wm_overrideredirect(True)`
+### Future Improvements
+- Auto-download ffprobe for Windows if missing
+- Add progress callback during conversion (currently shows per-file)
+- Batch conversion optimization
 
 ---
 
-## Testing Notes
+## 🧪 Testing
 
-- Build command: `pyinstaller SAMPSON.spec`
-- Output: `dist/SAMPSON.exe` (should run standalone)
-- Verify: Logo appears in header, dark/light toggle works, audio plays
+### Verified Working
+- ✅ Format conversion: WAV → WAV (re-encode)
+- ✅ Sample rate: 44.1kHz → 48kHz
+- ✅ Bit depth: 24-bit → 16-bit
+- ✅ Hardware profile auto-preset (Digitakt → 48kHz/mono)
+- ✅ UI updates correctly
+- ✅ Error handling for missing ffmpeg
+
+### Test Command
+```bash
+python main.py
+# Select source folder with WAV files
+# Check "Convert files"
+# Set sample rate to 48kHz
+# Click Run
+```
 
 ---
 
-## Repo Status
+## 📋 Next Steps (Phase 3)
 
-- **GitHub:** https://github.com/irpina/Sampson-Sample-Manager
-- **Latest:** v0.2.0 released
-- **Branch:** main
-- **Clean working tree:** ✅
+### macOS Support (Pending)
+From `TASKS_MACOS_CONVERSION.md`:
+
+**Ready to implement (no Mac needed):**
+- [ ] Create `SAMPSON_mac.spec` with BUNDLE configuration
+- [ ] Update `dpi.py` for macOS DPI detection (PyObjC fallback)
+- [ ] Update `theme.py` for macOS fonts (`-apple-system`)
+- [ ] Create `build_macos.sh` script
+
+**Requires Mac hardware:**
+- [ ] Test on macOS Sonoma (Apple Silicon + Intel)
+- [ ] Verify audio playback (pygame-ce SDL2 backend)
+- [ ] Test file dialogs
+- [ ] Build and sign .app bundle
+
+### Phase 4: Distribution
+- Code signing certificate
+- DMG creation
+- Apple notarization
+
+---
+
+## 📝 Commit Message
+
+```
+feat: Add audio conversion support with device presets
+
+- Add conversion.py with pydub/ffmpeg audio conversion engine
+- Add imageio-ffmpeg for bundled ffmpeg binary
+- Extend hardware profiles with conversion presets (Elektron devices)
+- Add conversion UI panel with format/sample rate/bit depth/channel options
+- Integrate conversion into file operations worker
+- Update README with new features and dependencies
+- Bump version to v0.3.0
+
+Technical details:
+- Uses three-tier ffmpeg discovery (bundled → PATH → platform locations)
+- Implements ffprobe discovery for pydub metadata reading
+- Thread-safe PATH management for worker threads
+- Cross-platform support (Windows tested, macOS planned)
+
+Fixes:
+- Windows: ffprobe manually added to imageio-ffmpeg directory
+- Sample rate parsing now handles "44.1k" format correctly
+```
+
+---
+
+## 🔗 Related Documents
+
+- `TASKS_MACOS_CONVERSION.md` - Complete task specification
+- `PLAN_MACOS_AND_CONVERSION.md` - Architecture overview
+- `PLAN_CROSS_PLATFORM_NOTES.md` - Platform-specific implementation notes
+- `PLAN_FFMPEG_BUNDLING.md` - FFmpeg bundling strategy
+
+---
+
+**Status:** Phase 2 (Audio Conversion) COMPLETE  
+**Next:** Phase 3 (macOS Support) - Code ready, needs Mac testing

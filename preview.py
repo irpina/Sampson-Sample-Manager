@@ -7,6 +7,7 @@ import theme
 import constants
 from dpi import _px
 from operations import _compute_output
+from conversion import get_target_extension
 
 
 # ── Tooltip ─────────────────────────────────────────────────────────────────
@@ -134,12 +135,27 @@ def _populate_preview(files, source_root):
     sub_width = 0 if struct_mode == "flat" else _px(140)
     state.preview_tree.column("subfolder", width=sub_width, minwidth=0, stretch=False)
 
+    # Check if conversion is enabled
+    convert_enabled = (state.convert_enabled_var and 
+                       state.convert_enabled_var.get())
+    target_format = state.convert_format_var.get() if state.convert_format_var else "wav"
+    
     for i, f in enumerate(files[:shown]):
         new_name, rel_sub = _compute_output(
             f, source_root, dest_path, no_rename, struct_mode, path_limit)
+        
+        # Apply extension change and conversion indicator if converting
+        if convert_enabled:
+            # Change extension to target format
+            new_name_stem = Path(new_name).stem
+            new_name = new_name_stem + get_target_extension(target_format)
+            display_name = f"{new_name} [c]"
+        else:
+            display_name = new_name
+        
         tag = "odd" if i % 2 else "even"
         state.preview_tree.insert("", "end",
-                                  values=(f.name, new_name, rel_sub, str(f)),
+                                  values=(f.name, display_name, rel_sub, str(f)),
                                   tags=(tag,))
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)

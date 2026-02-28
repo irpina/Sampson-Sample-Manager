@@ -29,6 +29,16 @@ _dpi_scale         = 1.0    # pixels-per-96-dpi-pixel; set once at startup
 profile_var        = None   # tk.StringVar — key into constants.PROFILES; default "Generic"
 struct_mode_var    = None   # tk.StringVar — "flat" | "mirror" | "parent"
 no_rename_var      = None
+
+# Audio conversion options
+convert_enabled_var = None      # tk.BooleanVar
+convert_format_var = None       # tk.StringVar ("wav" or "aiff")
+convert_sample_rate_var = None  # tk.StringVar ("keep", "44.1 kHz", "48 kHz", "96 kHz")
+convert_bit_depth_var = None    # tk.StringVar ("keep", "16-bit", "24-bit", "32-bit")
+convert_channels_var = None     # tk.StringVar ("keep", "mono", "stereo")
+convert_normalize_var = None    # tk.BooleanVar
+convert_follow_profile_var = None  # tk.BooleanVar - auto-apply device preset
+
 _tooltip_win       = None   # active hover tooltip Toplevel (or None)
 _tooltip_item      = None   # item_id currently shown in tooltip
 
@@ -37,3 +47,6 @@ _is_playing        = False  # True while pygame.mixer is playing
 transport_prev_btn = None   # ttk.Button refs for enable/disable
 transport_play_btn = None
 transport_next_btn = None
+
+# Conversion error tracking
+_last_conversion_error = None  # Stores last conversion error details

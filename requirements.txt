@@ -1,0 +1,11 @@
+# Core dependencies for SAMPSON
+pygame-ce>=2.5.0
+customtkinter>=5.2.0
+pydub>=0.25.1
+imageio-ffmpeg>=0.6.0  # Bundled minimal ffmpeg for audio conversion
+
+# Python 3.13+ compatibility (audioop was removed from stdlib)
+audioop-lts>=0.2.0; python_version >= "3.13"
+
+# macOS-specific (only installed on Darwin)
+pyobjc-framework-Cocoa>=10.0; sys_platform == "darwin"
