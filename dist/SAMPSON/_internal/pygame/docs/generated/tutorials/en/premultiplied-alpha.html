@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Pygame Tutorials - What is Premultiplied Alpha? &#8212; pygame-ce v2.5.6 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygame.css?v=a9f2cf0f" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+    <script src="../../_static/documentation_options.js?v=53b7011b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/script.js?v=57918e6b"></script>
+    <link rel="icon" href="../../_static/pygame.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Author: Youngwook Kim (Korean)" href="Red_or_Black/1.Prolog/introduction.html" />
+    <link rel="prev" title="Newbie Guide to Pygame" href="newbie-guide.html" /> 
+  </head><body>  
+
+    <div class="document">
+
+  <div class="header">
+	<div class="flex-container">
+	<div class="logo">
+	  <a href="https://pyga.me/docs">
+	    <img src="../../_static/pygame_ce_tiny.webp"/>
+	  </a>
+	  <h5>pygame-ce documentation</h5>
+	</div>
+	<div class="pagelinks">
+	  <div class="top">
+      <div class="nav-top-wrapper">
+        <a href="https://pyga.me/docs">Pygame-ce Home</a> ||
+        <a href="../../index.html">Help Contents</a> ||
+        <a href="../../genindex.html">Reference Index</a>
+      </div>
+      <div class="searchbar-container">
+        <img class="theme-icon" data-theme="dark-theme" src="../../_static/light-theme-icon.svg" width="24" height="24" alt="Light Theme Icon">
+        <img class="theme-icon" data-theme="light-theme" src="../../_static/dark-theme-icon.svg" width="24" height="24" alt="Dark Theme Icon">
+        <form action="../../search.html" method="get" class="searchbar-form" style="display:inline;float:right;">
+          <input name="q" value="" type="text">
+          <img class="searchbar-button" src="../../_static/searchbar-icon.svg" alt="Search">
+          <input class="searchbar-submit" value="search" type="submit">
+        </form>
+      </div>
+	  </div>
+	  <hr style="color:black;border-bottom:none;border-style: dotted;border-bottom-style:none;">
+	  <p class="bottom"><b>Most useful stuff</b>:
+	    <a href="../../ref/color.html">Color</a> | 
+	    <a href="../../ref/display.html">display</a> | 
+	    <a href="../../ref/draw.html">draw</a> | 
+	    <a href="../../ref/event.html">event</a> | 
+	    <a href="../../ref/font.html">font</a> | 
+	    <a href="../../ref/image.html">image</a> | 
+	    <a href="../../ref/key.html">key</a> | 
+	    <a href="../../ref/locals.html">locals</a> | 
+	    <a href="../../ref/mixer.html">mixer</a> | 
+	    <a href="../../ref/mouse.html">mouse</a> | 
+	    <a href="../../ref/rect.html">Rect</a> | 
+	    <a href="../../ref/surface.html">Surface</a> | 
+	    <a href="../../ref/time.html">time</a> | 
+	    <a href="../../ref/music.html">music</a> | 
+	    <a href="../../ref/pygame.html">pygame</a>
+	  </p>
+
+	  <p class="bottom"><b>Advanced stuff</b>:
+	    <a href="../../ref/cursors.html">cursors</a> | 
+	    <a href="../../ref/joystick.html">joystick</a> | 
+	    <a href="../../ref/mask.html">mask</a> | 
+	    <a href="../../ref/sprite.html">sprite</a> | 
+	    <a href="../../ref/transform.html">transform</a> | 
+	    <a href="../../ref/bufferproxy.html">BufferProxy</a> | 
+	    <a href="../../ref/freetype.html">freetype</a> | 
+	    <a href="../../ref/gfxdraw.html">gfxdraw</a> | 
+	    <a href="../../ref/midi.html">midi</a> | 
+	    <a href="../../ref/pixelarray.html">PixelArray</a> | 
+	    <a href="../../ref/pixelcopy.html">pixelcopy</a> | 
+	    <a href="../../ref/sndarray.html">sndarray</a> | 
+	    <a href="../../ref/surfarray.html">surfarray</a> | 
+	    <a href="../../ref/math.html">math</a>
+	  </p>
+
+	  <p class="bottom"><b>Other</b>:
+	    <a href="../../ref/camera.html">camera</a> | 
+	    <a href="../../ref/sdl2_controller.html#module-pygame._sdl2.controller">controller</a> | 
+	    <a href="../../ref/examples.html">examples</a> | 
+	    <a href="../../ref/scrap.html">scrap</a> | 
+	    <a href="../../ref/system.html">system</a> | 
+	    <a href="../../ref/tests.html">tests</a> | 
+	    <a href="../../ref/touch.html">touch</a> | 
+	    <a href="../../ref/typing.html">typing</a> | 
+	    <a href="../../ref/pygame.html#module-pygame.version">version</a> | 
+	    <a href="../../ref/window.html">Window</a>
+	  </p>
+</div>
+</div>
+  </div>
+
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+<section id="pygame-tutorials-what-is-premultiplied-alpha">
+<section id="what-is-premultiplied-alpha">
+<h2>What is Premultiplied Alpha?<a class="headerlink" href="#what-is-premultiplied-alpha" title="Link to this heading">¶</a></h2>
+<dl class="docinfo field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dan Lawrence</p>
+</dd>
+<dt class="field-even">Contact<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="mailto:danintheshed&#37;&#52;&#48;gmail&#46;com">danintheshed<span>&#64;</span>gmail<span>&#46;</span>com</a></p>
+</dd>
+</dl>
+<section id="introduction-to-alpha-composition">
+<h3>Introduction to Alpha Composition<a class="headerlink" href="#introduction-to-alpha-composition" title="Link to this heading">¶</a></h3>
+<p>Alpha composition is the process by which we combine one or more semi-transparent images
+into a final non-transparent image for display. In pygame-ce these images are called Surfaces
+so I'll use that terminology going forwards.</p>
+<p>The simplest example of an alpha composition is when we create a Surface, fill it with a color
+that has an alpha channel, and then blit that surface direct to our display surface. For example:</p>
+<div class="literal-block-wrapper docutils container" id="straight-alpha-py">
+<div class="code-block-caption"><span class="caption-text">Simple example of Straight Alpha composition</span><a class="headerlink" href="#straight-alpha-py" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="linenos"> 2</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pygame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SRCALPHA</span><span class="p">,</span> <span class="n">QUIT</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s2">&quot;Basic Composition&quot;</span><span class="p">)</span>
+<span class="linenos"> 7</span> <span class="n">display_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">300</span><span class="p">,</span> <span class="mi">170</span><span class="p">))</span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span> <span class="c1"># create a Surface with the SRCALPHA flag to add an extra channel of data</span>
+<span class="linenos">10</span> <span class="c1"># to each pixel that indicates how transparent it should be (from 0 - fully</span>
+<span class="linenos">11</span> <span class="c1"># transparent, to 255 - fully opaque.</span>
+<span class="linenos">12</span> <span class="n">basic_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="mi">120</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="n">flags</span><span class="o">=</span><span class="n">SRCALPHA</span><span class="p">)</span>
+<span class="linenos">13</span> <span class="c1"># the fourth number here sets the alpha to 25 (almost fully see through)</span>
+<span class="linenos">14</span> <span class="n">basic_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span>
+<span class="linenos">15</span>
+<span class="linenos">16</span> <span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="linenos">17</span>
+<span class="linenos">18</span> <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
+<span class="linenos">19</span>     <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+<span class="linenos">20</span>         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+<span class="linenos">21</span>             <span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="linenos">22</span>
+<span class="linenos">23</span>     <span class="n">display_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">180</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+<span class="linenos">24</span>
+<span class="linenos">25</span>     <span class="n">display_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">basic_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span>
+<span class="linenos">26</span>
+<span class="linenos">27</span>     <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>This kind of alpha composition uses the 'Straight Alpha' formula:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">RGB</span> <span class="o">*</span> <span class="n">source</span><span class="o">.</span><span class="n">A</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">destination</span><span class="o">.</span><span class="n">RGB</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">source</span><span class="o">.</span><span class="n">A</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>In this formula our 'basic_surf' from the example code above would be the source, and our 'display_surf'
+would be the destination.</p>
+<p>The main advantage of this kind of alpha compositing is the independence of all the channels from one
+another and the simplicity of its use. There is no setup required and most image editing programs will
+export alpha in this way as a separate channel. This is why it is the default composition method in
+pygame-ce.</p>
+</section>
+<section id="how-to-use-premultiplied-alpha-blending">
+<h3>How to use Premultiplied Alpha blending<a class="headerlink" href="#how-to-use-premultiplied-alpha-blending" title="Link to this heading">¶</a></h3>
+<p>Premultiplied alpha blending uses a slightly different formula to compose two surfaces</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">RGB</span> <span class="o">+</span> <span class="p">(</span><span class="n">destination</span><span class="o">.</span><span class="n">RGB</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">source</span><span class="o">.</span><span class="n">A</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>As you can see there is one less multiplication in there - this is because, as is implied by the name,
+in a premultiplied alpha composition all the pixels colors have already been multiplied by their alpha
+channel value.</p>
+<p>We can rewrite the example above to use premultiplied alpha:</p>
+<div class="literal-block-wrapper docutils container" id="premultiplied-alpha-py">
+<div class="code-block-caption"><span class="caption-text">Simple example of Premultiplied Alpha composition</span><a class="headerlink" href="#premultiplied-alpha-py" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="linenos"> 2</span> <span class="kn">from</span><span class="w"> </span><span class="nn">pygame</span><span class="w"> </span><span class="kn">import</span> <span class="n">SRCALPHA</span><span class="p">,</span> <span class="n">BLEND_PREMULTIPLIED</span><span class="p">,</span> <span class="n">QUIT</span>
+<span class="linenos"> 3</span>
+<span class="linenos"> 4</span> <span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s2">&quot;Basic Composition&quot;</span><span class="p">)</span>
+<span class="linenos"> 7</span> <span class="n">display_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">300</span><span class="p">,</span> <span class="mi">170</span><span class="p">))</span>
+<span class="linenos"> 8</span>
+<span class="linenos"> 9</span> <span class="n">basic_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="mi">120</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="n">flags</span><span class="o">=</span><span class="n">SRCALPHA</span><span class="p">)</span>
+<span class="linenos">10</span> <span class="n">basic_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span>
+<span class="hll"><span class="linenos">11</span> <span class="n">basic_surf</span> <span class="o">=</span> <span class="n">basic_surf</span><span class="o">.</span><span class="n">premul_alpha</span><span class="p">()</span>
+</span><span class="linenos">12</span>
+<span class="linenos">13</span> <span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="linenos">14</span>
+<span class="linenos">15</span> <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
+<span class="linenos">16</span>     <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+<span class="linenos">17</span>         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">QUIT</span><span class="p">:</span>
+<span class="linenos">18</span>             <span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="linenos">19</span>
+<span class="linenos">20</span>     <span class="n">display_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">180</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+<span class="linenos">21</span>
+<span class="linenos">22</span>     <span class="n">display_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">basic_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+<span class="hll"><span class="linenos">23</span>                       <span class="n">special_flags</span><span class="o">=</span><span class="n">BLEND_PREMULTIPLIED</span><span class="p">)</span>
+</span><span class="linenos">24</span>
+<span class="linenos">25</span>     <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>There are two main changes here. First setting the blend mode in the blit from the default blending
+algorithm, which uses the straight alpha formula, to <cite>BLEND_PREMULTIPLIED</cite>. Second, we use the
+<cite>premul_alpha()</cite> method on our alpha surface to return a Surface where the color channels have been
+multiplied by the alpha.</p>
+<p>Using <cite>premul_alpha()</cite> is just one way to get a premultiplied Surface, some image editing programs
+will allow you to export images in a premultiplied alpha format, or you could manually convert an
+image's alpha channel to a grayscale layer and multiply that with your image before your final export.</p>
+<p>If you run the two programs above they should produce the exact same result.</p>
+</section>
+<section id="why-would-you-use-premultiplied-alpha">
+<h3>Why would you use premultiplied alpha?<a class="headerlink" href="#why-would-you-use-premultiplied-alpha" title="Link to this heading">¶</a></h3>
+<p>So far premultiplied alpha probably just seems like extra steps to get the same result. Why would you
+want to use it over straight alpha?</p>
+<p>There are two main reasons - and the first is performance. As you saw in the two formulas above, there
+is one less mathematical operation to do at composition time with premultiplied alpha. Assuming you are
+not adjusting your alpha in real-time - and in most game development usages you won't be, that is one
+less operation to do per pixel which means, that on average your premultiplied alpha blits will be a
+little bit faster than your straight alpha blits.</p>
+<p>The second reason is a little more complicated to demonstrate so I've prepared a program to demonstrate
+the issue. Essentially the straight alpha formula has issues when blending together two surfaces that
+both contain alpha pixels, and the impact of this can vary from not noticeable at all to looking very
+messy. Here is the example program for straight alpha:</p>
+<div class="literal-block-wrapper docutils container" id="straight-alpha-tool-tip-py">
+<div class="code-block-caption"><span class="caption-text">Example of Straight Alpha composition between two surfaces with per-pixel alpha</span><a class="headerlink" href="#straight-alpha-tool-tip-py" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span> <span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s2">&quot;Straight Alpha&quot;</span><span class="p">)</span>
+<span class="linenos"> 6</span> <span class="n">display_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">300</span><span class="p">,</span> <span class="mi">170</span><span class="p">))</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span> <span class="n">text_font</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="s2">&quot;fonts/verdana.ttf&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span> <span class="n">tool_tip_text</span> <span class="o">=</span> <span class="n">text_font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+<span class="linenos">11</span>     <span class="s2">&quot;Some text in a box, to test alpha blending. &quot;</span>
+<span class="linenos">12</span>     <span class="s2">&quot;A quick brown fox jumps over the lazy dog.&quot;</span><span class="p">,</span>
+<span class="linenos">13</span>     <span class="kc">True</span><span class="p">,</span>
+<span class="linenos">14</span>     <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">250</span><span class="p">),</span>
+<span class="linenos">15</span>     <span class="n">wraplength</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+<span class="linenos">16</span> <span class="p">)</span><span class="o">.</span><span class="n">convert_alpha</span><span class="p">()</span>
+<span class="linenos">17</span>
+<span class="linenos">18</span> <span class="n">tool_tip_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="mi">120</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="n">flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+<span class="linenos">19</span> <span class="n">tool_tip_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span>
+<span class="linenos">20</span>
+<span class="linenos">21</span> <span class="n">tool_tip_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tool_tip_text</span><span class="p">,</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="linenos">22</span>
+<span class="linenos">23</span> <span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="linenos">24</span>
+<span class="linenos">25</span> <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
+<span class="linenos">26</span>     <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+<span class="linenos">27</span>         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
+<span class="linenos">28</span>             <span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="linenos">29</span>
+<span class="linenos">30</span>     <span class="n">display_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">180</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+<span class="linenos">31</span>
+<span class="linenos">32</span>     <span class="n">display_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tool_tip_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span>
+<span class="linenos">33</span>
+<span class="linenos">34</span>     <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>This example approximates the sort of code you might use to add a semi-transparent 'tool-tip'
+pop up box in a pygame-ce application. You may need to change the path to the verdana font,
+copy it into a 'fonts/' subdirectory or use an alternative font. The issue is visible on all
+fonts but more obvious on some fonts than others depending on how much they rely on alpha pixels
+for visibility. If you run this program you will get a result that looks like this:</p>
+<img alt="Example of Straight Alpha Composition" src="../../_images/straight_alpha_composition.webp" />
+<p>Which, to my eyes, makes the text difficult to read and something of a strain on the eyes.</p>
+<p>If we rewrite the example to use premultiplied alpha composition instead:</p>
+<div class="literal-block-wrapper docutils container" id="premultiplied-alpha-tool-tip-py">
+<div class="code-block-caption"><span class="caption-text">Example of Premultiplied Alpha composition between two surfaces with per-pixel alpha</span><a class="headerlink" href="#premultiplied-alpha-tool-tip-py" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span> <span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="linenos"> 2</span>
+<span class="linenos"> 3</span> <span class="n">pygame</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="linenos"> 4</span>
+<span class="hll"><span class="linenos"> 5</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s2">&quot;Premultiplied Alpha&quot;</span><span class="p">)</span>
+</span><span class="linenos"> 6</span> <span class="n">display_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">300</span><span class="p">,</span> <span class="mi">170</span><span class="p">))</span>
+<span class="linenos"> 7</span>
+<span class="linenos"> 8</span> <span class="n">text_font</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="s2">&quot;fonts/verdana.ttf&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="linenos"> 9</span>
+<span class="linenos">10</span> <span class="n">tool_tip_text</span> <span class="o">=</span> <span class="n">text_font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span>
+<span class="linenos">11</span>     <span class="s2">&quot;Some text in a box, to test alpha blending. &quot;</span>
+<span class="linenos">12</span>     <span class="s2">&quot;A quick brown fox jumps over the lazy dog.&quot;</span><span class="p">,</span>
+<span class="linenos">13</span>     <span class="kc">True</span><span class="p">,</span>
+<span class="linenos">14</span>     <span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">250</span><span class="p">),</span>
+<span class="linenos">15</span>     <span class="n">wraplength</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+<span class="linenos">16</span> <span class="p">)</span><span class="o">.</span><span class="n">convert_alpha</span><span class="p">()</span>
+<span class="hll"><span class="linenos">17</span> <span class="n">tool_tip_text</span> <span class="o">=</span> <span class="n">tool_tip_text</span><span class="o">.</span><span class="n">premul_alpha</span><span class="p">()</span>
+</span><span class="linenos">18</span>
+<span class="linenos">19</span> <span class="n">tool_tip_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="mi">120</span><span class="p">,</span> <span class="mi">120</span><span class="p">),</span> <span class="n">flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">SRCALPHA</span><span class="p">)</span>
+<span class="linenos">20</span> <span class="n">tool_tip_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span>
+<span class="hll"><span class="linenos">21</span> <span class="n">tool_tip_surf</span> <span class="o">=</span> <span class="n">tool_tip_surf</span><span class="o">.</span><span class="n">premul_alpha</span><span class="p">()</span>
+</span><span class="linenos">22</span>
+<span class="linenos">23</span> <span class="n">tool_tip_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tool_tip_text</span><span class="p">,</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+<span class="hll"><span class="linenos">24</span>                    <span class="n">special_flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">BLEND_PREMULTIPLIED</span><span class="p">)</span>
+</span><span class="linenos">25</span>
+<span class="linenos">26</span> <span class="n">running</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="linenos">27</span>
+<span class="linenos">28</span> <span class="k">while</span> <span class="n">running</span><span class="p">:</span>
+<span class="linenos">29</span>     <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+<span class="linenos">30</span>         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
+<span class="linenos">31</span>             <span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="linenos">32</span>
+<span class="linenos">33</span>     <span class="n">display_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">180</span><span class="p">,</span> <span class="mi">140</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+<span class="linenos">34</span>
+<span class="linenos">35</span>     <span class="n">display_surf</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">tool_tip_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+<span class="hll"><span class="linenos">36</span>                       <span class="n">special_flags</span><span class="o">=</span><span class="n">pygame</span><span class="o">.</span><span class="n">BLEND_PREMULTIPLIED</span><span class="p">)</span>
+</span><span class="linenos">37</span>
+<span class="linenos">38</span>     <span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>You then get a result that looks like this:</p>
+<img alt="Example of Premultiplied Alpha Composition" src="../../_images/premultiplied_alpha_composition.webp" />
+<p>Which is a lot easier to read.</p>
+<p>Why does this happen? Essentially it is because in the Straight Alpha formula the combined pixels
+colors are losing the influence of the alpha information for the destination surface's pixels.
+If you scroll back up to the formula for Straight Alpha you will notice that destination alpha
+doesn't appear anywhere in it. In the example, the destination alpha should reduce the influence
+of the black tool tip box background color on the final pixels by a large amount, but in the straight
+alpha version it doesn't so we get a lot of extra black blended into the alpha edges of our light
+blue text.</p>
+<p>In the premultiplied alpha formula all the color channels of both surfaces are already multiplied by
+their alpha channel - so we don't lose any information during the composition formula and the end
+result looks more like what we would expect.</p>
+<p>---</p>
+<p>And that is about all you need to know about alpha compositing and the differences between straight
+alpha and premultiplied alpha. If you do want to learn more, then <a class="reference external" href="https://en.wikipedia.org/wiki/Alpha_compositing">wikipedia has a nice long article
+for further reading.</a></p>
+</section>
+</section>
+</section>
+
+
+<br /><br />
+<hr />
+<a href="https://github.com/pygame-community/pygame-ce/edit/main/docs/reST/tutorials/en/premultiplied-alpha.rst" rel="nofollow">Edit on GitHub</a>
+            <div class="clearer"></div>
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Red_or_Black/1.Prolog/introduction.html" title="Author: Youngwook Kim (Korean)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="newbie-guide.html" title="Newbie Guide to Pygame"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pygame-ce v2.5.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Pygame Tutorials - What is Premultiplied Alpha?</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2000-2022, pygame developers, 2023 pygame-ce developers.
+    </div>
+  </body>
+</html>

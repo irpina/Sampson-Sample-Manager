@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pygame.Surface &#8212; pygame-ce v2.5.6 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygame.css?v=a9f2cf0f" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
+    <script src="../_static/documentation_options.js?v=53b7011b"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/script.js?v=57918e6b"></script>
+    <link rel="icon" href="../_static/pygame.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pygame.surfarray" href="surfarray.html" />
+    <link rel="prev" title="pygame.sprite" href="sprite.html" /> 
+  </head><body>  
+
+    <div class="document">
+
+  <div class="header">
+	<div class="flex-container">
+	<div class="logo">
+	  <a href="https://pyga.me/docs">
+	    <img src="../_static/pygame_ce_tiny.webp"/>
+	  </a>
+	  <h5>pygame-ce documentation</h5>
+	</div>
+	<div class="pagelinks">
+	  <div class="top">
+      <div class="nav-top-wrapper">
+        <a href="https://pyga.me/docs">Pygame-ce Home</a> ||
+        <a href="../index.html">Help Contents</a> ||
+        <a href="../genindex.html">Reference Index</a>
+      </div>
+      <div class="searchbar-container">
+        <img class="theme-icon" data-theme="dark-theme" src="../_static/light-theme-icon.svg" width="24" height="24" alt="Light Theme Icon">
+        <img class="theme-icon" data-theme="light-theme" src="../_static/dark-theme-icon.svg" width="24" height="24" alt="Dark Theme Icon">
+        <form action="../search.html" method="get" class="searchbar-form" style="display:inline;float:right;">
+          <input name="q" value="" type="text">
+          <img class="searchbar-button" src="../_static/searchbar-icon.svg" alt="Search">
+          <input class="searchbar-submit" value="search" type="submit">
+        </form>
+      </div>
+	  </div>
+	  <hr style="color:black;border-bottom:none;border-style: dotted;border-bottom-style:none;">
+	  <p class="bottom"><b>Most useful stuff</b>:
+	    <a href="color.html">Color</a> | 
+	    <a href="display.html">display</a> | 
+	    <a href="draw.html">draw</a> | 
+	    <a href="event.html">event</a> | 
+	    <a href="font.html">font</a> | 
+	    <a href="image.html">image</a> | 
+	    <a href="key.html">key</a> | 
+	    <a href="locals.html">locals</a> | 
+	    <a href="mixer.html">mixer</a> | 
+	    <a href="mouse.html">mouse</a> | 
+	    <a href="rect.html">Rect</a> | 
+	    <a href="surface.html">Surface</a> | 
+	    <a href="time.html">time</a> | 
+	    <a href="music.html">music</a> | 
+	    <a href="pygame.html">pygame</a>
+	  </p>
+
+	  <p class="bottom"><b>Advanced stuff</b>:
+	    <a href="cursors.html">cursors</a> | 
+	    <a href="joystick.html">joystick</a> | 
+	    <a href="mask.html">mask</a> | 
+	    <a href="sprite.html">sprite</a> | 
+	    <a href="transform.html">transform</a> | 
+	    <a href="bufferproxy.html">BufferProxy</a> | 
+	    <a href="freetype.html">freetype</a> | 
+	    <a href="gfxdraw.html">gfxdraw</a> | 
+	    <a href="midi.html">midi</a> | 
+	    <a href="pixelarray.html">PixelArray</a> | 
+	    <a href="pixelcopy.html">pixelcopy</a> | 
+	    <a href="sndarray.html">sndarray</a> | 
+	    <a href="surfarray.html">surfarray</a> | 
+	    <a href="math.html">math</a>
+	  </p>
+
+	  <p class="bottom"><b>Other</b>:
+	    <a href="camera.html">camera</a> | 
+	    <a href="sdl2_controller.html#module-pygame._sdl2.controller">controller</a> | 
+	    <a href="examples.html">examples</a> | 
+	    <a href="scrap.html">scrap</a> | 
+	    <a href="system.html">system</a> | 
+	    <a href="tests.html">tests</a> | 
+	    <a href="touch.html">touch</a> | 
+	    <a href="typing.html">typing</a> | 
+	    <a href="pygame.html#module-pygame.version">version</a> | 
+	    <a href="window.html">Window</a>
+	  </p>
+</div>
+</div>
+  </div>
+
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+<section id="pygame-surface">
+<dl class="py class definition">
+<dt class="sig sig-object py title" id="pygame.Surface">
+<span class="sig-prename descclassname"><span class="pre">pygame.</span></span><span class="sig-name descname"><span class="pre">Surface</span></span><a class="headerlink" href="#pygame.Surface" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Pygame object for representing images.</span></div>
+<div class="line"><span class="signature">Surface(size, flags=0, depth=0, masks=None) -&gt; Surface</span></div>
+<div class="line"><span class="signature">Surface(size, flags=0, surface=...) -&gt; Surface</span></div>
+</div>
+<table class="toc docutils align-default">
+<tbody>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.blit">pygame.Surface.blit</a></div>
+</td>
+<td>—</td>
+<td>Draw another Surface onto this one.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.blits">pygame.Surface.blits</a></div>
+</td>
+<td>—</td>
+<td>Draw many Surfaces onto this Surface at their corresponding location.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.fblits">pygame.Surface.fblits</a></div>
+</td>
+<td>—</td>
+<td>Draw many Surfaces onto this Surface at their corresponding location and with the same special_flags.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.convert">pygame.Surface.convert</a></div>
+</td>
+<td>—</td>
+<td>Change the pixel format of a Surface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.convert_alpha">pygame.Surface.convert_alpha</a></div>
+</td>
+<td>—</td>
+<td>Change the pixel format of a Surface including per pixel alphas.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.copy">pygame.Surface.copy</a></div>
+</td>
+<td>—</td>
+<td>Create a new copy of a Surface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.fill">pygame.Surface.fill</a></div>
+</td>
+<td>—</td>
+<td>Fill Surface with a solid color.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.scroll">pygame.Surface.scroll</a></div>
+</td>
+<td>—</td>
+<td>Shift the Surface pixels in place.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.set_colorkey">pygame.Surface.set_colorkey</a></div>
+</td>
+<td>—</td>
+<td>Set the transparent colorkey.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_colorkey">pygame.Surface.get_colorkey</a></div>
+</td>
+<td>—</td>
+<td>Get the current transparent colorkey.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.set_alpha">pygame.Surface.set_alpha</a></div>
+</td>
+<td>—</td>
+<td>Set the alpha value for the full Surface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_alpha">pygame.Surface.get_alpha</a></div>
+</td>
+<td>—</td>
+<td>Get the current Surface transparency value.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.lock">pygame.Surface.lock</a></div>
+</td>
+<td>—</td>
+<td>Lock the Surface memory for pixel access.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.unlock">pygame.Surface.unlock</a></div>
+</td>
+<td>—</td>
+<td>Unlock the Surface memory from pixel access.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.mustlock">pygame.Surface.mustlock</a></div>
+</td>
+<td>—</td>
+<td>Test if the Surface requires locking.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_locked">pygame.Surface.get_locked</a></div>
+</td>
+<td>—</td>
+<td>Test if the Surface is current locked.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_locks">pygame.Surface.get_locks</a></div>
+</td>
+<td>—</td>
+<td>Gets the locks for the Surface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_at">pygame.Surface.get_at</a></div>
+</td>
+<td>—</td>
+<td>Get the color value at a single pixel.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.set_at">pygame.Surface.set_at</a></div>
+</td>
+<td>—</td>
+<td>Set the color value for a single pixel.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_at_mapped">pygame.Surface.get_at_mapped</a></div>
+</td>
+<td>—</td>
+<td>Get the mapped color value at a single pixel.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_palette">pygame.Surface.get_palette</a></div>
+</td>
+<td>—</td>
+<td>Get the color index palette for an 8-bit Surface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_palette_at">pygame.Surface.get_palette_at</a></div>
+</td>
+<td>—</td>
+<td>Get the color for a single entry in a palette.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.set_palette">pygame.Surface.set_palette</a></div>
+</td>
+<td>—</td>
+<td>Set the color palette for an 8-bit Surface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.set_palette_at">pygame.Surface.set_palette_at</a></div>
+</td>
+<td>—</td>
+<td>Set the color for a single index in an 8-bit Surface palette.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.map_rgb">pygame.Surface.map_rgb</a></div>
+</td>
+<td>—</td>
+<td>Convert a color into a mapped color value.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.unmap_rgb">pygame.Surface.unmap_rgb</a></div>
+</td>
+<td>—</td>
+<td>Convert a mapped integer color value into a Color.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.set_clip">pygame.Surface.set_clip</a></div>
+</td>
+<td>—</td>
+<td>Set the current clipping area of the Surface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_clip">pygame.Surface.get_clip</a></div>
+</td>
+<td>—</td>
+<td>Get the current clipping area of the Surface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.subsurface">pygame.Surface.subsurface</a></div>
+</td>
+<td>—</td>
+<td>Create a new Surface that references its parent.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_parent">pygame.Surface.get_parent</a></div>
+</td>
+<td>—</td>
+<td>Find the parent of a subsurface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_abs_parent">pygame.Surface.get_abs_parent</a></div>
+</td>
+<td>—</td>
+<td>Find the top level parent of a subsurface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_offset">pygame.Surface.get_offset</a></div>
+</td>
+<td>—</td>
+<td>Find the position of a child subsurface inside a parent.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_abs_offset">pygame.Surface.get_abs_offset</a></div>
+</td>
+<td>—</td>
+<td>Find the absolute position of a child subsurface inside its top level parent.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_size">pygame.Surface.get_size</a></div>
+</td>
+<td>—</td>
+<td>Get the dimensions of the Surface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_width">pygame.Surface.get_width</a></div>
+</td>
+<td>—</td>
+<td>Get the width of the Surface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_height">pygame.Surface.get_height</a></div>
+</td>
+<td>—</td>
+<td>Get the height of the Surface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_rect">pygame.Surface.get_rect</a></div>
+</td>
+<td>—</td>
+<td>Get the rectangular area of the Surface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_frect">pygame.Surface.get_frect</a></div>
+</td>
+<td>—</td>
+<td>Get the rectangular area of the Surface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_bitsize">pygame.Surface.get_bitsize</a></div>
+</td>
+<td>—</td>
+<td>Get the bit depth of the Surface pixel format.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_bytesize">pygame.Surface.get_bytesize</a></div>
+</td>
+<td>—</td>
+<td>Get the bytes used per Surface pixel.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_flags">pygame.Surface.get_flags</a></div>
+</td>
+<td>—</td>
+<td>Get the additional flags used for the Surface.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_pitch">pygame.Surface.get_pitch</a></div>
+</td>
+<td>—</td>
+<td>Get the number of bytes used per Surface row.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_masks">pygame.Surface.get_masks</a></div>
+</td>
+<td>—</td>
+<td>The bitmasks needed to convert between a color and a mapped integer.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.set_masks">pygame.Surface.set_masks</a></div>
+</td>
+<td>—</td>
+<td>Set the bitmasks needed to convert between a color and a mapped integer.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_shifts">pygame.Surface.get_shifts</a></div>
+</td>
+<td>—</td>
+<td>The bit shifts needed to convert between a color and a mapped integer.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.set_shifts">pygame.Surface.set_shifts</a></div>
+</td>
+<td>—</td>
+<td>Sets the bit shifts needed to convert between a color and a mapped integer.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_losses">pygame.Surface.get_losses</a></div>
+</td>
+<td>—</td>
+<td>The significant bits used to convert between a color and a mapped integer.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_bounding_rect">pygame.Surface.get_bounding_rect</a></div>
+</td>
+<td>—</td>
+<td>Find the smallest rect containing data.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_view">pygame.Surface.get_view</a></div>
+</td>
+<td>—</td>
+<td>Return a buffer view of the Surface's pixels.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.get_buffer">pygame.Surface.get_buffer</a></div>
+</td>
+<td>—</td>
+<td>Acquires a buffer object for the pixels of the Surface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface._pixels_address">pygame.Surface._pixels_address</a></div>
+</td>
+<td>—</td>
+<td>Pixel buffer address.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.premul_alpha">pygame.Surface.premul_alpha</a></div>
+</td>
+<td>—</td>
+<td>Returns a copy of the Surface with the RGB channels pre-multiplied by the alpha channel.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.premul_alpha_ip">pygame.Surface.premul_alpha_ip</a></div>
+</td>
+<td>—</td>
+<td>Multiplies the RGB channels by the Surface alpha channel.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.width">pygame.Surface.width</a></div>
+</td>
+<td>—</td>
+<td>Surface width in pixels (read-only).</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.height">pygame.Surface.height</a></div>
+</td>
+<td>—</td>
+<td>Surface height in pixels (read-only).</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="surface.html#pygame.Surface.size">pygame.Surface.size</a></div>
+</td>
+<td>—</td>
+<td>Surface size in pixels (read-only).</td>
+</tr>
+</tbody>
+</table>
+<p>A pygame Surface is used to represent any image. The Surface has a fixed
+resolution and pixel format. Surfaces with 8-bit pixels use a color palette
+to map to 24-bit color.</p>
+<p>Call <a class="tooltip reference internal" href="#pygame.Surface" title=""><code class="xref py py-meth docutils literal notranslate"><span class="pre">pygame.Surface()</span></code><span class="tooltip-content">Pygame object for representing images.</span></a> to create a new image object. The Surface will
+be cleared to all black. The only required arguments are the sizes. With no
+additional arguments, the Surface will be created in a format that best
+matches the display Surface.</p>
+<p>The pixel format can be controlled by passing the bit depth or an existing
+Surface. The flags argument is a bitmask of additional features for the
+Surface. You can pass any combination of these flags:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HWSURFACE</span>    <span class="p">(</span><span class="n">obsolete</span> <span class="ow">in</span> <span class="n">pygame</span> <span class="mi">2</span><span class="p">)</span> <span class="n">creates</span> <span class="n">the</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">video</span> <span class="n">memory</span>
+<span class="n">SRCALPHA</span>     <span class="n">the</span> <span class="n">pixel</span> <span class="nb">format</span> <span class="n">will</span> <span class="n">include</span> <span class="n">a</span> <span class="n">per</span><span class="o">-</span><span class="n">pixel</span> <span class="n">alpha</span>
+</pre></div>
+</div>
+<p>Both flags are only a request, and may not be possible for all displays and
+formats.</p>
+<p>Advanced users can combine a set of bitmasks with a depth value. The masks
+are a set of 4 integers representing which bits in a pixel will represent
+each color. Normal Surfaces should not require the masks argument.</p>
+<p>Surfaces can have many extra attributes like alpha planes, colorkeys, source
+rectangle clipping. These functions mainly effect how the Surface is blitted
+to other Surfaces. The blit routines will attempt to use hardware
+acceleration when possible, otherwise they will use highly optimized
+software blitting methods.</p>
+<p>There are three types of transparency supported in pygame: colorkeys,
+Surface alphas, and pixel alphas. Surface alphas can be mixed with
+colorkeys, but an image with per pixel alphas cannot use the other modes.
+Colorkey transparency makes a single color value transparent. Any pixels
+matching the colorkey will not be drawn. The Surface alpha value is a single
+value that changes the transparency for the entire image. A Surface alpha of
+255 is opaque, and a value of 0 is completely transparent.</p>
+<p>Per pixel alphas are different because they store a transparency value for
+every pixel. This allows for the most precise transparency effects, but it
+also the slowest. Per pixel alphas cannot be mixed with Surface alpha and
+colorkeys.</p>
+<p>There is support for pixel access for the Surfaces. Pixel access on hardware
+Surfaces is slow and not recommended. Pixels can be accessed using the
+<a class="reference internal" href="#pygame.Surface.get_at" title="pygame.Surface.get_at"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_at()</span></code></a> and <a class="reference internal" href="#pygame.Surface.set_at" title="pygame.Surface.set_at"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_at()</span></code></a> functions. These methods are fine for
+simple access, but will be considerably slow when doing of pixel work with
+them. If you plan on doing a lot of pixel level work, it is recommended to
+use a <a class="tooltip reference internal" href="pixelarray.html#pygame.PixelArray" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.PixelArray</span></code><span class="tooltip-content">pygame object for direct pixel access of surfaces</span></a>, which gives an array like view of the
+Surface. For involved mathematical manipulations try the
+<a class="tooltip reference internal" href="surfarray.html#module-pygame.surfarray" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.surfarray</span></code><span class="tooltip-content">pygame module for accessing surface pixel data using array interfaces</span></a> module (It's quite quick, but requires NumPy.)</p>
+<p>Any functions that directly access a Surface's pixel data will need that
+Surface to be lock()'ed. These functions can <a class="reference internal" href="#pygame.Surface.lock" title="pygame.Surface.lock"><code class="xref py py-meth docutils literal notranslate"><span class="pre">lock()</span></code></a> and
+<a class="reference internal" href="#pygame.Surface.unlock" title="pygame.Surface.unlock"><code class="xref py py-meth docutils literal notranslate"><span class="pre">unlock()</span></code></a> the Surfaces themselves without assistance. But, if a
+function will be called many times, there will be a lot of overhead for
+multiple locking and unlocking of the Surface. It is best to lock the
+Surface manually before making the function call many times, and then
+unlocking when you are finished. All functions that need a locked Surface
+will say so in their docs. Remember to leave the Surface locked only while
+necessary.</p>
+<p>Surface pixels are stored internally as a single number that has all the
+colors encoded into it. Use the <a class="reference internal" href="#pygame.Surface.map_rgb" title="pygame.Surface.map_rgb"><code class="xref py py-meth docutils literal notranslate"><span class="pre">map_rgb()</span></code></a> and
+<a class="reference internal" href="#pygame.Surface.unmap_rgb" title="pygame.Surface.unmap_rgb"><code class="xref py py-meth docutils literal notranslate"><span class="pre">unmap_rgb()</span></code></a> to convert between individual red, green, and blue
+values into a packed integer for that Surface.</p>
+<p>Surfaces can also reference sections of other Surfaces. These are created
+with the <a class="reference internal" href="#pygame.Surface.subsurface" title="pygame.Surface.subsurface"><code class="xref py py-meth docutils literal notranslate"><span class="pre">subsurface()</span></code></a> method. Any change to either Surface will
+effect the other.</p>
+<p>Each Surface contains a clipping area. By default the clip area covers the
+entire Surface. If it is changed, all drawing operations will only effect
+the smaller area.</p>
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.blit">
+<span class="sig-name descname"><span class="pre">blit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.blit" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw another Surface onto this one.</span></div>
+<div class="line"><span class="signature">blit(source, dest=(0, 0), area=None, special_flags=0) -&gt; Rect</span></div>
+</div>
+<p>Draws another Surface onto this Surface.</p>
+<dl>
+<dt><strong>Parameters</strong></dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">source</span></code></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">Surface</span></code> object to draw onto this <code class="docutils literal notranslate"><span class="pre">Surface</span></code>.
+If it has transparency, transparent pixels will be ignored when blittting to an 8-bit <code class="docutils literal notranslate"><span class="pre">Surface</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">dest</span></code> <em>(optional)</em></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">source</span></code> draw position onto this <code class="docutils literal notranslate"><span class="pre">Surface</span></code>, defaults to (0, 0).
+It can be a coordinate pair <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> or a <code class="docutils literal notranslate"><span class="pre">Rect</span></code> (using its top-left corner).
+If a <code class="docutils literal notranslate"><span class="pre">Rect</span></code> is passed, its size will not affect the blit.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">area</span></code> <em>(optional)</em></dt><dd><p>The rectangular portion of the <code class="docutils literal notranslate"><span class="pre">source</span></code> to draw.
+It can be a <code class="docutils literal notranslate"><span class="pre">Rect</span></code> object representing that section. If <code class="docutils literal notranslate"><span class="pre">None</span></code> or not provided,
+the entire source Surface will be drawn.
+If the <code class="docutils literal notranslate"><span class="pre">Rect</span></code> has negative position, the final blit position will be
+<code class="docutils literal notranslate"><span class="pre">dest</span></code> - <code class="docutils literal notranslate"><span class="pre">Rect.topleft</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">special_flags</span></code> <em>(optional)</em></dt><dd><p>Controls how the colors of the <code class="docutils literal notranslate"><span class="pre">source</span></code> are combined with this Surface.
+If not provided it defaults to <code class="docutils literal notranslate"><span class="pre">BLENDMODE_NONE</span></code> (<code class="docutils literal notranslate"><span class="pre">0</span></code>).
+See <a class="reference internal" href="special_flags_list.html"><span class="doc">special flags</span></a> for a list of possible values.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt><strong>Return</strong></dt><dd><p>A <a class="tooltip reference internal" href="rect.html" title=""><span class="doc">pygame.Rect</span><span class="tooltip-content">pygame object for storing rectangular coordinates</span></a> object representing the affected area of this <code class="docutils literal notranslate"><span class="pre">Surface</span></code> that was modified
+by the blit operation. This area includes only the pixels within this <code class="docutils literal notranslate"><span class="pre">Surface</span></code> or
+its clipping area (see <a class="reference internal" href="#pygame.Surface.set_clip" title="pygame.Surface.set_clip"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_clip()</span></code></a>).
+Generally you don't need to use this return value, as it was initially designed to
+pass it to <a class="tooltip reference internal" href="display.html#pygame.display.update" title=""><code class="xref py py-meth docutils literal notranslate"><span class="pre">pygame.display.update()</span></code><span class="tooltip-content">Update all, or a portion, of the display. For non-OpenGL displays.</span></a> to optimize the updating of the display.
+Since modern computers are fast enough to update the entire display at high speeds,
+this return value is rarely used nowadays.</p>
+</dd>
+<dt><strong>Example Use</strong></dt><dd><div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># create a Surface of size 50x50 and fill it with red color</span>
+<span class="n">red_surf</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Surface</span><span class="p">((</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+<span class="n">red_surf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+
+<span class="c1"># draw the Surface on another Surface at position (0, 0)</span>
+<span class="n">another_surface</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">red_surf</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+</dd>
+<dt><strong>Notes</strong></dt><dd><ul class="simple">
+<li><p>When self-blitting and there is a colorkey or alpha transparency set, resulting colors
+may appear slightly different compared to a non-self blit.</p></li>
+<li><p>The blit is ignored if the <code class="docutils literal notranslate"><span class="pre">source</span></code> is positioned completely outside this <code class="docutils literal notranslate"><span class="pre">Surface</span></code>'s
+clipping area. Otherwise only the overlapping area will be drawn.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.5.1: </span>The dest argument is optional and defaults to (0, 0)</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.blits">
+<span class="sig-name descname"><span class="pre">blits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.blits" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw many Surfaces onto this Surface at their corresponding location.</span></div>
+<div class="line"><span class="signature">blits(blit_sequence, doreturn=1) -&gt; Union[list[Rect], None]</span></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">blits</span></code> method efficiently draws a sequence of Surfaces onto this <code class="docutils literal notranslate"><span class="pre">Surface</span></code>.</p>
+<p><strong>Parameters</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">blit_sequence</span></code></dt><dd><p>A sequence that contains each Surface to be drawn along with its associated blit
+arguments. See the <strong>Sequence Item Formats</strong> section below for the possible formats.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">doreturn</span></code> (optional)</dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">doreturn</span></code> parameter controls the return value. When set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, it returns
+a list of rectangles representing the changed areas. When set to <code class="docutils literal notranslate"><span class="pre">False</span></code>, returns
+<code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>Return</strong></p>
+<blockquote>
+<div><p>A list of rectangles or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</div></blockquote>
+<p><strong>Sequence Item Formats</strong></p>
+<blockquote>
+<div><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">(source,</span> <span class="pre">dest)</span></code></dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">source</span></code>: Surface object to be drawn.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dest</span></code>: Position where the source Surface should be blitted.</p></li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">(source,</span> <span class="pre">dest,</span> <span class="pre">area)</span></code></dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">area</span></code>: (optional) Specific area of the source Surface to be drawn.</p></li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">(source,</span> <span class="pre">dest,</span> <span class="pre">area,</span> <span class="pre">special_flags)</span></code></dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">special_flags</span></code>: (optional) Controls the blending mode for drawing colors.
+See <a class="reference internal" href="special_flags_list.html"><span class="doc">special flags</span></a> for a list of possible values.</p></li>
+</ul>
+</dd>
+</dl>
+</div></blockquote>
+<p><strong>Notes</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">blits</span></code> is an advanced method. It is recommended to read the documentation
+of <a class="reference internal" href="#pygame.Surface.blit" title="pygame.Surface.blit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">blit()</span></code></a> first.</p></li>
+<li><p>To draw a <code class="docutils literal notranslate"><span class="pre">Surface</span></code> with a special flag, you must specify an area as well, e.g.,
+<code class="docutils literal notranslate"><span class="pre">(source,</span> <span class="pre">dest,</span> <span class="pre">None,</span> <span class="pre">special_flags)</span></code>.</p></li>
+<li><p>Prefer using <a class="reference internal" href="#pygame.Surface.blits" title="pygame.Surface.blits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">blits()</span></code></a> over <a class="reference internal" href="#pygame.Surface.blit" title="pygame.Surface.blit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">blit()</span></code></a> when drawing multiple Surfaces
+for better performance. Use <a class="reference internal" href="#pygame.Surface.blit" title="pygame.Surface.blit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">blit()</span></code></a> if you need to draw a single Surface.</p></li>
+<li><p>For drawing a sequence of (source, dest) pairs with whole source Surface
+and a singular special_flag, use the <a class="reference internal" href="#pygame.Surface.fblits" title="pygame.Surface.fblits"><code class="xref py py-meth docutils literal notranslate"><span class="pre">fblits()</span></code></a> method.</p></li>
+</ul>
+</div></blockquote>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.9.4.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.fblits">
+<span class="sig-name descname"><span class="pre">fblits</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.fblits" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw many Surfaces onto this Surface at their corresponding location and with the same special_flags.</span></div>
+<div class="line"><span class="signature">fblits(blit_sequence, special_flags=0, /) -&gt; None</span></div>
+</div>
+<p>This method takes a sequence of tuples (source, dest) as input, where source is a Surface
+object and dest is its destination position on this Surface. It draws each source Surface
+fully (meaning that unlike <cite>blit()</cite> you cannot pass an &quot;area&quot; parameter to represent
+a smaller portion of the source Surface to draw) on this Surface with the same blending
+mode specified by special_flags.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>blit_sequence</strong> -- a sequence of (source, dest)</p></li>
+<li><p><strong>special_flags</strong> -- the flag(s) representing the blend mode used for each Surface.
+See <a class="reference internal" href="special_flags_list.html"><span class="doc">special flags</span></a> for a list of possible values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method only accepts a sequence of (source, dest) pairs and a single
+special_flags value that's applied to all Surfaces drawn. This allows faster
+iteration over the sequence and better performance over <cite>blits()</cite>. Further
+optimizations are applied if blit_sequence is a list or a tuple (using one
+of them is recommended).</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.1.4.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.convert">
+<span class="sig-name descname"><span class="pre">convert</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.convert" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Change the pixel format of a Surface.</span></div>
+<div class="line"><span class="signature">convert(surface, /) -&gt; Surface</span></div>
+<div class="line"><span class="signature">convert(depth, flags=0, /) -&gt; Surface</span></div>
+<div class="line"><span class="signature">convert(masks, flags=0, /) -&gt; Surface</span></div>
+<div class="line"><span class="signature">convert() -&gt; Surface</span></div>
+</div>
+<p>Creates a new copy of the Surface with the pixel format changed. The new
+pixel format can be determined from another existing Surface. Otherwise
+depth, flags, and masks arguments can be used, similar to the
+<a class="tooltip reference internal" href="#pygame.Surface" title=""><code class="xref py py-meth docutils literal notranslate"><span class="pre">pygame.Surface()</span></code><span class="tooltip-content">Pygame object for representing images.</span></a> call.</p>
+<p>If no arguments are passed the new Surface will have the same pixel
+format as the display Surface. This is always the fastest format for
+blitting. It is a good idea to convert all Surfaces before they are
+blitted many times.</p>
+<p>The converted Surface will have no pixel alphas. They will be stripped if
+the original had them. See <a class="reference internal" href="#pygame.Surface.convert_alpha" title="pygame.Surface.convert_alpha"><code class="xref py py-meth docutils literal notranslate"><span class="pre">convert_alpha()</span></code></a> for preserving or
+creating per-pixel alphas.</p>
+<p>The new copy will have the same class as the copied Surface. This lets
+a Surface subclass inherit this method without the need to override,
+unless subclass specific instance attributes also need copying.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.5.0: </span>converting to a known format will succeed without
+a window/display Surface.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.convert_alpha">
+<span class="sig-name descname"><span class="pre">convert_alpha</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.convert_alpha" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Change the pixel format of a Surface including per pixel alphas.</span></div>
+<div class="line"><span class="signature">convert_alpha() -&gt; Surface</span></div>
+</div>
+<p>Creates a new copy of the Surface with the desired pixel format. The new
+Surface will be in a format suited for quick blitting to the display Surface
+with per pixel alpha.</p>
+<p>Unlike the <a class="reference internal" href="#pygame.Surface.convert" title="pygame.Surface.convert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">convert()</span></code></a> method, the pixel format for the new
+Surface will not be exactly the same as the display Surface, but it will
+be optimized for fast alpha blitting to it.</p>
+<p>As with <a class="reference internal" href="#pygame.Surface.convert" title="pygame.Surface.convert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">convert()</span></code></a> the returned Surface has the same class as
+the converted Surface.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.4.0: </span>'Surface' argument deprecated.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.copy" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Create a new copy of a Surface.</span></div>
+<div class="line"><span class="signature">copy() -&gt; Surface</span></div>
+</div>
+<p>Makes a duplicate copy of a Surface. The new Surface will have the same
+pixel formats, color palettes, transparency settings, and class as the
+original. If a Surface subclass also needs to copy any instance specific
+attributes then it should override <code class="docutils literal notranslate"><span class="pre">copy()</span></code>. Shallow copy and deepcopy
+are supported, Surface implements __copy__ and __deepcopy__ respectively.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.3.1: </span>Added support for deepcopy by implementing __deepcopy__, calls copy() internally.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.fill">
+<span class="sig-name descname"><span class="pre">fill</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.fill" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Fill Surface with a solid color.</span></div>
+<div class="line"><span class="signature">fill(color, rect=None, special_flags=0) -&gt; Rect</span></div>
+</div>
+<p>Fill the Surface with a solid color. If no rect argument is given the
+entire Surface will be filled. The rect argument will limit the fill to a
+specific area. The fill will also be contained by the Surface clip area.</p>
+<p>The color argument should be compatible with <a class="reference internal" href="typing.html#pygame.typing.ColorLike" title="pygame.typing.ColorLike"><code class="xref py py-data docutils literal notranslate"><span class="pre">pygame.typing.ColorLike</span></code></a>.
+If using <code class="docutils literal notranslate"><span class="pre">RGBA</span></code>, the Alpha (A part of <code class="docutils literal notranslate"><span class="pre">RGBA</span></code>) is ignored unless the Surface
+uses per pixel alpha (Surface has the <code class="docutils literal notranslate"><span class="pre">SRCALPHA</span></code> flag).</p>
+<p>The special_flags argument controls how the colors are combined. See <a class="reference internal" href="special_flags_list.html"><span class="doc">special flags</span></a>
+for a list of possible values.</p>
+<p>This will return the affected Surface area.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As of pygame-ce version 2.5.1, a long-standing bug has been fixed!
+Now when passing in a <code class="docutils literal notranslate"><span class="pre">Rect</span></code> with negative <code class="docutils literal notranslate"><span class="pre">x</span></code> or negative <code class="docutils literal notranslate"><span class="pre">y</span></code> (or both),
+the <code class="docutils literal notranslate"><span class="pre">Rect</span></code> filled will no longer be shifted to <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code>, but instead only the
+part of the <code class="docutils literal notranslate"><span class="pre">Rect</span></code> overlapping the window's <code class="docutils literal notranslate"><span class="pre">Rect</span></code> will be filled.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.scroll">
+<span class="sig-name descname"><span class="pre">scroll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.scroll" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Shift the Surface pixels in place.</span></div>
+<div class="line"><span class="signature">scroll(dx=0, dy=0, scroll_flag=0, /) -&gt; None</span></div>
+</div>
+<p>Move the Surface by dx pixels right and dy pixels down. dx and dy may be
+negative for left and up scrolls respectively.</p>
+<p>Scrolling is contained by the Surface clip area. It is safe to have dx
+and dy values that exceed the Surface size.</p>
+<dl class="simple">
+<dt>The scroll flag can be:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code> (default): the pixels are shifted but previous pixels are
+not modified.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pygame.SCROLL_ERASE</span></code>: the space created by the shifting pixels
+is filled with black or transparency.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pygame.SCROLL_REPEAT</span></code>: the pixels that disappear out of the
+Surface or clip bounds are brought back on the opposite side
+resulting in an infinitely scrolling and repeating Surface.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.9.</span></p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.5.3: </span>Add repeating scroll and allow erasing pixels</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.set_colorkey">
+<span class="sig-name descname"><span class="pre">set_colorkey</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.set_colorkey" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the transparent colorkey.</span></div>
+<div class="line"><span class="signature">set_colorkey(color, flags=0, /) -&gt; None</span></div>
+<div class="line"><span class="signature">set_colorkey(color, /) -&gt; None</span></div>
+</div>
+<p>Set the current color key for the Surface. When blitting this Surface
+onto a destination, any pixels that have the same color as the colorkey
+will be transparent. The color should be compatible with <a class="reference internal" href="typing.html#pygame.typing.ColorLike" title="pygame.typing.ColorLike"><code class="xref py py-data docutils literal notranslate"><span class="pre">pygame.typing.ColorLike</span></code></a>.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code> is passed, the colorkey will be unset.</p>
+<p>The colorkey will be ignored if the Surface is formatted to use per pixel
+alpha values. The colorkey can be mixed with the full Surface alpha
+value.</p>
+<p>The optional flags argument can be set to <code class="docutils literal notranslate"><span class="pre">pygame.RLEACCEL</span></code> to provide
+better performance on non accelerated displays. An <code class="docutils literal notranslate"><span class="pre">RLEACCEL</span></code> Surface
+will be slower to modify, but quicker to blit as a source.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_colorkey">
+<span class="sig-name descname"><span class="pre">get_colorkey</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_colorkey" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the current transparent colorkey.</span></div>
+<div class="line"><span class="signature">get_colorkey() -&gt; Optional[tuple[int, int, int, int]]</span></div>
+</div>
+<p>Return the current colorkey value for the Surface. If the colorkey is not
+set then <code class="docutils literal notranslate"><span class="pre">None</span></code> is returned.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.set_alpha">
+<span class="sig-name descname"><span class="pre">set_alpha</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.set_alpha" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the alpha value for the full Surface.</span></div>
+<div class="line"><span class="signature">set_alpha(value, flags=0, /) -&gt; None</span></div>
+<div class="line"><span class="signature">set_alpha(value, /) -&gt; None</span></div>
+</div>
+<p>Set the current alpha value for the Surface. When blitting this Surface
+onto a destination, the pixels will be drawn slightly transparent. The
+alpha value is an integer from 0 to 255, 0 is fully transparent and 255
+is fully opaque. If <code class="docutils literal notranslate"><span class="pre">None</span></code> is passed for the alpha value, then alpha
+blending will be disabled, including per-pixel alpha.</p>
+<p>This value is different than the per pixel Surface alpha. For a Surface
+with per pixel alpha, blanket alpha is ignored and <code class="docutils literal notranslate"><span class="pre">None</span></code> is returned.</p>
+<div class="versionchangedold">
+<p><span class="versionmodified changed">Changed in pygame 2.0: </span>per-Surface alpha can be combined with per-pixel
+alpha.</p>
+</div>
+<p>The optional flags argument can be set to <code class="docutils literal notranslate"><span class="pre">pygame.RLEACCEL</span></code> to provide
+better performance on non accelerated displays. An <code class="docutils literal notranslate"><span class="pre">RLEACCEL</span></code> Surface
+will be slower to modify, but quicker to blit as a source.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_alpha">
+<span class="sig-name descname"><span class="pre">get_alpha</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_alpha" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the current Surface transparency value.</span></div>
+<div class="line"><span class="signature">get_alpha() -&gt; Optional[int]</span></div>
+</div>
+<p>Return the current alpha value for the Surface.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.lock">
+<span class="sig-name descname"><span class="pre">lock</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.lock" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Lock the Surface memory for pixel access.</span></div>
+<div class="line"><span class="signature">lock() -&gt; None</span></div>
+</div>
+<p>Lock the pixel data of a Surface for access. On accelerated Surfaces, the
+pixel data may be stored in volatile video memory or nonlinear compressed
+forms. When a Surface is locked the pixel memory becomes available to
+access by regular software. Code that reads or writes pixel values will
+need the Surface to be locked.</p>
+<p>Surfaces should not remain locked for more than necessary. A locked
+Surface can often not be displayed or managed by pygame.</p>
+<p>Not all Surfaces require locking. The <a class="reference internal" href="#pygame.Surface.mustlock" title="pygame.Surface.mustlock"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mustlock()</span></code></a> method can
+determine if it is actually required. There is no performance penalty for
+locking and unlocking a Surface that does not need it.</p>
+<p>All pygame functions will automatically lock and unlock the Surface data
+as needed. If a section of code is going to make calls that will
+repeatedly lock and unlock the Surface many times, it can be helpful to
+wrap the block inside a lock and unlock pair.</p>
+<p>It is safe to nest locking and unlocking calls. The Surface will only be
+unlocked after the final lock is released.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.unlock">
+<span class="sig-name descname"><span class="pre">unlock</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.unlock" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Unlock the Surface memory from pixel access.</span></div>
+<div class="line"><span class="signature">unlock() -&gt; None</span></div>
+</div>
+<p>Unlock the Surface pixel data after it has been locked. The unlocked
+Surface can once again be drawn and managed by pygame. See the
+<a class="reference internal" href="#pygame.Surface.lock" title="pygame.Surface.lock"><code class="xref py py-meth docutils literal notranslate"><span class="pre">lock()</span></code></a> documentation for more details.</p>
+<p>All pygame functions will automatically lock and unlock the Surface data
+as needed. If a section of code is going to make calls that will
+repeatedly lock and unlock the Surface many times, it can be helpful to
+wrap the block inside a lock and unlock pair.</p>
+<p>It is safe to nest locking and unlocking calls. The Surface will only be
+unlocked after the final lock is released.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.mustlock">
+<span class="sig-name descname"><span class="pre">mustlock</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.mustlock" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Test if the Surface requires locking.</span></div>
+<div class="line"><span class="signature">mustlock() -&gt; bool</span></div>
+</div>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if the Surface is required to be locked to access pixel
+data. Usually pure software Surfaces do not require locking. This method
+is rarely needed, since it is safe and quickest to just lock all Surfaces
+as needed.</p>
+<p>All pygame functions will automatically lock and unlock the Surface data
+as needed. If a section of code is going to make calls that will
+repeatedly lock and unlock the Surface many times, it can be helpful to
+wrap the block inside a lock and unlock pair.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_locked">
+<span class="sig-name descname"><span class="pre">get_locked</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_locked" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Test if the Surface is current locked.</span></div>
+<div class="line"><span class="signature">get_locked() -&gt; bool</span></div>
+</div>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> when the Surface is locked. It doesn't matter how many
+times the Surface is locked.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_locks">
+<span class="sig-name descname"><span class="pre">get_locks</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_locks" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Gets the locks for the Surface.</span></div>
+<div class="line"><span class="signature">get_locks() -&gt; tuple[Any, ...]</span></div>
+</div>
+<p>Returns the currently existing locks for the Surface.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_at">
+<span class="sig-name descname"><span class="pre">get_at</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_at" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the color value at a single pixel.</span></div>
+<div class="line"><span class="signature">get_at(x_y, /) -&gt; Color</span></div>
+</div>
+<p>Return a copy of the <code class="docutils literal notranslate"><span class="pre">RGBA</span></code> Color value at the given pixel. If the
+Surface has no per pixel alpha, then the alpha value will always be 255
+(opaque). If the pixel position is outside the area of the Surface an
+<code class="docutils literal notranslate"><span class="pre">IndexError</span></code> exception will be raised.</p>
+<p>Getting and setting pixels one at a time is generally too slow to be used
+in a game or realtime situation. It is better to use methods which
+operate on many pixels at a time like with the blit, fill and draw
+methods - or by using <a class="tooltip reference internal" href="surfarray.html#module-pygame.surfarray" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.surfarray</span></code><span class="tooltip-content">pygame module for accessing surface pixel data using array interfaces</span></a>/<a class="tooltip reference internal" href="pixelarray.html#pygame.PixelArray" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.PixelArray</span></code><span class="tooltip-content">pygame object for direct pixel access of surfaces</span></a>.</p>
+<p>This function will temporarily lock and unlock the Surface as needed.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.3.1: </span>can now also accept both float coordinates and
+Vector2s for pixels.</p>
+</div>
+<div class="versionchangedold">
+<p><span class="versionmodified changed">Changed in pygame 1.9: </span>Returning a Color instead of tuple. Use <code class="docutils literal notranslate"><span class="pre">tuple(surf.get_at((x,y)))</span></code>
+if you want a tuple, and not a Color. This should only matter if
+you want to use the color as a key in a dict.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.set_at">
+<span class="sig-name descname"><span class="pre">set_at</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.set_at" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the color value for a single pixel.</span></div>
+<div class="line"><span class="signature">set_at(x_y, color, /) -&gt; None</span></div>
+</div>
+<p>Set the color of a single pixel at the specified coordinates to be a
+<a class="reference internal" href="typing.html#pygame.typing.ColorLike" title="pygame.typing.ColorLike"><code class="xref py py-data docutils literal notranslate"><span class="pre">pygame.typing.ColorLike</span></code></a> value. If the Surface does not have per pixel alphas,
+the alpha value is ignored. Setting pixels outside the Surface area or outside
+the Surface clipping will have no effect.</p>
+<p>Getting and setting pixels one at a time is generally too slow to be used
+in a game or realtime situation.</p>
+<p>This function will temporarily lock and unlock the Surface as needed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the Surface is palettized, the pixel color will be set to the
+most similar color in the palette.</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.3.1: </span>can now also accept both float coordinates and
+Vector2s for pixels.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_at_mapped">
+<span class="sig-name descname"><span class="pre">get_at_mapped</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_at_mapped" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the mapped color value at a single pixel.</span></div>
+<div class="line"><span class="signature">get_at_mapped(x_y, /) -&gt; int</span></div>
+</div>
+<p>Return the integer value of the given pixel. If the pixel position is
+outside the area of the Surface an <code class="docutils literal notranslate"><span class="pre">IndexError</span></code> exception will be
+raised.</p>
+<p>This method is intended for pygame unit testing. It unlikely has any use
+in an application.</p>
+<p>This function will temporarily lock and unlock the Surface as needed.</p>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.9.2.</span></p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.3.1: </span>can now also accept both float coordinates and
+Vector2s for pixels.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_palette">
+<span class="sig-name descname"><span class="pre">get_palette</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_palette" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the color index palette for an 8-bit Surface.</span></div>
+<div class="line"><span class="signature">get_palette() -&gt; list[Color]</span></div>
+</div>
+<p>Return a list of up to 256 color elements that represent the indexed
+colors used in an 8-bit Surface. The returned list is a copy of the
+palette, and changes will have no effect on the Surface.</p>
+<p>Returning a list of <code class="docutils literal notranslate"><span class="pre">Color(with</span> <span class="pre">length</span> <span class="pre">3)</span></code> instances instead of tuples.</p>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.9.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_palette_at">
+<span class="sig-name descname"><span class="pre">get_palette_at</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_palette_at" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the color for a single entry in a palette.</span></div>
+<div class="line"><span class="signature">get_palette_at(index, /) -&gt; Color</span></div>
+</div>
+<p>Returns the red, green, and blue color values for a single index in a
+Surface palette. The index should be a value from 0 to 255.</p>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.9: </span>Returning <code class="docutils literal notranslate"><span class="pre">Color(with</span> <span class="pre">length</span> <span class="pre">3)</span></code> instance instead of a tuple.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.set_palette">
+<span class="sig-name descname"><span class="pre">set_palette</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.set_palette" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the color palette for an 8-bit Surface.</span></div>
+<div class="line"><span class="signature">set_palette(palette, /) -&gt; None</span></div>
+</div>
+<p>Set the full palette for an 8-bit Surface. This will replace the colors in
+the existing palette. A partial palette can be passed and only the first
+colors in the original palette will be changed.</p>
+<p>This function has no effect on a Surface with more than 8-bits per pixel.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.set_palette_at">
+<span class="sig-name descname"><span class="pre">set_palette_at</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.set_palette_at" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the color for a single index in an 8-bit Surface palette.</span></div>
+<div class="line"><span class="signature">set_palette_at(index, color, /) -&gt; None</span></div>
+</div>
+<p>Set the palette value for a single entry in a Surface palette. The index
+should be a value from 0 to 255.</p>
+<p>This function has no effect on a Surface with more than 8-bits per pixel.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.map_rgb">
+<span class="sig-name descname"><span class="pre">map_rgb</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.map_rgb" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Convert a color into a mapped color value.</span></div>
+<div class="line"><span class="signature">map_rgb(color, /) -&gt; int</span></div>
+</div>
+<p>Convert a <a class="reference internal" href="typing.html#pygame.typing.ColorLike" title="pygame.typing.ColorLike"><code class="xref py py-data docutils literal notranslate"><span class="pre">pygame.typing.ColorLike</span></code></a> into the mapped integer value
+for this Surface. The returned integer will contain no more bits than the
+bit depth of the Surface. Mapped color values are not often used inside pygame,
+but can be passed to most functions that require a Surface and a color.</p>
+<p>See the Surface object documentation for more information about colors
+and pixel formats.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.unmap_rgb">
+<span class="sig-name descname"><span class="pre">unmap_rgb</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.unmap_rgb" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Convert a mapped integer color value into a Color.</span></div>
+<div class="line"><span class="signature">unmap_rgb(mapped_int, /) -&gt; Color</span></div>
+</div>
+<p>Convert an mapped integer color into the <code class="docutils literal notranslate"><span class="pre">RGB</span></code> color components for
+this Surface. Mapped color values are not often used inside pygame, but
+can be passed to most functions that require a Surface and a color.</p>
+<p>See the Surface object documentation for more information about colors
+and pixel formats.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.set_clip">
+<span class="sig-name descname"><span class="pre">set_clip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.set_clip" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the current clipping area of the Surface.</span></div>
+<div class="line"><span class="signature">set_clip(rect, /) -&gt; None</span></div>
+</div>
+<p>Each Surface has an active clipping area. This is a rectangle that
+represents the only pixels on the Surface that can be modified. If
+<code class="docutils literal notranslate"><span class="pre">None</span></code> is passed for the rectangle the full Surface will be available
+for changes.</p>
+<p>The clipping area is always restricted to the area of the Surface itself.
+If the clip rectangle is too large it will be shrunk to fit inside the
+Surface.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_clip">
+<span class="sig-name descname"><span class="pre">get_clip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_clip" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the current clipping area of the Surface.</span></div>
+<div class="line"><span class="signature">get_clip() -&gt; Rect</span></div>
+</div>
+<p>Return a rectangle of the current clipping area. The Surface will always
+return a valid rectangle that will never be outside the bounds of the
+Surface. If the Surface has had <code class="docutils literal notranslate"><span class="pre">None</span></code> set for the clipping area, the
+Surface will return a rectangle with the full area of the Surface.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.subsurface">
+<span class="sig-name descname"><span class="pre">subsurface</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.subsurface" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Create a new Surface that references its parent.</span></div>
+<div class="line"><span class="signature">subsurface(rect, /) -&gt; Surface</span></div>
+<div class="line"><span class="signature">subsurface(left_top, width_height, /) -&gt; Surface</span></div>
+<div class="line"><span class="signature">subsurface(left, top, width, height, /) -&gt; Surface</span></div>
+</div>
+<p>Returns a new Surface that shares its pixels with its new parent. The new
+Surface is considered a child of the original. Modifications to either
+Surface pixels will effect each other. Surface information like clipping
+area and color keys are unique to each Surface.</p>
+<p>The new Surface will inherit the palette, color key, and alpha settings
+from its parent.</p>
+<p>It is possible to have any number of subsurfaces and subsubsurfaces on
+the parent. It is also possible to subsurface the display Surface if the
+display mode is not hardware accelerated.</p>
+<p>See <a class="reference internal" href="#pygame.Surface.get_offset" title="pygame.Surface.get_offset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_offset()</span></code></a> and <a class="reference internal" href="#pygame.Surface.get_parent" title="pygame.Surface.get_parent"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_parent()</span></code></a> to learn more
+about the state of a subsurface.</p>
+<p>A subsurface will have the same class as the parent Surface.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_parent">
+<span class="sig-name descname"><span class="pre">get_parent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_parent" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Find the parent of a subsurface.</span></div>
+<div class="line"><span class="signature">get_parent() -&gt; Surface</span></div>
+</div>
+<p>Returns the parent Surface of a subsurface. If this is not a subsurface
+then <code class="docutils literal notranslate"><span class="pre">None</span></code> will be returned.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_abs_parent">
+<span class="sig-name descname"><span class="pre">get_abs_parent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_abs_parent" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Find the top level parent of a subsurface.</span></div>
+<div class="line"><span class="signature">get_abs_parent() -&gt; Surface</span></div>
+</div>
+<p>Returns the parent Surface of a subsurface. If this is not a subsurface
+then this Surface will be returned.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_offset">
+<span class="sig-name descname"><span class="pre">get_offset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_offset" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Find the position of a child subsurface inside a parent.</span></div>
+<div class="line"><span class="signature">get_offset() -&gt; tuple[int, int]</span></div>
+</div>
+<p>Get the offset position of a child subsurface inside of a parent. If the
+Surface is not a subsurface this will return (0, 0).</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_abs_offset">
+<span class="sig-name descname"><span class="pre">get_abs_offset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_abs_offset" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Find the absolute position of a child subsurface inside its top level parent.</span></div>
+<div class="line"><span class="signature">get_abs_offset() -&gt; tuple[int, int]</span></div>
+</div>
+<p>Get the offset position of a child subsurface inside of its top level
+parent Surface. If the Surface is not a subsurface this will return (0,
+0).</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_size">
+<span class="sig-name descname"><span class="pre">get_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_size" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the dimensions of the Surface.</span></div>
+<div class="line"><span class="signature">get_size() -&gt; tuple[int, int]</span></div>
+</div>
+<p>Return the width and height of the Surface in pixels. Can also be accessed
+with <a class="reference internal" href="#pygame.Surface.size" title="pygame.Surface.size"><code class="xref py py-attr docutils literal notranslate"><span class="pre">size</span></code></a></p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_width">
+<span class="sig-name descname"><span class="pre">get_width</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_width" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the width of the Surface.</span></div>
+<div class="line"><span class="signature">get_width() -&gt; int</span></div>
+</div>
+<p>Return the width of the Surface in pixels. Can also be accessed with <a class="reference internal" href="#pygame.Surface.width" title="pygame.Surface.width"><code class="xref py py-attr docutils literal notranslate"><span class="pre">width</span></code></a></p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_height">
+<span class="sig-name descname"><span class="pre">get_height</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_height" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the height of the Surface.</span></div>
+<div class="line"><span class="signature">get_height() -&gt; int</span></div>
+</div>
+<p>Return the height of the Surface in pixels. Can also be accessed with <a class="reference internal" href="#pygame.Surface.height" title="pygame.Surface.height"><code class="xref py py-attr docutils literal notranslate"><span class="pre">height</span></code></a></p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_rect">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_rect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the rectangular area of the Surface.</span></div>
+<div class="line"><span class="signature">get_rect(**kwargs) -&gt; Rect</span></div>
+</div>
+<p>Returns a new rectangle covering the entire Surface. This rectangle will
+always start at (0, 0) with a width and height the same size as the Surface.</p>
+<p>You can pass keyword argument values to this function. These named values
+will be applied to the attributes of the Rect before it is returned. An
+example would be <code class="docutils literal notranslate"><span class="pre">mysurf.get_rect(center=(100,</span> <span class="pre">100))</span></code> to create a
+rectangle for the Surface centered at a given position. Size attributes
+such as <code class="docutils literal notranslate"><span class="pre">size</span></code> or <code class="docutils literal notranslate"><span class="pre">w</span></code> can also be applied to resize the Rect.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_frect">
+<span class="sig-name descname"><span class="pre">get_frect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_frect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the rectangular area of the Surface.</span></div>
+<div class="line"><span class="signature">get_frect(**kwargs) -&gt; FRect</span></div>
+</div>
+<p>This is the same as <a class="reference internal" href="#pygame.Surface.get_rect" title="pygame.Surface.get_rect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Surface.get_rect()</span></code></a> but returns an FRect. FRect is similar
+to Rect, except it stores float values instead.</p>
+<p>You can pass keyword argument values to this function. These named values
+will be applied to the attributes of the FRect before it is returned. An
+example would be <code class="docutils literal notranslate"><span class="pre">mysurf.get_frect(center=(100.5,</span> <span class="pre">100.5))</span></code> to create a
+rectangle for the Surface centered at a given position. Size attributes
+such as <code class="docutils literal notranslate"><span class="pre">size</span></code> or <code class="docutils literal notranslate"><span class="pre">w</span></code> can also be applied to resize the FRect.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.3.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_bitsize">
+<span class="sig-name descname"><span class="pre">get_bitsize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_bitsize" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the bit depth of the Surface pixel format.</span></div>
+<div class="line"><span class="signature">get_bitsize() -&gt; int</span></div>
+</div>
+<p>Returns the number of bits used to represent each pixel. This value may
+not exactly fill the number of bytes used per pixel. For example a 15 bit
+Surface still requires a full 2 bytes.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_bytesize">
+<span class="sig-name descname"><span class="pre">get_bytesize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_bytesize" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the bytes used per Surface pixel.</span></div>
+<div class="line"><span class="signature">get_bytesize() -&gt; int</span></div>
+</div>
+<p>Return the number of bytes used per pixel.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_flags">
+<span class="sig-name descname"><span class="pre">get_flags</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_flags" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the additional flags used for the Surface.</span></div>
+<div class="line"><span class="signature">get_flags() -&gt; int</span></div>
+</div>
+<p>Returns a set of current Surface features. Each feature is a bit in the
+flags bitmask. Typical flags are <code class="docutils literal notranslate"><span class="pre">RLEACCEL</span></code>, <code class="docutils literal notranslate"><span class="pre">SRCALPHA</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">SRCCOLORKEY</span></code>.</p>
+<p>Here is a more complete list of flags. A full list can be found in
+<code class="docutils literal notranslate"><span class="pre">SDL_video.h</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SWSURFACE</span>      <span class="mh">0x00000000</span>    <span class="c1"># Surface is in system memory</span>
+<span class="n">HWSURFACE</span>      <span class="mh">0x00000001</span>    <span class="c1"># (obsolete in pygame 2) Surface is in video memory</span>
+<span class="n">ASYNCBLIT</span>      <span class="mh">0x00000004</span>    <span class="c1"># (obsolete in pygame 2) Use asynchronous blits if possible</span>
+</pre></div>
+</div>
+<p>See <a class="tooltip reference internal" href="display.html#pygame.display.set_mode" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.display.set_mode()</span></code><span class="tooltip-content">Initialize a window or screen for display.</span></a> for flags exclusive to the
+display Surface.</p>
+<p>Used internally (read-only)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">HWACCEL</span>        <span class="mh">0x00000100</span>    <span class="c1"># Blit uses hardware acceleration</span>
+<span class="n">SRCCOLORKEY</span>    <span class="mh">0x00001000</span>    <span class="c1"># Blit uses a source color key</span>
+<span class="n">RLEACCELOK</span>     <span class="mh">0x00002000</span>    <span class="c1"># Private flag</span>
+<span class="n">RLEACCEL</span>       <span class="mh">0x00004000</span>    <span class="c1"># Surface is RLE encoded</span>
+<span class="n">SRCALPHA</span>       <span class="mh">0x00010000</span>    <span class="c1"># Blit uses source alpha blending</span>
+<span class="n">PREALLOC</span>       <span class="mh">0x01000000</span>    <span class="c1"># Surface uses preallocated memory</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_pitch">
+<span class="sig-name descname"><span class="pre">get_pitch</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_pitch" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the number of bytes used per Surface row.</span></div>
+<div class="line"><span class="signature">get_pitch() -&gt; int</span></div>
+</div>
+<p>Return the number of bytes separating each row in the Surface. Surfaces
+in video memory are not always linearly packed. Subsurfaces will also
+have a larger pitch than their real width.</p>
+<p>This value is not needed for normal pygame usage.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_masks">
+<span class="sig-name descname"><span class="pre">get_masks</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_masks" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">The bitmasks needed to convert between a color and a mapped integer.</span></div>
+<div class="line"><span class="signature">get_masks() -&gt; tuple[int, int, int, int]</span></div>
+</div>
+<p>Returns the bitmasks used to isolate each color in a mapped integer.</p>
+<p>This value is not needed for normal pygame usage.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.set_masks">
+<span class="sig-name descname"><span class="pre">set_masks</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.set_masks" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the bitmasks needed to convert between a color and a mapped integer.</span></div>
+<div class="line"><span class="signature">set_masks(color, /) -&gt; None</span></div>
+</div>
+<p>This is not needed for normal pygame usage.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Starting in pygame 2.0, the masks are read-only and
+accordingly this method will raise a TypeError if called.</p>
+</div>
+<div class="deprecatedold">
+<p><span class="versionmodified deprecated">Deprecated since pygame 2.0.0.</span></p>
+</div>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.8.1.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_shifts">
+<span class="sig-name descname"><span class="pre">get_shifts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_shifts" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">The bit shifts needed to convert between a color and a mapped integer.</span></div>
+<div class="line"><span class="signature">get_shifts() -&gt; tuple[int, int, int, int]</span></div>
+</div>
+<p>Returns the pixel shifts need to convert between each color and a mapped
+integer.</p>
+<p>This value is not needed for normal pygame usage.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.set_shifts">
+<span class="sig-name descname"><span class="pre">set_shifts</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.set_shifts" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Sets the bit shifts needed to convert between a color and a mapped integer.</span></div>
+<div class="line"><span class="signature">set_shifts(color, /) -&gt; None</span></div>
+</div>
+<p>This is not needed for normal pygame usage.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Starting in pygame 2.0, the shifts are read-only and
+accordingly this method will raise a TypeError if called.</p>
+</div>
+<div class="deprecatedold">
+<p><span class="versionmodified deprecated">Deprecated since pygame 2.0.0.</span></p>
+</div>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.8.1.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_losses">
+<span class="sig-name descname"><span class="pre">get_losses</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_losses" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">The significant bits used to convert between a color and a mapped integer.</span></div>
+<div class="line"><span class="signature">get_losses() -&gt; tuple[int, int, int, int]</span></div>
+</div>
+<p>Return the least significant number of bits stripped from each color in a
+mapped integer.</p>
+<p>This value is not needed for normal pygame usage.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_bounding_rect">
+<span class="sig-name descname"><span class="pre">get_bounding_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_bounding_rect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Find the smallest rect containing data.</span></div>
+<div class="line"><span class="signature">get_bounding_rect(min_alpha=1) -&gt; Rect</span></div>
+</div>
+<p>Returns the smallest rectangular region that contains all the pixels in
+the Surface that have an alpha value greater than or equal to the minimum
+alpha value.</p>
+<p>This function will temporarily lock and unlock the Surface as needed.</p>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.8.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_view">
+<span class="sig-name descname"><span class="pre">get_view</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_view" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Return a buffer view of the Surface's pixels.</span></div>
+<div class="line"><span class="signature">get_view(kind='2', /) -&gt; BufferProxy</span></div>
+</div>
+<p>Return an object which exports a Surface's internal pixel buffer as
+a C level array struct, Python level array interface or a C level
+buffer interface. The new buffer protocol is supported.</p>
+<p>The kind argument is the length 1 string '0', '1', '2', '3',
+'r', 'g', 'b', or 'a'. The letters are case insensitive;
+'A' will work as well. The argument can be either a Unicode or byte (char)
+string. The default is '2'.</p>
+<p>'0' returns a contiguous unstructured bytes view. No Surface shape
+information is given. A <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised if the Surface's pixels
+are discontinuous.</p>
+<p>'1' returns a (Surface.width * Surface.height) array of continuous
+pixels. A <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised if the Surface pixels are
+discontinuous.</p>
+<p>'2' returns a (Surface.width, Surface.height) array of raw pixels.
+The pixels are Surface-bytesize-d unsigned integers. The pixel format is
+Surface specific. The 3 byte unsigned integers of 24 bit Surfaces are
+unlikely accepted by anything other than other pygame functions.</p>
+<p>'3' returns a (Surface.width, Surface.height, 3) array of <code class="docutils literal notranslate"><span class="pre">RGB</span></code> color
+components. Each of the red, green, and blue components are unsigned
+bytes. Only 24-bit and 32-bit Surfaces are supported. The color
+components must be in either <code class="docutils literal notranslate"><span class="pre">RGB</span></code> or <code class="docutils literal notranslate"><span class="pre">BGR</span></code> order within the pixel.</p>
+<p>'r' for red, 'g' for green, 'b' for blue, and 'a' for alpha return a
+(Surface.width, Surface.height) view of a single color component within a
+Surface: a color plane. Color components are unsigned bytes. Both 24-bit
+and 32-bit Surfaces support 'r', 'g', and 'b'. Only 32-bit Surfaces with
+<code class="docutils literal notranslate"><span class="pre">SRCALPHA</span></code> support 'a'.</p>
+<p>The Surface is locked only when an exposed interface is accessed.
+For new buffer interface accesses, the Surface is unlocked once the
+last buffer view is released. For array interface and old buffer
+interface accesses, the Surface remains locked until the BufferProxy
+object is released.</p>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.9.2.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.get_buffer">
+<span class="sig-name descname"><span class="pre">get_buffer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.get_buffer" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Acquires a buffer object for the pixels of the Surface.</span></div>
+<div class="line"><span class="signature">get_buffer() -&gt; BufferProxy</span></div>
+</div>
+<p>Return a buffer object for the pixels of the Surface. The buffer can be
+used for direct pixel access and manipulation. Surface pixel data is
+represented as an unstructured block of memory, with a start address
+and length in bytes. The data need not be contiguous. Any gaps are
+included in the length, but otherwise ignored.</p>
+<p>This method implicitly locks the Surface. The lock will be released when
+the returned <a class="tooltip reference internal" href="bufferproxy.html#pygame.BufferProxy" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.BufferProxy</span></code><span class="tooltip-content">pygame object to export a surface buffer through an array protocol</span></a> object is garbage collected.</p>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.8.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Surface._pixels_address">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_pixels_address</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pygame.Surface._pixels_address" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Pixel buffer address.</span></div>
+<div class="line"><span class="signature">_pixels_address -&gt; int</span></div>
+</div>
+<p>The starting address of the Surface's raw pixel bytes.</p>
+<div class="versionaddedold">
+<p><span class="versionmodified added">New in pygame 1.9.2.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.premul_alpha">
+<span class="sig-name descname"><span class="pre">premul_alpha</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.premul_alpha" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Returns a copy of the Surface with the RGB channels pre-multiplied by the alpha channel.</span></div>
+<div class="line"><span class="signature">premul_alpha() -&gt; Surface</span></div>
+</div>
+<p>Returns a copy of the initial Surface with the red, green and blue color
+channels multiplied by the alpha channel. This is intended to make it
+easier to work with the BLEND_PREMULTIPLED blend mode flag of the blit()
+method. Surfaces which have called this method will only look correct
+after blitting if the BLEND_PREMULTIPLED special flag is used.</p>
+<p>It is worth noting that after calling this method, methods that return the
+color of a pixel such as get_at() will return the alpha multiplied color
+values. It is not possible to fully reverse an alpha multiplication of
+the colors in a Surface as integer color channel data is generally
+reduced by the operation (e.g. 255 x 0 = 0, from there it is not
+possible to reconstruct the original 255 from just the two remaining
+zeros in the color and alpha channels).</p>
+<p>If you call this method, and then call it again, it will multiply the color
+channels by the alpha channel twice. There are many possible ways to obtain
+a Surface with the color channels pre-multiplied by the alpha channel in
+pygame, and it is not possible to tell the difference just from the
+information in the pixels. It is completely possible to have two identical
+Surfaces - one intended for pre-multiplied alpha blending and one intended
+for normal blending. For this reason we do not store state on Surfaces
+intended for pre-multiplied alpha blending.</p>
+<p>Surfaces without an alpha channel cannot use this method and will return
+an error if you use it on them. It is best used on 32 bit Surfaces (the
+default on most platforms) as the blitting on these Surfaces can be
+accelerated by SIMD versions of the pre-multiplied blitter.</p>
+<p>In general pre-multiplied alpha blitting is faster then 'straight alpha'
+blitting and produces superior results when blitting an alpha Surface onto
+another Surface with alpha - assuming both Surfaces contain pre-multiplied
+alpha colors.</p>
+<p>There is a <a class="reference external" href="../tutorials/en/premultiplied-alpha.html">tutorial on premultiplied alpha blending here.</a></p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.1.4.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Surface.premul_alpha_ip">
+<span class="sig-name descname"><span class="pre">premul_alpha_ip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Surface.premul_alpha_ip" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Multiplies the RGB channels by the Surface alpha channel.</span></div>
+<div class="line"><span class="signature">premul_alpha_ip() -&gt; Surface</span></div>
+</div>
+<p>Multiplies the RGB channels of the Surface by the alpha channel in place
+and returns the Surface.</p>
+<p>Surfaces without an alpha channel cannot use this method and will return
+an error if you use it on them. It is best used on 32 bit Surfaces (the
+default on most platforms) as the blitting on these Surfaces can be
+accelerated by SIMD versions of the pre-multiplied blitter.</p>
+<p>Refer to the <a class="reference internal" href="#pygame.Surface.premul_alpha" title="pygame.Surface.premul_alpha"><code class="xref py py-meth docutils literal notranslate"><span class="pre">premul_alpha()</span></code></a> method for more information.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.1.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Surface.width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">width</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pygame.Surface.width" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Surface width in pixels (read-only).</span></div>
+<div class="line"><span class="signature">width -&gt; int</span></div>
+</div>
+<p>Read-only attribute. Same as <a class="reference internal" href="#pygame.Surface.get_width" title="pygame.Surface.get_width"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_width()</span></code></a></p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Surface.height">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">height</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pygame.Surface.height" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Surface height in pixels (read-only).</span></div>
+<div class="line"><span class="signature">height -&gt; int</span></div>
+</div>
+<p>Read-only attribute. Same as <a class="reference internal" href="#pygame.Surface.get_height" title="pygame.Surface.get_height"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_height()</span></code></a></p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Surface.size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pygame.Surface.size" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Surface size in pixels (read-only).</span></div>
+<div class="line"><span class="signature">size -&gt; tuple[int, int]</span></div>
+</div>
+<p>Read-only attribute. Same as <a class="reference internal" href="#pygame.Surface.get_size" title="pygame.Surface.get_size"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_size()</span></code></a></p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.0.</span></p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+<br /><br />
+<hr />
+<a href="https://github.com/pygame-community/pygame-ce/edit/main/docs/reST/ref/surface.rst" rel="nofollow">Edit on GitHub</a>
+            <div class="clearer"></div>
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="surfarray.html" title="pygame.surfarray"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sprite.html" title="pygame.sprite"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pygame-ce v2.5.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.Surface</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2000-2022, pygame developers, 2023 pygame-ce developers.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pygame.sdl2_video &#8212; pygame-ce v2.5.6 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygame.css?v=a9f2cf0f" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
+    <script src="../_static/documentation_options.js?v=53b7011b"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/script.js?v=57918e6b"></script>
+    <link rel="icon" href="../_static/pygame.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pygame.sndarray" href="sndarray.html" />
+    <link rel="prev" title="pygame._sdl2.controller" href="sdl2_controller.html" /> 
+  </head><body>  
+
+    <div class="document">
+
+  <div class="header">
+	<div class="flex-container">
+	<div class="logo">
+	  <a href="https://pyga.me/docs">
+	    <img src="../_static/pygame_ce_tiny.webp"/>
+	  </a>
+	  <h5>pygame-ce documentation</h5>
+	</div>
+	<div class="pagelinks">
+	  <div class="top">
+      <div class="nav-top-wrapper">
+        <a href="https://pyga.me/docs">Pygame-ce Home</a> ||
+        <a href="../index.html">Help Contents</a> ||
+        <a href="../genindex.html">Reference Index</a>
+      </div>
+      <div class="searchbar-container">
+        <img class="theme-icon" data-theme="dark-theme" src="../_static/light-theme-icon.svg" width="24" height="24" alt="Light Theme Icon">
+        <img class="theme-icon" data-theme="light-theme" src="../_static/dark-theme-icon.svg" width="24" height="24" alt="Dark Theme Icon">
+        <form action="../search.html" method="get" class="searchbar-form" style="display:inline;float:right;">
+          <input name="q" value="" type="text">
+          <img class="searchbar-button" src="../_static/searchbar-icon.svg" alt="Search">
+          <input class="searchbar-submit" value="search" type="submit">
+        </form>
+      </div>
+	  </div>
+	  <hr style="color:black;border-bottom:none;border-style: dotted;border-bottom-style:none;">
+	  <p class="bottom"><b>Most useful stuff</b>:
+	    <a href="color.html">Color</a> | 
+	    <a href="display.html">display</a> | 
+	    <a href="draw.html">draw</a> | 
+	    <a href="event.html">event</a> | 
+	    <a href="font.html">font</a> | 
+	    <a href="image.html">image</a> | 
+	    <a href="key.html">key</a> | 
+	    <a href="locals.html">locals</a> | 
+	    <a href="mixer.html">mixer</a> | 
+	    <a href="mouse.html">mouse</a> | 
+	    <a href="rect.html">Rect</a> | 
+	    <a href="surface.html">Surface</a> | 
+	    <a href="time.html">time</a> | 
+	    <a href="music.html">music</a> | 
+	    <a href="pygame.html">pygame</a>
+	  </p>
+
+	  <p class="bottom"><b>Advanced stuff</b>:
+	    <a href="cursors.html">cursors</a> | 
+	    <a href="joystick.html">joystick</a> | 
+	    <a href="mask.html">mask</a> | 
+	    <a href="sprite.html">sprite</a> | 
+	    <a href="transform.html">transform</a> | 
+	    <a href="bufferproxy.html">BufferProxy</a> | 
+	    <a href="freetype.html">freetype</a> | 
+	    <a href="gfxdraw.html">gfxdraw</a> | 
+	    <a href="midi.html">midi</a> | 
+	    <a href="pixelarray.html">PixelArray</a> | 
+	    <a href="pixelcopy.html">pixelcopy</a> | 
+	    <a href="sndarray.html">sndarray</a> | 
+	    <a href="surfarray.html">surfarray</a> | 
+	    <a href="math.html">math</a>
+	  </p>
+
+	  <p class="bottom"><b>Other</b>:
+	    <a href="camera.html">camera</a> | 
+	    <a href="sdl2_controller.html#module-pygame._sdl2.controller">controller</a> | 
+	    <a href="examples.html">examples</a> | 
+	    <a href="scrap.html">scrap</a> | 
+	    <a href="system.html">system</a> | 
+	    <a href="tests.html">tests</a> | 
+	    <a href="touch.html">touch</a> | 
+	    <a href="typing.html">typing</a> | 
+	    <a href="pygame.html#module-pygame.version">version</a> | 
+	    <a href="window.html">Window</a>
+	  </p>
+</div>
+</div>
+  </div>
+
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+<section id="module-pygame._sdl2.video">
+<span id="pygame-sdl2-video"></span><dl class="definition">
+<dt class="title module sig sig-object">
+<code class="docutils literal notranslate"><span class="pre">pygame.sdl2_video</span></code></dt>
+<dd><div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This module isn't ready for prime time yet, it's still in development.
+These docs are primarily meant to help the pygame developers and
+super-early adopters who are in communication with the developers.
+This API will change.</p>
+</div>
+<table class="toc docutils align-default">
+<tbody>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.messagebox">pygame._sdl2.video.messagebox</a></div>
+</td>
+<td>—</td>
+<td>Create a native GUI message box</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.RendererDriverInfo">pygame._sdl2.video.RendererDriverInfo</a></div>
+</td>
+<td>—</td>
+<td>pygame object encapsulating Renderer driver information</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.get_drivers">pygame._sdl2.video.get_drivers</a></div>
+</td>
+<td>—</td>
+<td>Yield info about the rendering drivers available for Renderer objects</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.get_grabbed_window">pygame._sdl2.video.get_grabbed_window</a></div>
+</td>
+<td>—</td>
+<td>Get the window with input grab enabled</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Window">pygame._sdl2.video.Window</a></div>
+</td>
+<td>—</td>
+<td>pygame object that represents a window</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture">pygame._sdl2.video.Texture</a></div>
+</td>
+<td>—</td>
+<td>pygame object that represents a texture</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image">pygame._sdl2.video.Image</a></div>
+</td>
+<td>—</td>
+<td>pygame object that represents a portion of a texture</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer">pygame._sdl2.video.Renderer</a></div>
+</td>
+<td>—</td>
+<td>pygame object wrapping a 2D rendering context for a window</td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><span class="summaryline">Experimental pygame module for porting new SDL video systems</span></div>
+</div>
+<dl class="py function definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.messagebox">
+<span class="sig-prename descclassname"><span class="pre">pygame._sdl2.video.</span></span><span class="sig-name descname"><span class="pre">messagebox</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.messagebox" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Create a native GUI message box</span></div>
+<div class="line"><span class="signature">messagebox(title, message, window=None, info=False, warn=False, buttons=('OK',), return_button=0, escape_button=0)</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>title</strong> (<em>str</em>) -- A title string, or <code class="docutils literal notranslate"><span class="pre">None</span></code> to omit a title.</p></li>
+<li><p><strong>message</strong> (<em>str</em>) -- A message string.</p></li>
+<li><p><strong>info</strong> (<em>bool</em>) -- If <code class="docutils literal notranslate"><span class="pre">True</span></code>, display an info message.</p></li>
+<li><p><strong>warn</strong> (<em>bool</em>) -- If <code class="docutils literal notranslate"><span class="pre">True</span></code>, display a warning message.</p></li>
+<li><p><strong>error</strong> (<em>bool</em>) -- If <code class="docutils literal notranslate"><span class="pre">True</span></code>, display an error message.</p></li>
+<li><p><strong>buttons</strong> (<em>tuple</em>) -- An optional sequence of button name strings to show to the user.</p></li>
+<li><p><strong>return_button</strong> (<em>int</em>) -- Button index to use if the return key is hit (<code class="docutils literal notranslate"><span class="pre">-1</span></code> for none).</p></li>
+<li><p><strong>escape_button</strong> (<em>int</em>) -- Button index to use if the escape key is hit (<code class="docutils literal notranslate"><span class="pre">-1</span></code> for none).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The index of the button that was pushed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.RendererDriverInfo">
+<span class="sig-prename descclassname"><span class="pre">pygame._sdl2.video.</span></span><span class="sig-name descname"><span class="pre">RendererDriverInfo</span></span><a class="headerlink" href="#pygame._sdl2.video.RendererDriverInfo" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">pygame object encapsulating Renderer driver information</span></div>
+</div>
+<p>Attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">name</span>
+<span class="n">flags</span>
+<span class="n">num_texture_formats</span>
+<span class="n">max_texture_width</span>
+<span class="n">max_texture_height</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.get_drivers">
+<span class="sig-prename descclassname"><span class="pre">pygame._sdl2.video.</span></span><span class="sig-name descname"><span class="pre">get_drivers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.get_drivers" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Yield info about the rendering drivers available for Renderer objects</span></div>
+<div class="line"><span class="signature">get_drivers() -&gt; Iterator[RendererDriverInfo]</span></div>
+</div>
+</dd></dl>
+
+<dl class="py function definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.get_grabbed_window">
+<span class="sig-prename descclassname"><span class="pre">pygame._sdl2.video.</span></span><span class="sig-name descname"><span class="pre">get_grabbed_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.get_grabbed_window" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the window with input grab enabled</span></div>
+<div class="line"><span class="signature">get_grabbed_window() -&gt; Window or None</span></div>
+</div>
+<p>Gets the <a class="reference internal" href="#pygame._sdl2.video.Window" title="pygame._sdl2.video.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a> with input grab enabled, if input is grabbed,
+otherwise <code class="docutils literal notranslate"><span class="pre">None</span></code> is returned.</p>
+</dd></dl>
+
+<dl class="py class definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Window">
+<span class="sig-prename descclassname"><span class="pre">pygame._sdl2.video.</span></span><span class="sig-name descname"><span class="pre">Window</span></span><a class="headerlink" href="#pygame._sdl2.video.Window" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">pygame object that represents a window</span></div>
+</div>
+<p>See <a class="tooltip reference internal" href="window.html#pygame.Window" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Window</span></code><span class="tooltip-content">Pygame object that represents a window.</span></a></p>
+</dd></dl>
+
+<dl class="py class definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture">
+<span class="sig-prename descclassname"><span class="pre">pygame._sdl2.video.</span></span><span class="sig-name descname"><span class="pre">Texture</span></span><a class="headerlink" href="#pygame._sdl2.video.Texture" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">pygame object that represents a texture</span></div>
+<div class="line"><span class="signature">Texture(renderer, size, depth=0, static=False, streaming=False, target=False, scale_quality=None) -&gt; Texture</span></div>
+</div>
+<table class="toc docutils align-default">
+<tbody>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.renderer">pygame._sdl2.video.Texture.renderer</a></div>
+</td>
+<td>—</td>
+<td>Get the renderer associated with the texture (**read-only**)</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.width">pygame._sdl2.video.Texture.width</a></div>
+</td>
+<td>—</td>
+<td>Get the width of the texture (**read-only**)</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.height">pygame._sdl2.video.Texture.height</a></div>
+</td>
+<td>—</td>
+<td>Get the height of the texture (**read-only**)</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.alpha">pygame._sdl2.video.Texture.alpha</a></div>
+</td>
+<td>—</td>
+<td>Get or set the additional alpha value multiplied into draw operations</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.blend_mode">pygame._sdl2.video.Texture.blend_mode</a></div>
+</td>
+<td>—</td>
+<td>Get or set the blend mode for texture drawing operations</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.color">pygame._sdl2.video.Texture.color</a></div>
+</td>
+<td>—</td>
+<td>Get or set the additional color value multiplied into texture drawing operations</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.from_surface">pygame._sdl2.video.Texture.from_surface</a></div>
+</td>
+<td>—</td>
+<td>Create a texture from an existing surface</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.get_rect">pygame._sdl2.video.Texture.get_rect</a></div>
+</td>
+<td>—</td>
+<td>Get the rectangular area of the texture</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.draw">pygame._sdl2.video.Texture.draw</a></div>
+</td>
+<td>—</td>
+<td>Copy a portion of the texture to the rendering target</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.draw_triangle">pygame._sdl2.video.Texture.draw_triangle</a></div>
+</td>
+<td>—</td>
+<td>Copy a triangle portion of the texture to the rendering target using the given coordinates</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.draw_quad">pygame._sdl2.video.Texture.draw_quad</a></div>
+</td>
+<td>—</td>
+<td>Copy a quad portion of the texture to the rendering target using the given coordinates</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Texture.update">pygame._sdl2.video.Texture.update</a></div>
+</td>
+<td>—</td>
+<td>Update the texture with Surface (slow operation, use sparingly)</td>
+</tr>
+</tbody>
+</table>
+<p>Creates an empty texture.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>renderer</strong> (<a class="reference internal" href="#pygame._sdl2.video.Renderer" title="pygame._sdl2.video.Renderer"><em>Renderer</em></a>) -- The rendering context for the texture.</p></li>
+<li><p><strong>size</strong> (<em>tuple</em>) -- The width and height for the texture.</p></li>
+<li><p><strong>depth</strong> (<em>int</em>) -- The pixel format (<code class="docutils literal notranslate"><span class="pre">0</span></code> to use the default).</p></li>
+<li><p><strong>static</strong> (<em>bool</em>) -- Initialize the texture as static
+(changes rarely, not lockable).</p></li>
+<li><p><strong>streaming</strong> (<em>bool</em>) -- Initialize the texture as streaming
+(changes frequently, lockable).</p></li>
+<li><p><strong>target</strong> (<em>bool</em>) -- Initialize the texture as target
+(can be used as a rendering target).</p></li>
+<li><p><strong>scale_quality</strong> (<em>int</em>) -- Set the texture scale quality. Can be <code class="docutils literal notranslate"><span class="pre">0</span></code>
+(nearest pixel sampling), <code class="docutils literal notranslate"><span class="pre">1</span></code>
+(linear filtering, supported by OpenGL and Direct3D)
+and <code class="docutils literal notranslate"><span class="pre">2</span></code> (anisotropic filtering, supported by Direct3D).</p></li>
+</ul>
+</dd>
+</dl>
+<p>One of <code class="docutils literal notranslate"><span class="pre">static</span></code>, <code class="docutils literal notranslate"><span class="pre">streaming</span></code>, or <code class="docutils literal notranslate"><span class="pre">target</span></code> can be set
+to <code class="docutils literal notranslate"><span class="pre">True</span></code>. If all are <code class="docutils literal notranslate"><span class="pre">False</span></code>, then <code class="docutils literal notranslate"><span class="pre">static</span></code> is used.</p>
+<p><a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a> objects provide a platform-agnostic API for working with GPU textures.
+They are stored in GPU video memory (VRAM), and are therefore very fast to
+rotate and resize when drawn onto a <a class="reference internal" href="#pygame._sdl2.video.Renderer" title="pygame._sdl2.video.Renderer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Renderer</span></code></a>
+(an object that manages a rendering context inside a <a class="reference internal" href="#pygame._sdl2.video.Window" title="pygame._sdl2.video.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a>) on most GPUs.</p>
+<p>Since textures are stored in GPU video memory, they aren't as easy to modify
+as the image data of <a class="tooltip reference internal" href="surface.html#pygame.Surface" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Surface</span></code><span class="tooltip-content">Pygame object for representing images.</span></a> objects, which reside in RAM.</p>
+<p>Textures can be modified in 2 ways:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>By drawing other textures onto them, achieved by marking them as &quot;target&quot; textures and setting them as the rendering target of their Renderer object (if properly configured and supported).</p></li>
+<li><p>By updating them with a Surface.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A <a class="tooltip reference internal" href="surface.html#pygame.Surface" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Surface</span></code><span class="tooltip-content">Pygame object for representing images.</span></a>-to-<a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a> update is generally
+considered a slow operation, as it requires image data to be uploaded from
+RAM to VRAM, which can have a notable overhead cost.</p>
+</div>
+</div></blockquote>
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.renderer">
+<span class="sig-name descname"><span class="pre">renderer</span></span><a class="headerlink" href="#pygame._sdl2.video.Texture.renderer" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the renderer associated with the texture (**read-only**)</span></div>
+<div class="line"><span class="signature">renderer -&gt; Renderer</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.width">
+<span class="sig-name descname"><span class="pre">width</span></span><a class="headerlink" href="#pygame._sdl2.video.Texture.width" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the width of the texture (**read-only**)</span></div>
+<div class="line"><span class="signature">width -&gt; int</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.height">
+<span class="sig-name descname"><span class="pre">height</span></span><a class="headerlink" href="#pygame._sdl2.video.Texture.height" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the height of the texture (**read-only**)</span></div>
+<div class="line"><span class="signature">height -&gt; int</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.alpha">
+<span class="sig-name descname"><span class="pre">alpha</span></span><a class="headerlink" href="#pygame._sdl2.video.Texture.alpha" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the additional alpha value multiplied into draw operations</span></div>
+<div class="line"><span class="signature">alpha -&gt; int</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.blend_mode">
+<span class="sig-name descname"><span class="pre">blend_mode</span></span><a class="headerlink" href="#pygame._sdl2.video.Texture.blend_mode" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the blend mode for texture drawing operations</span></div>
+<div class="line"><span class="signature">blend_mode -&gt; int</span></div>
+</div>
+<p>Gets or sets the blend mode for the texture's drawing operations.
+Valid blend modes are any of the <code class="docutils literal notranslate"><span class="pre">BLENDMODE_*</span></code> constants or a custom one.</p>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.color">
+<span class="sig-name descname"><span class="pre">color</span></span><a class="headerlink" href="#pygame._sdl2.video.Texture.color" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the additional color value multiplied into texture drawing operations</span></div>
+<div class="line"><span class="signature">color -&gt; Color</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.from_surface">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_surface</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Texture.from_surface" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Create a texture from an existing surface</span></div>
+<div class="line"><span class="signature">from_surface(renderer, surface) -&gt; Texture</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>renderer</strong> (<a class="reference internal" href="#pygame._sdl2.video.Renderer" title="pygame._sdl2.video.Renderer"><em>Renderer</em></a>) -- Rendering context for the texture.</p></li>
+<li><p><strong>surface</strong> (<a class="reference internal" href="surface.html#pygame.Surface" title="pygame.Surface"><em>Surface</em></a>) -- The surface to create a texture from.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.get_rect">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Texture.get_rect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the rectangular area of the texture</span></div>
+<div class="line"><span class="signature">get_rect(**kwargs) -&gt; Rect</span></div>
+</div>
+<p>Like <a class="tooltip reference internal" href="surface.html#pygame.Surface.get_rect" title=""><code class="xref py py-meth docutils literal notranslate"><span class="pre">pygame.Surface.get_rect()</span></code><span class="tooltip-content">Get the rectangular area of the Surface.</span></a>, this method returns a <strong>new</strong>
+<a class="tooltip reference internal" href="rect.html#pygame.Rect" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Rect</span></code><span class="tooltip-content">pygame object for storing rectangular coordinates</span></a> covering the entire texture. It will always
+have a <code class="docutils literal notranslate"><span class="pre">topleft</span></code> of <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code> with a <code class="docutils literal notranslate"><span class="pre">width</span></code> and <code class="docutils literal notranslate"><span class="pre">height</span></code> the same size as the
+texture.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Texture.draw" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Copy a portion of the texture to the rendering target</span></div>
+<div class="line"><span class="signature">draw(srcrect=None, dstrect=None, angle=0, origin=None, flip_x=False, flip_y=False) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>srcrect</strong> -- The source rectangle on the texture, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for the
+entire texture.</p></li>
+<li><p><strong>dstrect</strong> -- The destination rectangle on the rendering target, or
+<code class="docutils literal notranslate"><span class="pre">None</span></code> for the entire rendering target. The texture
+will be stretched to fill <code class="docutils literal notranslate"><span class="pre">dstrect</span></code>.</p></li>
+<li><p><strong>angle</strong> (<em>float</em>) -- The angle (in degrees) to rotate dstrect around
+(clockwise).</p></li>
+<li><p><strong>origin</strong> -- The point around which dstrect will be rotated.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, it will equal the center:
+<code class="docutils literal notranslate"><span class="pre">(dstrect.w/2,</span> <span class="pre">dstrect.h/2)</span></code>.</p></li>
+<li><p><strong>flip_x</strong> (<em>bool</em>) -- Flip the drawn texture portion horizontally (x - axis).</p></li>
+<li><p><strong>flip_y</strong> (<em>bool</em>) -- Flip the drawn texture portion vertically (y - axis).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.draw_triangle">
+<span class="sig-name descname"><span class="pre">draw_triangle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Texture.draw_triangle" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Copy a triangle portion of the texture to the rendering target using the given coordinates</span></div>
+<div class="line"><span class="signature">draw_triangle(p1_xy, p2_xy, p3_xy, p1_uv=(0.0, 0.0), p2_uv=(1.0, 1.0), p3_uv=(0.0, 1.0), p1_mod=(255, 255, 255, 255), p2_mod=(255, 255, 255, 255), p3_mod=(255, 255, 255, 255)) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p1_xy</strong> -- The first vertex coordinate on the rendering target.</p></li>
+<li><p><strong>p2_xy</strong> -- The second vertex coordinate on the rendering target.</p></li>
+<li><p><strong>p3_xy</strong> -- The third vertex coordinate on the rendering target.</p></li>
+<li><p><strong>p1_uv</strong> -- The first UV coordinate of the triangle portion.</p></li>
+<li><p><strong>p2_uv</strong> -- The second UV coordinate of the triangle portion.</p></li>
+<li><p><strong>p3_uv</strong> -- The third UV coordinate of the triangle portion.</p></li>
+<li><p><strong>p1_mod</strong> -- The first vertex color modulation.</p></li>
+<li><p><strong>p2_mod</strong> -- The second vertex color modulation.</p></li>
+<li><p><strong>p3_mod</strong> -- The third vertex color modulation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.draw_quad">
+<span class="sig-name descname"><span class="pre">draw_quad</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Texture.draw_quad" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Copy a quad portion of the texture to the rendering target using the given coordinates</span></div>
+<div class="line"><span class="signature">draw_quad(p1_xy, p2_xy, p3_xy, p4_xy, p1_uv=(0.0, 0.0), p2_uv=(1.0, 0.0), p3_uv=(1.0, 1.0), p4_uv=(0.0, 1.0), p1_mod=(255, 255, 255, 255), p2_mod=(255, 255, 255, 255), p3_mod=(255, 255, 255, 255), p4_mod=(255, 255, 255, 255)) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p1_xy</strong> -- The first vertex coordinate on the rendering target.</p></li>
+<li><p><strong>p2_xy</strong> -- The second vertex coordinate on the rendering target.</p></li>
+<li><p><strong>p3_xy</strong> -- The third vertex coordinate on the rendering target.</p></li>
+<li><p><strong>p4_xy</strong> -- The fourth vertex coordinate on the rendering target.</p></li>
+<li><p><strong>p1_uv</strong> -- The first UV coordinate of the quad portion.</p></li>
+<li><p><strong>p2_uv</strong> -- The second UV coordinate of the quad portion.</p></li>
+<li><p><strong>p3_uv</strong> -- The third UV coordinate of the quad portion.</p></li>
+<li><p><strong>p4_uv</strong> -- The fourth UV coordinate of the quad portion.</p></li>
+<li><p><strong>p1_mod</strong> -- The first vertex color modulation.</p></li>
+<li><p><strong>p2_mod</strong> -- The second vertex color modulation.</p></li>
+<li><p><strong>p3_mod</strong> -- The third vertex color modulation.</p></li>
+<li><p><strong>p4_mod</strong> -- The fourth vertex color modulation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Texture.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Texture.update" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Update the texture with Surface (slow operation, use sparingly)</span></div>
+<div class="line"><span class="signature">update(surface, area=None) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surface</strong> (<a class="reference internal" href="surface.html#pygame.Surface" title="pygame.Surface"><em>Surface</em></a>) -- The source surface.</p></li>
+<li><p><strong>area</strong> -- The rectangular area of the texture to update.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a fairly slow function, intended for use with static textures
+that do not change often.</p>
+<p>If the texture is intended to be updated often, it is preferred to create
+the texture as streaming and use the locking functions.</p>
+<p>While this function will work with streaming textures, for optimization
+reasons you may not get the pixels back if you lock the texture afterward.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image">
+<span class="sig-prename descclassname"><span class="pre">pygame._sdl2.video.</span></span><span class="sig-name descname"><span class="pre">Image</span></span><a class="headerlink" href="#pygame._sdl2.video.Image" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">pygame object that represents a portion of a texture</span></div>
+<div class="line"><span class="signature">Image(texture_or_image, srcrect=None) -&gt; Image</span></div>
+</div>
+<table class="toc docutils align-default">
+<tbody>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.angle">pygame._sdl2.video.Image.angle</a></div>
+</td>
+<td>—</td>
+<td>Get and set the angle the Image draws itself with</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.flip_x">pygame._sdl2.video.Image.flip_x</a></div>
+</td>
+<td>—</td>
+<td>Get or set whether the Image is flipped on the x axis</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.flip_y">pygame._sdl2.video.Image.flip_y</a></div>
+</td>
+<td>—</td>
+<td>Get or set whether the Image is flipped on the y axis</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.color">pygame._sdl2.video.Image.color</a></div>
+</td>
+<td>—</td>
+<td>Get or set the Image color modifier</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.alpha">pygame._sdl2.video.Image.alpha</a></div>
+</td>
+<td>—</td>
+<td>Get or set the Image alpha modifier (0-255)</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.blend_mode">pygame._sdl2.video.Image.blend_mode</a></div>
+</td>
+<td>—</td>
+<td>Get or set the blend mode for the Image</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.texture">pygame._sdl2.video.Image.texture</a></div>
+</td>
+<td>—</td>
+<td>Get or set the Texture the Image is based on</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.srcrect">pygame._sdl2.video.Image.srcrect</a></div>
+</td>
+<td>—</td>
+<td>Get or set the Rect the Image is based on</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.origin">pygame._sdl2.video.Image.origin</a></div>
+</td>
+<td>—</td>
+<td>Get or set the Image's origin of rotation</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.get_rect">pygame._sdl2.video.Image.get_rect</a></div>
+</td>
+<td>—</td>
+<td>Get the rectangular area of the Image</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Image.draw">pygame._sdl2.video.Image.draw</a></div>
+</td>
+<td>—</td>
+<td>Copy a portion of the Image to the rendering target</td>
+</tr>
+</tbody>
+</table>
+<p>Creates an Image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>texture_or_image</strong> (<a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><em>Texture</em></a><em> | </em><a class="reference internal" href="#pygame._sdl2.video.Image" title="pygame._sdl2.video.Image"><em>Image</em></a>) -- The Texture or an existing Image
+object to create the Image from.</p></li>
+<li><p><strong>srcrect</strong> -- The rectangular portion of the Texture or Image object
+passed to <code class="docutils literal notranslate"><span class="pre">texture_or_image</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+<p>An <a class="reference internal" href="#pygame._sdl2.video.Image" title="pygame._sdl2.video.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> object represents a portion of a <a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a>. Specifically,
+they can be used to store and manipulate arguments for <a class="reference internal" href="#pygame._sdl2.video.Texture.draw" title="pygame._sdl2.video.Texture.draw"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Texture.draw()</span></code></a>
+in a more user-friendly way.</p>
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.angle">
+<span class="sig-name descname"><span class="pre">angle</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.angle" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get and set the angle the Image draws itself with</span></div>
+<div class="line"><span class="signature">angle -&gt; float</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.flip_x">
+<span class="sig-name descname"><span class="pre">flip_x</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.flip_x" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set whether the Image is flipped on the x axis</span></div>
+<div class="line"><span class="signature">flip_x -&gt; bool</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.flip_y">
+<span class="sig-name descname"><span class="pre">flip_y</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.flip_y" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set whether the Image is flipped on the y axis</span></div>
+<div class="line"><span class="signature">flip_y -&gt; bool</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.color">
+<span class="sig-name descname"><span class="pre">color</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.color" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the Image color modifier</span></div>
+<div class="line"><span class="signature">color -&gt; Color</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.alpha">
+<span class="sig-name descname"><span class="pre">alpha</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.alpha" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the Image alpha modifier (0-255)</span></div>
+<div class="line"><span class="signature">alpha -&gt; float</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.blend_mode">
+<span class="sig-name descname"><span class="pre">blend_mode</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.blend_mode" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the blend mode for the Image</span></div>
+<div class="line"><span class="signature">blend_mode -&gt; int</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.texture">
+<span class="sig-name descname"><span class="pre">texture</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.texture" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the Texture the Image is based on</span></div>
+<div class="line"><span class="signature">texture -&gt; Texture</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.srcrect">
+<span class="sig-name descname"><span class="pre">srcrect</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.srcrect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the Rect the Image is based on</span></div>
+<div class="line"><span class="signature">srcrect -&gt; Rect</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.origin">
+<span class="sig-name descname"><span class="pre">origin</span></span><a class="headerlink" href="#pygame._sdl2.video.Image.origin" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the Image's origin of rotation</span></div>
+<div class="line"><span class="signature">origin -&gt; (float, float) or None</span></div>
+</div>
+<p>Gets or sets the Image's origin of rotation, a 2D point relative to
+the topleft coordinates of the Image's rectangular area.</p>
+<p>An origin of <code class="docutils literal notranslate"><span class="pre">None</span></code> means no origin was set and the Image will be
+rotated around its center.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.get_rect">
+<span class="sig-name descname"><span class="pre">get_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Image.get_rect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the rectangular area of the Image</span></div>
+<div class="line"><span class="signature">get_rect() -&gt; Rect</span></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The returned <code class="xref py py-class docutils literal notranslate"><span class="pre">Rect</span></code> object might contain position information
+relative to the bounds of the <a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a> or Image object it was
+created from.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Image.draw">
+<span class="sig-name descname"><span class="pre">draw</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Image.draw" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Copy a portion of the Image to the rendering target</span></div>
+<div class="line"><span class="signature">draw(srcrect=None, dstrect=None) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>srcrect</strong> -- Source rectangle specifying a sub-Image, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for the
+entire Image.</p></li>
+<li><p><strong>dstrect</strong> -- Destination rectangle or position on the render target,
+or <code class="docutils literal notranslate"><span class="pre">None</span></code> for entire target. The Image is stretched to
+fill dstrect.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer">
+<span class="sig-prename descclassname"><span class="pre">pygame._sdl2.video.</span></span><span class="sig-name descname"><span class="pre">Renderer</span></span><a class="headerlink" href="#pygame._sdl2.video.Renderer" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">pygame object wrapping a 2D rendering context for a window</span></div>
+<div class="line"><span class="signature">Renderer(window, index=-1, accelerated=-1, vsync=False, target_texture=False) -&gt; Renderer</span></div>
+</div>
+<table class="toc docutils align-default">
+<tbody>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.draw_blend_mode">pygame._sdl2.video.Renderer.draw_blend_mode</a></div>
+</td>
+<td>—</td>
+<td>Get or set the blend mode used for primitive drawing operations</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.draw_color">pygame._sdl2.video.Renderer.draw_color</a></div>
+</td>
+<td>—</td>
+<td>Get or set the color used for primitive drawing operations</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.logical_size">pygame._sdl2.video.Renderer.logical_size</a></div>
+</td>
+<td>—</td>
+<td>Get or set the logical Renderer size (a device independent resolution for rendering)</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.scale">pygame._sdl2.video.Renderer.scale</a></div>
+</td>
+<td>—</td>
+<td>Get the drawing scale for the current rendering target</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.target">pygame._sdl2.video.Renderer.target</a></div>
+</td>
+<td>—</td>
+<td>Get or set the current rendering target</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.from_window">pygame._sdl2.video.Renderer.from_window</a></div>
+</td>
+<td>—</td>
+<td>Create a Renderer from an existing window</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.clear">pygame._sdl2.video.Renderer.clear</a></div>
+</td>
+<td>—</td>
+<td>Clear the current rendering target with the drawing color</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.present">pygame._sdl2.video.Renderer.present</a></div>
+</td>
+<td>—</td>
+<td>Update the screen with any rendering performed since the previous call</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.get_viewport">pygame._sdl2.video.Renderer.get_viewport</a></div>
+</td>
+<td>—</td>
+<td>Get the drawing area on the rendering target</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.set_viewport">pygame._sdl2.video.Renderer.set_viewport</a></div>
+</td>
+<td>—</td>
+<td>Set the drawing area on the rendering target</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.coordinates_to_window">pygame._sdl2.video.Renderer.coordinates_to_window</a></div>
+</td>
+<td>—</td>
+<td>Translates renderer coordinates to window coordinates</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.coordinates_from_window">pygame._sdl2.video.Renderer.coordinates_from_window</a></div>
+</td>
+<td>—</td>
+<td>Translates window coordinates to renderer coordinates</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.blit">pygame._sdl2.video.Renderer.blit</a></div>
+</td>
+<td>—</td>
+<td>Draw textures using a Surface-like API</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.draw_line">pygame._sdl2.video.Renderer.draw_line</a></div>
+</td>
+<td>—</td>
+<td>Draw a line</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.draw_point">pygame._sdl2.video.Renderer.draw_point</a></div>
+</td>
+<td>—</td>
+<td>Draw a point</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.draw_rect">pygame._sdl2.video.Renderer.draw_rect</a></div>
+</td>
+<td>—</td>
+<td>Draw a rectangle outline</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.fill_rect">pygame._sdl2.video.Renderer.fill_rect</a></div>
+</td>
+<td>—</td>
+<td>Draw a filled rectangle</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.draw_triangle">pygame._sdl2.video.Renderer.draw_triangle</a></div>
+</td>
+<td>—</td>
+<td>Draw a triangle outline</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.fill_triangle">pygame._sdl2.video.Renderer.fill_triangle</a></div>
+</td>
+<td>—</td>
+<td>Draw a filled triangle</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.draw_quad">pygame._sdl2.video.Renderer.draw_quad</a></div>
+</td>
+<td>—</td>
+<td>Draw a quad outline</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.fill_quad">pygame._sdl2.video.Renderer.fill_quad</a></div>
+</td>
+<td>—</td>
+<td>Draw a filled quad</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.to_surface">pygame._sdl2.video.Renderer.to_surface</a></div>
+</td>
+<td>—</td>
+<td>Read pixels from current rendering target and create a Surface (slow operation, use sparingly)</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="sdl2_video.html#pygame._sdl2.video.Renderer.compose_custom_blend_mode">pygame._sdl2.video.Renderer.compose_custom_blend_mode</a></div>
+</td>
+<td>—</td>
+<td>Compose a custom blend mode</td>
+</tr>
+</tbody>
+</table>
+<p>Creates a 2D rendering context for a window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>window</strong> (<a class="reference internal" href="#pygame._sdl2.video.Window" title="pygame._sdl2.video.Window"><em>Window</em></a>) -- The window onto which the rendering context should be
+placed.</p></li>
+<li><p><strong>index</strong> (<em>int</em>) -- The index of rendering driver to initialize, or <code class="docutils literal notranslate"><span class="pre">-1</span></code> to init
+the first supporting the requested options.</p></li>
+<li><p><strong>accelerated</strong> (<em>int</em>) -- If 1, the renderer uses hardware acceleration.
+if 0, the renderer is a software fallback.
+<code class="docutils literal notranslate"><span class="pre">-1</span></code> gives precedence to renderers using hardware
+acceleration.</p></li>
+<li><p><strong>vsync</strong> (<em>bool</em>) -- If <code class="docutils literal notranslate"><span class="pre">True</span></code> <a class="reference internal" href="#pygame._sdl2.video.Renderer.present" title="pygame._sdl2.video.Renderer.present"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Renderer.present()</span></code></a> is synchronized with
+the refresh rate.</p></li>
+<li><p><strong>target_texture</strong> (<em>bool</em>) -- Whether the renderer should support setting
+<a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a> objects as target textures, to
+enable drawing onto them.</p></li>
+</ul>
+</dd>
+</dl>
+<p><a class="reference internal" href="#pygame._sdl2.video.Renderer" title="pygame._sdl2.video.Renderer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Renderer</span></code></a> objects provide a cross-platform API for rendering 2D
+graphics onto a <a class="reference internal" href="#pygame._sdl2.video.Window" title="pygame._sdl2.video.Window"><code class="xref py py-class docutils literal notranslate"><span class="pre">Window</span></code></a>, by using either Metal (macOS), OpenGL
+(macOS, Windows, Linux) or Direct3D (Windows) rendering drivers, depending
+on what is set or is available on a system during their creation.</p>
+<p>They can be used to draw both <a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a> objects and simple points,
+lines and rectangles (which are colored based on <a class="reference internal" href="#pygame._sdl2.video.Renderer.draw_color" title="pygame._sdl2.video.Renderer.draw_color"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Renderer.draw_color</span></code></a>).</p>
+<p>If configured correctly and supported by an underlying rendering driver, Renderer
+objects can have a <a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a> object temporarily set as a target texture
+(the Texture object must have been created with target texture usage support),
+which allows those textures to be drawn onto.</p>
+<p>To present drawn content onto the window, <a class="reference internal" href="#pygame._sdl2.video.Renderer.present" title="pygame._sdl2.video.Renderer.present"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Renderer.present()</span></code></a> should be
+called. <a class="reference internal" href="#pygame._sdl2.video.Renderer.clear" title="pygame._sdl2.video.Renderer.clear"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Renderer.clear()</span></code></a> should be called to clear any drawn content
+with the set Renderer draw color.</p>
+<p>When things are drawn onto Renderer objects, an internal batching system is
+used by default to batch those &quot;draw calls&quot; together, to have all of them be
+processed in one go when <a class="reference internal" href="#pygame._sdl2.video.Renderer.present" title="pygame._sdl2.video.Renderer.present"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Renderer.present()</span></code></a> is called. This is unlike
+<a class="tooltip reference internal" href="surface.html#pygame.Surface" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Surface</span></code><span class="tooltip-content">Pygame object for representing images.</span></a> objects, on which modifications via blitting occur
+immediately, but lends well to the behavior of GPUs, as draw calls can be
+expensive on lower-end models.</p>
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.draw_blend_mode">
+<span class="sig-name descname"><span class="pre">draw_blend_mode</span></span><a class="headerlink" href="#pygame._sdl2.video.Renderer.draw_blend_mode" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the blend mode used for primitive drawing operations</span></div>
+<div class="line"><span class="signature">draw_blend_mode -&gt; int</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.draw_color">
+<span class="sig-name descname"><span class="pre">draw_color</span></span><a class="headerlink" href="#pygame._sdl2.video.Renderer.draw_color" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the color used for primitive drawing operations</span></div>
+<div class="line"><span class="signature">draw_color -&gt; Color</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.logical_size">
+<span class="sig-name descname"><span class="pre">logical_size</span></span><a class="headerlink" href="#pygame._sdl2.video.Renderer.logical_size" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the logical Renderer size (a device independent resolution for rendering)</span></div>
+<div class="line"><span class="signature">logical_size -&gt; (int width, int height)</span></div>
+</div>
+<p>Note: When the rendering target is the main window, and <code class="docutils literal notranslate"><span class="pre">logical_size</span></code>
+has not been set before, it will contain <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code> and not the size of
+the window.</p>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.scale">
+<span class="sig-name descname"><span class="pre">scale</span></span><a class="headerlink" href="#pygame._sdl2.video.Renderer.scale" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the drawing scale for the current rendering target</span></div>
+<div class="line"><span class="signature">scale -&gt; (float, float)</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.target">
+<span class="sig-name descname"><span class="pre">target</span></span><a class="headerlink" href="#pygame._sdl2.video.Renderer.target" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the current rendering target</span></div>
+<div class="line"><span class="signature">target -&gt; Texture or None</span></div>
+</div>
+<p>Gets or sets the current rendering target.
+A value of <code class="docutils literal notranslate"><span class="pre">None</span></code> means that no custom rendering target was set and the
+Renderer's window will be used as the target.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.from_window">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.from_window" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Create a Renderer from an existing window</span></div>
+<div class="line"><span class="signature">from_window(window) -&gt; Renderer</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.clear" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Clear the current rendering target with the drawing color</span></div>
+<div class="line"><span class="signature">clear() -&gt; None</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.present">
+<span class="sig-name descname"><span class="pre">present</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.present" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Update the screen with any rendering performed since the previous call</span></div>
+<div class="line"><span class="signature">present() -&gt; None</span></div>
+</div>
+<p>Presents the composed backbuffer to the screen.
+Updates the screen with any rendering performed since the previous call.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.get_viewport">
+<span class="sig-name descname"><span class="pre">get_viewport</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.get_viewport" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the drawing area on the rendering target</span></div>
+<div class="line"><span class="signature">get_viewport() -&gt; Rect</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.set_viewport">
+<span class="sig-name descname"><span class="pre">set_viewport</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.set_viewport" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the drawing area on the rendering target</span></div>
+<div class="line"><span class="signature">set_viewport(area) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>area</strong> -- A <a class="tooltip reference internal" href="rect.html#pygame.Rect" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Rect</span></code><span class="tooltip-content">pygame object for storing rectangular coordinates</span></a> or tuple representing the
+drawing area on the target, or <code class="docutils literal notranslate"><span class="pre">None</span></code> to use the
+entire area of the current rendering target.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.coordinates_to_window">
+<span class="sig-name descname"><span class="pre">coordinates_to_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.coordinates_to_window" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Translates renderer coordinates to window coordinates</span></div>
+<div class="line"><span class="signature">coordinates_to_window(point) -&gt; (float, float)</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>point</strong> -- The coordinates in render space.</p>
+</dd>
+</dl>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.6.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.coordinates_from_window">
+<span class="sig-name descname"><span class="pre">coordinates_from_window</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.coordinates_from_window" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Translates window coordinates to renderer coordinates</span></div>
+<div class="line"><span class="signature">coordinates_from_window(point) -&gt; (float, float)</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>point</strong> -- The coordinates in window space.</p>
+</dd>
+</dl>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.6.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.blit">
+<span class="sig-name descname"><span class="pre">blit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.blit" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw textures using a Surface-like API</span></div>
+<div class="line"><span class="signature">blit(source, dest, area=None, special_flags=0)-&gt; Rect</span></div>
+</div>
+<p>For compatibility purposes. Draws <a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a> objects onto the
+Renderer using a method signature similar to <a class="tooltip reference internal" href="surface.html#pygame.Surface.blit" title=""><code class="xref py py-meth docutils literal notranslate"><span class="pre">pygame.Surface.blit()</span></code><span class="tooltip-content">Draw another Surface onto this one.</span></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> -- A <a class="reference internal" href="#pygame._sdl2.video.Texture" title="pygame._sdl2.video.Texture"><code class="xref py py-class docutils literal notranslate"><span class="pre">Texture</span></code></a> or <a class="reference internal" href="#pygame._sdl2.video.Image" title="pygame._sdl2.video.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> to draw.</p></li>
+<li><p><strong>dest</strong> -- The drawing destination on the rendering target.</p></li>
+<li><p><strong>area</strong> -- The portion of the source texture or image to draw from.</p></li>
+<li><p><strong>special_flags</strong> -- have no effect at this moment.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Textures created by different Renderers cannot shared with each other!</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.draw_line">
+<span class="sig-name descname"><span class="pre">draw_line</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.draw_line" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw a line</span></div>
+<div class="line"><span class="signature">draw_line(p1, p2) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p1</strong> -- The line start point.</p></li>
+<li><p><strong>p2</strong> -- The line end point.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.draw_point">
+<span class="sig-name descname"><span class="pre">draw_point</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.draw_point" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw a point</span></div>
+<div class="line"><span class="signature">draw_point(point) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>point</strong> -- The point's coordinates.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.draw_rect">
+<span class="sig-name descname"><span class="pre">draw_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.draw_rect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw a rectangle outline</span></div>
+<div class="line"><span class="signature">draw_rect(rect)-&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rect</strong> -- The <a class="tooltip reference internal" href="rect.html#pygame.Rect" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Rect</span></code><span class="tooltip-content">pygame object for storing rectangular coordinates</span></a>-like rectangle to draw.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.fill_rect">
+<span class="sig-name descname"><span class="pre">fill_rect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.fill_rect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw a filled rectangle</span></div>
+<div class="line"><span class="signature">fill_rect(rect)-&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rect</strong> -- The <a class="tooltip reference internal" href="rect.html#pygame.Rect" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Rect</span></code><span class="tooltip-content">pygame object for storing rectangular coordinates</span></a>-like rectangle to draw.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.draw_triangle">
+<span class="sig-name descname"><span class="pre">draw_triangle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.draw_triangle" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw a triangle outline</span></div>
+<div class="line"><span class="signature">draw_triangle(p1, p2, p3) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p1</strong> -- The first triangle point.</p></li>
+<li><p><strong>p2</strong> -- The second triangle point.</p></li>
+<li><p><strong>p2</strong> -- The third triangle point.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.fill_triangle">
+<span class="sig-name descname"><span class="pre">fill_triangle</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.fill_triangle" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw a filled triangle</span></div>
+<div class="line"><span class="signature">fill_triangle(p1, p2, p3) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p1</strong> -- The first triangle point.</p></li>
+<li><p><strong>p2</strong> -- The second triangle point.</p></li>
+<li><p><strong>p2</strong> -- The third triangle point.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.draw_quad">
+<span class="sig-name descname"><span class="pre">draw_quad</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.draw_quad" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw a quad outline</span></div>
+<div class="line"><span class="signature">draw_quad(p1, p2, p3, p4) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p1</strong> -- The first quad point.</p></li>
+<li><p><strong>p2</strong> -- The second quad point.</p></li>
+<li><p><strong>p2</strong> -- The third quad point.</p></li>
+<li><p><strong>p2</strong> -- The fourth quad point.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.fill_quad">
+<span class="sig-name descname"><span class="pre">fill_quad</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.fill_quad" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Draw a filled quad</span></div>
+<div class="line"><span class="signature">fill_quad(p1, p2, p3, p4) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>p1</strong> -- The first quad point.</p></li>
+<li><p><strong>p2</strong> -- The second quad point.</p></li>
+<li><p><strong>p2</strong> -- The third quad point.</p></li>
+<li><p><strong>p2</strong> -- The fourth quad point.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.to_surface">
+<span class="sig-name descname"><span class="pre">to_surface</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.to_surface" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Read pixels from current rendering target and create a Surface (slow operation, use sparingly)</span></div>
+<div class="line"><span class="signature">to_surface(surface=None, area=None)-&gt; Surface</span></div>
+</div>
+<p>Read pixel data from the current rendering target and return a
+<a class="tooltip reference internal" href="surface.html#pygame.Surface" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Surface</span></code><span class="tooltip-content">Pygame object for representing images.</span></a> containing it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>surface</strong> (<a class="reference internal" href="surface.html#pygame.Surface" title="pygame.Surface"><em>Surface</em></a>) -- A <a class="tooltip reference internal" href="surface.html#pygame.Surface" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Surface</span></code><span class="tooltip-content">Pygame object for representing images.</span></a> object to read the pixel
+data into. It must be large enough to fit the area, otherwise
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised.
+If set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, a new surface will be created.</p></li>
+<li><p><strong>area</strong> -- The area of the screen to read pixels from. The area is
+clipped to fit inside the viewport.
+If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the entire viewport is used.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a very slow operation, due to the overhead of the VRAM to RAM
+data transfer and the cost of creating a potentially large
+<a class="tooltip reference internal" href="surface.html#pygame.Surface" title=""><code class="xref py py-class docutils literal notranslate"><span class="pre">pygame.Surface</span></code><span class="tooltip-content">Pygame object for representing images.</span></a>. It should not be used frequently.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame._sdl2.video.Renderer.compose_custom_blend_mode">
+<span class="sig-name descname"><span class="pre">compose_custom_blend_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame._sdl2.video.Renderer.compose_custom_blend_mode" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Compose a custom blend mode</span></div>
+<div class="line"><span class="signature">compose_custom_blend_mode(color_mode, alpha_mode) -&gt; int</span></div>
+</div>
+<p>Compose a custom blend mode.
+See <a class="reference external" href="https://wiki.libsdl.org/SDL2/SDL_ComposeCustomBlendMode">https://wiki.libsdl.org/SDL2/SDL_ComposeCustomBlendMode</a> for more information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>color_mode</strong> -- A tuple <code class="docutils literal notranslate"><span class="pre">(srcColorFactor,</span> <span class="pre">dstColorFactor,</span> <span class="pre">colorOperation)</span></code></p></li>
+<li><p><strong>alpha_mode</strong> -- A tuple <code class="docutils literal notranslate"><span class="pre">(srcAlphaFactor,</span> <span class="pre">dstAlphaFactor,</span> <span class="pre">alphaOperation)</span></code></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A blend mode to be used with <code class="xref py py-meth docutils literal notranslate"><span class="pre">Renderer.set_draw_blend_mode()</span></code> and <code class="xref py py-meth docutils literal notranslate"><span class="pre">Texture.set_blend_mode()</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+<br /><br />
+<hr />
+<a href="https://github.com/pygame-community/pygame-ce/edit/main/docs/reST/ref/sdl2_video.rst" rel="nofollow">Edit on GitHub</a>
+            <div class="clearer"></div>
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="sndarray.html" title="pygame.sndarray"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="sdl2_controller.html" title="pygame._sdl2.controller"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pygame-ce v2.5.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.sdl2_video</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2000-2022, pygame developers, 2023 pygame-ce developers.
+    </div>
+  </body>
+</html>

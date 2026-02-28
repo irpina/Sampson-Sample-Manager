@@ -1,0 +1,1 @@
+../../../Resources/pygame/_sdl2/window.pyi
