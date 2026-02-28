@@ -1,1 +1,0 @@
-../../Resources/pygame/midi.pyi

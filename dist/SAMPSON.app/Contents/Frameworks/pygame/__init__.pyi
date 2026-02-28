@@ -1,1 +1,0 @@
-../../Resources/pygame/__init__.pyi
