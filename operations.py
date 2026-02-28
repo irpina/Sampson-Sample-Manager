@@ -7,6 +7,10 @@ import state
 import theme
 import constants
 from log_panel import log
+from conversion import (
+    check_ffmpeg, convert_file, get_target_extension,
+    parse_sample_rate, parse_bit_depth, parse_channels
+)
 
 
 def _apply_path_limit(new_name: str, dest_path_str: str, limit: int) -> str:
@@ -91,15 +95,40 @@ def run_tool():
     state.status_var.set("Collecting files\u2026")
     path_limit  = constants.PROFILES[state.profile_var.get()]["path_limit"]
     struct_mode = state.struct_mode_var.get()
+    
+    # Build conversion options if enabled
+    convert_options = None
+    if state.convert_enabled_var and state.convert_enabled_var.get():
+        if not check_ffmpeg():
+            messagebox.showerror(
+                "Conversion Error",
+                "ffmpeg is required for audio conversion.\n\n"
+                "Install:\n"
+                "- Windows: Download from ffmpeg.org and add to PATH\n"
+                "- macOS: brew install ffmpeg\n"
+                "- Linux: sudo apt install ffmpeg",
+                parent=state.root
+            )
+            state.run_btn.configure(text="Run", state="normal")
+            return
+        
+        convert_options = {
+            "output_format": state.convert_format_var.get(),
+            "sample_rate": parse_sample_rate(state.convert_sample_rate_var.get()),
+            "bit_depth": parse_bit_depth(state.convert_bit_depth_var.get()),
+            "channels": parse_channels(state.convert_channels_var.get()),
+            "normalize": state.convert_normalize_var.get() if state.convert_normalize_var else False,
+        }
+    
     threading.Thread(
         target=_run_worker,
         args=(source, dest, state.move_var.get(), state.dry_var.get(),
-              path_limit, state.no_rename_var.get(), struct_mode),
+              path_limit, state.no_rename_var.get(), struct_mode, convert_options),
         daemon=True,
     ).start()
 
 
-def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode):
+def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode, convert_options=None):
     files = []
     for folder_path in state._selected_folders:
         p = Path(folder_path)
@@ -118,14 +147,21 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
 
     label  = "MOVE" if move_files else "COPY"
     prefix = "[DRY] " if dry else ""
+    conv_label = " [convert]" if convert_options else ""
 
     for i, f in enumerate(files, 1):
         new_name, rel_sub = _compute_output(f, source, dest,
                                             no_rename, struct_mode, path_limit)
+        
+        # Apply extension change if converting
+        if convert_options:
+            new_name = Path(new_name).stem + get_target_extension(
+                convert_options["output_format"])
+        
         sub_dir = dest / rel_sub if rel_sub else dest
         target  = sub_dir / new_name
         dest_display = f"{rel_sub}/{new_name}" if rel_sub else new_name
-        msg = f"{prefix}{label}: {f.name}  \u2192  {dest_display}"
+        msg = f"{prefix}{label}{conv_label}: {f.name}  \u2192  {dest_display}"
 
         state.root.after(0, lambda m=msg: log(m))
         state.root.after(0, lambda pct=int(i / total * 100): state.progress_var.set(pct))
@@ -133,10 +169,27 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
 
         if not dry:
             sub_dir.mkdir(parents=True, exist_ok=True)
-            if move_files:
-                shutil.move(str(f), str(target))
+            
+            if convert_options:
+                # Convert file
+                try:
+                    success = convert_file(f, target, **convert_options)
+                    if not success:
+                        error_detail = state._last_conversion_error if state._last_conversion_error else "Unknown error"
+                        state.root.after(0, lambda fn=f.name, err=error_detail: log(f"ERROR: Failed to convert {fn}: {err[:200]}"))
+                        state._last_conversion_error = None  # Clear after logging
+                        continue
+                    if move_files:
+                        f.unlink()  # Delete original after conversion
+                except Exception as e:
+                    state.root.after(0, lambda fn=f.name, msg=str(e): log(f"ERROR: Failed to convert {fn}: {msg}"))
+                    continue
             else:
-                shutil.copy2(str(f), str(target))
+                # Standard copy/move
+                if move_files:
+                    shutil.move(str(f), str(target))
+                else:
+                    shutil.copy2(str(f), str(target))
 
     s = "s" if total != 1 else ""
     state.root.after(0, lambda: log("Done."))
