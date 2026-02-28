@@ -8,3 +8,5 @@ __pycache__/
 
 # Session notes (may contain personal info / local paths)
 CLAUDE_SESSION.md
+notarize.sh
+*.zip
