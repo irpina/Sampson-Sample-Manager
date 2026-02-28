@@ -182,3 +182,15 @@ SAMPSON/
 - Destination collisions are not handled — if a renamed file already exists at the target it will be overwritten silently.
 - Audio conversion uses bundled ffmpeg (via `static-ffmpeg`).
 - Preview is capped at **500 rows** for performance.
+
+---
+
+## Author
+
+Created by [@irpina](https://github.com/irpina)
+
+---
+
+## License
+
+MIT License — see LICENSE file for details.
