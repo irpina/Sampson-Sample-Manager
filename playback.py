@@ -7,16 +7,20 @@ import state
 
 # ── Backend selection ────────────────────────────────────────────────────────
 # NSSound on macOS (zero extra deps); pygame fallback for Windows/Linux.
-if sys.platform == "darwin":
-    from AppKit import NSSound as _NSSound
-    _USE_NSSOUND = True
-else:
-    import pygame.mixer as _mixer
-    _mixer.init()
-    _USE_NSSOUND = False
+# NOTE: AppKit is imported lazily to avoid race conditions with tkinter init.
+_USE_NSSOUND = sys.platform == "darwin"
+_NSSound = None  # Lazy-loaded on first use
+_current_index = -1
+_ns_sound = None
 
-_current_index = -1   # index into preview tree item list
-_ns_sound      = None # active NSSound instance (macOS only)
+
+def _ensure_nssound():
+    """Lazy-load NSSound to avoid AppKit initialization race with tkinter."""
+    global _NSSound
+    if _NSSound is None and _USE_NSSOUND:
+        from AppKit import NSSound
+        _NSSound = NSSound
+    return _NSSound
 
 
 # ── Internal helpers ─────────────────────────────────────────────────────────
@@ -44,6 +48,7 @@ def _is_busy() -> bool:
     if _USE_NSSOUND:
         return _ns_sound is not None and _ns_sound.isPlaying()
     else:
+        import pygame.mixer as _mixer
         return _mixer.music.get_busy()
 
 
@@ -59,7 +64,8 @@ def play():
         return
     try:
         if _USE_NSSOUND:
-            _ns_sound = _NSSound.alloc().initWithContentsOfFile_byReference_(
+            NSSound = _ensure_nssound()
+            _ns_sound = NSSound.alloc().initWithContentsOfFile_byReference_(
                 str(state._playback_file), True)
             if _ns_sound:
                 _ns_sound.play()
@@ -67,6 +73,7 @@ def play():
                 _update_transport_state()
                 state.root.after(200, _poll_playback)
         else:
+            import pygame.mixer as _mixer
             _mixer.music.load(str(state._playback_file))
             _mixer.music.play()
             state._is_playing = True
@@ -84,6 +91,7 @@ def stop():
             _ns_sound.stop()
         _ns_sound = None
     else:
+        import pygame.mixer as _mixer
         _mixer.music.stop()
     state._is_playing = False
     _update_transport_state()
@@ -150,7 +158,7 @@ def _update_transport_state():
         icon = "■" if state._is_playing else "▶"
         state.transport_play_btn.configure(text=icon)
     has_file = state._playback_file is not None
-    items    = _tree_items()
+    items = _tree_items()
     can_prev = has_file and _current_index > 0
     can_next = has_file and _current_index < len(items) - 1
     for btn, enabled in [
