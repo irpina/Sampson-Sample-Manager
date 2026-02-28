@@ -271,12 +271,148 @@ def build_center(parent):
                       dropdown_hover_color=theme.CYAN_CONT,
                       corner_radius=8).grid(row=7, column=0, columnspan=2, sticky="ew", padx=16)
 
-    # Row 8 is the expanding spacer
-    frame.rowconfigure(8, weight=1)
+    # ── Audio Conversion ──────────────────────────────────────────────────────
+    ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
+        row=8, column=0, columnspan=2, sticky="ew", padx=16, pady=(10, 8))
+
+    ctk.CTkLabel(frame, text="Audio conversion",
+                 font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
+                 anchor="center").grid(row=9, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
+
+    # Initialize conversion variables
+    state.convert_enabled_var = tk.BooleanVar(value=False)
+    state.convert_format_var = tk.StringVar(value="wav")
+    state.convert_sample_rate_var = tk.StringVar(value="keep")
+    state.convert_bit_depth_var = tk.StringVar(value="keep")
+    state.convert_channels_var = tk.StringVar(value="keep")
+    state.convert_normalize_var = tk.BooleanVar(value=False)
+    state.convert_follow_profile_var = tk.BooleanVar(value=True)
+
+    # Conversion enable checkbox
+    conv_cb = ctk.CTkCheckBox(frame, text="Convert files",
+                              variable=state.convert_enabled_var,
+                              fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
+                              checkmark_color=theme.BG_ROOT,
+                              border_color=theme.OUTLINE_VAR,
+                              text_color=theme.FG_ON_SURF,
+                              corner_radius=4,
+                              font=(theme.FONT_UI, 10))
+    conv_cb.grid(row=10, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    _add_tooltip(conv_cb, "Convert audio files to target format/sample rate")
+
+    # Conversion options frame
+    conv_opts = ctk.CTkFrame(frame, fg_color=theme.BG_SURF1,
+                             corner_radius=8, border_width=1,
+                             border_color=theme.OUTLINE_VAR)
+    conv_opts.grid(row=11, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
+
+    # Format row
+    fmt_row = ctk.CTkFrame(conv_opts, fg_color="transparent")
+    fmt_row.pack(fill="x", padx=10, pady=(8, 4))
+    ctk.CTkLabel(fmt_row, text="Format:",
+                 font=(theme.FONT_UI, 9),
+                 text_color=theme.FG_VARIANT).pack(side="left")
+    fmt_combo = ctk.CTkComboBox(fmt_row,
+                                values=["wav", "aiff"],
+                                variable=state.convert_format_var,
+                                width=_px(90),
+                                state="readonly",
+                                font=(theme.FONT_UI, 9),
+                                fg_color=theme.BG_SURF2,
+                                text_color=theme.FG_ON_SURF,
+                                border_color=theme.OUTLINE_VAR,
+                                button_color=theme.CYAN_CONT,
+                                button_hover_color=theme.CYAN,
+                                dropdown_fg_color=theme.BG_SURF1,
+                                dropdown_text_color=theme.FG_ON_SURF,
+                                dropdown_hover_color=theme.CYAN_CONT)
+    fmt_combo.pack(side="left", padx=(8, 0))
+
+    # Sample rate row
+    sr_row = ctk.CTkFrame(conv_opts, fg_color="transparent")
+    sr_row.pack(fill="x", padx=10, pady=4)
+    ctk.CTkLabel(sr_row, text="Sample rate:",
+                 font=(theme.FONT_UI, 9),
+                 text_color=theme.FG_VARIANT).pack(side="left")
+    sr_combo = ctk.CTkComboBox(sr_row,
+                               values=["keep original", "44.1k", "48k", "96k"],
+                               variable=state.convert_sample_rate_var,
+                               width=_px(110),
+                               state="readonly",
+                               font=(theme.FONT_UI, 9),
+                               fg_color=theme.BG_SURF2,
+                               text_color=theme.FG_ON_SURF,
+                               border_color=theme.OUTLINE_VAR,
+                               button_color=theme.CYAN_CONT,
+                               button_hover_color=theme.CYAN,
+                               dropdown_fg_color=theme.BG_SURF1,
+                               dropdown_text_color=theme.FG_ON_SURF,
+                               dropdown_hover_color=theme.CYAN_CONT)
+    sr_combo.pack(side="left", padx=(8, 0))
+
+    # Bit depth row
+    bd_row = ctk.CTkFrame(conv_opts, fg_color="transparent")
+    bd_row.pack(fill="x", padx=10, pady=4)
+    ctk.CTkLabel(bd_row, text="Bit depth:",
+                 font=(theme.FONT_UI, 9),
+                 text_color=theme.FG_VARIANT).pack(side="left")
+    bd_combo = ctk.CTkComboBox(bd_row,
+                               values=["keep", "16bit", "24bit", "32bit"],
+                               variable=state.convert_bit_depth_var,
+                               width=_px(90),
+                               state="readonly",
+                               font=(theme.FONT_UI, 9),
+                               fg_color=theme.BG_SURF2,
+                               text_color=theme.FG_ON_SURF,
+                               border_color=theme.OUTLINE_VAR,
+                               button_color=theme.CYAN_CONT,
+                               button_hover_color=theme.CYAN,
+                               dropdown_fg_color=theme.BG_SURF1,
+                               dropdown_text_color=theme.FG_ON_SURF,
+                               dropdown_hover_color=theme.CYAN_CONT)
+    bd_combo.pack(side="left", padx=(8, 0))
+
+    # Channels row
+    ch_row = ctk.CTkFrame(conv_opts, fg_color="transparent")
+    ch_row.pack(fill="x", padx=10, pady=(4, 8))
+    ctk.CTkLabel(ch_row, text="Channels:",
+                 font=(theme.FONT_UI, 9),
+                 text_color=theme.FG_VARIANT).pack(side="left")
+    ch_combo = ctk.CTkComboBox(ch_row,
+                               values=["keep", "mono", "stereo"],
+                               variable=state.convert_channels_var,
+                               width=_px(90),
+                               state="readonly",
+                               font=(theme.FONT_UI, 9),
+                               fg_color=theme.BG_SURF2,
+                               text_color=theme.FG_ON_SURF,
+                               border_color=theme.OUTLINE_VAR,
+                               button_color=theme.CYAN_CONT,
+                               button_hover_color=theme.CYAN,
+                               dropdown_fg_color=theme.BG_SURF1,
+                               dropdown_text_color=theme.FG_ON_SURF,
+                               dropdown_hover_color=theme.CYAN_CONT)
+    ch_combo.pack(side="left", padx=(8, 0))
+
+    # Enable/disable options based on convert_enabled
+    def _toggle_conv_opts(*_):
+        enabled = state.convert_enabled_var.get()
+        new_state = "readonly" if enabled else "disabled"
+        for combo in [fmt_combo, sr_combo, bd_combo, ch_combo]:
+            try:
+                combo.configure(state=new_state)
+            except Exception:
+                pass
+
+    state.convert_enabled_var.trace_add("write", _toggle_conv_opts)
+    _toggle_conv_opts()  # Set initial state
+
+    # Row 12 is the expanding spacer
+    frame.rowconfigure(12, weight=1)
 
     # ── Transport controls ────────────────────────────────────────────────────
     transport_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    transport_frame.grid(row=9, column=0, columnspan=2, pady=(20, 10))
+    transport_frame.grid(row=13, column=0, columnspan=2, pady=(10, 10))
 
     _tr_kw = dict(
         width=_px(36), corner_radius=8,
@@ -298,29 +434,32 @@ def build_center(parent):
     state.transport_next_btn.configure(state="disabled")
 
     ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=10, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
+        row=14, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ctk.CTkButton(frame, text="Run",
                                    font=(theme.FONT_UI, 12, "bold"),
                                    fg_color=theme.CYAN, text_color=theme.BG_ROOT,
                                    hover_color=theme.CYAN_CONT, corner_radius=8,
                                    command=operations.run_tool)
-    state.run_btn.grid(row=11, column=0, columnspan=2, padx=16, sticky="ew")
+    state.run_btn.grid(row=15, column=0, columnspan=2, padx=16, sticky="ew")
 
     ctk.CTkButton(frame, text="Clear log",
                   fg_color="transparent", text_color=theme.FG_MUTED,
                   hover_color=theme.BG_SURF2, border_width=1,
                   border_color=theme.OUTLINE_VAR, corner_radius=8,
-                  command=log_panel.clear_log).grid(row=12, column=0, columnspan=2, padx=16, pady=(10, 16))
+                  command=log_panel.clear_log).grid(row=16, column=0, columnspan=2, padx=16, pady=(10, 16))
 
     # Ensure critical UI elements don't collapse on resize
-    # Row 8 is the expanding spacer - it can shrink
-    # Rows 6-7 (profile), 9 (transport), 11-12 (buttons) need minimum height
+    # Row 12 is the expanding spacer - it can shrink
+    # Rows 6-7 (profile), 9-11 (conversion), 13 (transport), 15-16 (buttons) need minimum height
     frame.rowconfigure(6, weight=0, minsize=_px(20))
     frame.rowconfigure(7, weight=0, minsize=_px(40))
-    frame.rowconfigure(9, weight=0, minsize=_px(50))
-    frame.rowconfigure(11, weight=0, minsize=_px(45))
-    frame.rowconfigure(12, weight=0, minsize=_px(50))
+    frame.rowconfigure(9, weight=0, minsize=_px(20))
+    frame.rowconfigure(11, weight=0, minsize=_px(140))
+    frame.rowconfigure(12, weight=1)
+    frame.rowconfigure(13, weight=0, minsize=_px(50))
+    frame.rowconfigure(15, weight=0, minsize=_px(45))
+    frame.rowconfigure(16, weight=0, minsize=_px(50))
 
     return frame
 
@@ -423,7 +562,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.2.4",
+    ctk.CTkLabel(frame, text="v0.3.0",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
@@ -483,6 +622,13 @@ def toggle_theme():
     saved_active      = state.active_dir_var.get()  if state.active_dir_var  else ""
     saved_profile     = state.profile_var.get()     if state.profile_var     else "Generic"
     saved_struct_mode = state.struct_mode_var.get() if state.struct_mode_var else "flat"
+    
+    # Save conversion settings
+    saved_conv_enabled = state.convert_enabled_var.get() if state.convert_enabled_var else False
+    saved_conv_format = state.convert_format_var.get() if state.convert_format_var else "wav"
+    saved_conv_sr = state.convert_sample_rate_var.get() if state.convert_sample_rate_var else "keep"
+    saved_conv_bd = state.convert_bit_depth_var.get() if state.convert_bit_depth_var else "keep"
+    saved_conv_ch = state.convert_channels_var.get() if state.convert_channels_var else "keep"
 
     state._is_dark = not state._is_dark
     theme._apply_theme_colors(state._is_dark)
@@ -503,6 +649,18 @@ def toggle_theme():
         state.dest_var.set(saved_dest)
     if saved_source:
         state.source_var.set(saved_source)   # trace → navigate_to(source_root)
+    
+    # Restore conversion settings
+    if state.convert_enabled_var:
+        state.convert_enabled_var.set(saved_conv_enabled)
+    if state.convert_format_var:
+        state.convert_format_var.set(saved_conv_format)
+    if state.convert_sample_rate_var:
+        state.convert_sample_rate_var.set(saved_conv_sr)
+    if state.convert_bit_depth_var:
+        state.convert_bit_depth_var.set(saved_conv_bd)
+    if state.convert_channels_var:
+        state.convert_channels_var.set(saved_conv_ch)
 
     if saved_active and saved_active != saved_source and Path(saved_active).is_dir():
         state.root.after(50, lambda: browser.navigate_to(saved_active))
@@ -542,6 +700,54 @@ def build_app():
     state.active_dir_var.trace_add("write", lambda *_: playback.reset())
     state.source_var.trace_add("write", browser.on_source_var_changed)
     state.no_rename_var.trace_add("write",   lambda *_: preview.refresh_preview())
-    state.profile_var.trace_add("write",    lambda *_: preview.refresh_preview())
     state.struct_mode_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.root.bind("<Return>", lambda _e: operations.run_tool())
+
+    # Profile change handler - auto-apply conversion preset + refresh preview
+    def _on_profile_changed(*_):
+        """Apply device conversion preset when profile changes."""
+        if (state.convert_follow_profile_var and 
+            state.convert_follow_profile_var.get()):
+            
+            profile_name = state.profile_var.get()
+            profile = constants.PROFILES.get(profile_name, {})
+            preset = profile.get("conversion")
+            
+            if preset:
+                state.convert_enabled_var.set(True)
+                state.convert_format_var.set(preset.get("format", "wav"))
+                
+                sr = preset.get("sample_rate")
+                if sr == 44100:
+                    state.convert_sample_rate_var.set("44.1k")
+                elif sr == 48000:
+                    state.convert_sample_rate_var.set("48k")
+                elif sr == 96000:
+                    state.convert_sample_rate_var.set("96k")
+                else:
+                    state.convert_sample_rate_var.set("keep")
+                
+                bd = preset.get("bit_depth")
+                if bd == 16:
+                    state.convert_bit_depth_var.set("16bit")
+                elif bd == 24:
+                    state.convert_bit_depth_var.set("24bit")
+                elif bd == 32:
+                    state.convert_bit_depth_var.set("32bit")
+                else:
+                    state.convert_bit_depth_var.set("keep")
+                
+                ch = preset.get("channels")
+                if ch == 1:
+                    state.convert_channels_var.set("mono")
+                elif ch == 2:
+                    state.convert_channels_var.set("stereo")
+                else:
+                    state.convert_channels_var.set("keep")
+            else:
+                # No preset for this device - disable conversion
+                state.convert_enabled_var.set(False)
+        
+        preview.refresh_preview()
+    
+    state.profile_var.trace_add("write", _on_profile_changed)

@@ -2,7 +2,7 @@
   <img src="sampsontransparent2.png" alt="SAMPSON Logo" width="400">
 </p>
 
-**Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, preview exactly how they'll be renamed and structured, then copy or move them in one click.
+**Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux, macOS) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, convert formats for specific devices, preview exactly how they'll be renamed and structured, then copy or move them in one click.
 
 > Pre-built binaries (Windows .exe and Linux binary) available on the [Releases](https://github.com/irpina/Splice-Sample-Flattener/releases) page — no Python required.
 
@@ -11,11 +11,14 @@
 ## Features
 
 - **Audio playback** — click any file in the preview to hear it instantly; navigate with ◀ ▶ ▶▶ transport controls or arrow keys
-- **Hardware profiles** — path-limit enforcement for specific devices:
+- **Hardware profiles** — path-limit enforcement and format presets for specific devices:
   - **Generic** — no limit
-  - **M8** — 127-character SD path limit (Dirtywave M8)
+  - **M8** — 127-character SD path limit (Dirtywave M8), auto-convert to 44.1kHz/16-bit WAV
   - **MPC One** — 255-character limit
   - **SP-404mkII** — 255-character limit
+  - **Elektron Digitakt** — Auto-convert to 48kHz/16-bit mono WAV
+  - **Elektron Analog Rytm** — Auto-convert to 48kHz/16-bit WAV
+  - **Elektron Syntakt** — Auto-convert to 48kHz/16-bit WAV
 - **Folder structure modes** — choose how files land in the destination:
   - **Flat** — all files together in one folder
   - **Mirror** — preserve the full source directory tree
@@ -26,11 +29,19 @@
 - **Dry run mode** — default-on; logs every action without touching the filesystem
 - **Operation log** — colour-coded (red = move, green = copy, yellow = dry run, cyan = done)
 - **Dark / Light theme** — MD3 near-black palette or warm 60s/70s pastels; toggle preserves your session
+- **Audio conversion** — Convert samples to device-compatible formats:
+  - Output formats: WAV, AIFF
+  - Sample rates: 44.1kHz, 48kHz, 96kHz (or keep original)
+  - Bit depths: 16-bit, 24-bit, 32-bit float (or keep original)
+  - Channel conversion: stereo ↔ mono
+  - Auto-apply presets when selecting hardware profiles
 - **HiDPI / 4K support** — DPI-aware on Windows; scales via system settings on Linux/macOS
 
 ### Supported formats
 
-`.wav` · `.aiff` · `.aif` · `.flac` · `.mp3` · `.ogg`
+**Input:** `.wav` · `.aiff` · `.aif` · `.flac` · `.mp3` · `.ogg`
+
+**Output:** `.wav` · `.aif`
 
 ---
 
@@ -43,11 +54,15 @@ Grab the latest `SAMPSON.exe` from the [Releases](https://github.com/irpina/Spli
 ## Running from source
 
 ```bash
-pip install pygame-ce
+pip install -r requirements.txt
 python main.py
 ```
 
-Requires Python 3.10+. All UI is standard-library tkinter; `pygame-ce` is the only third-party dependency (audio playback).
+Requires Python 3.10+. Core dependencies:
+- `pygame-ce` — audio playback
+- `customtkinter` — modern UI widgets
+- `pydub` — audio conversion
+- `imageio-ffmpeg` — bundled ffmpeg binary (no separate install needed)
 
 ---
 
@@ -112,17 +127,20 @@ Click **☀ Light** / **☾ Dark** in the top-right corner to switch themes. Sou
 
 ```
 SAMPSON/
-├── main.py          # entry point — DPI setup, creates root window, starts app
-├── state.py         # all shared mutable globals (widgets, vars, flags)
-├── constants.py     # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
-├── dpi.py           # Windows DPI awareness and _px() scaling helper
-├── theme.py         # colour constants, _apply_theme_colors(), setup_styles()
-├── log_panel.py     # operation log helpers
-├── operations.py    # file copy/move worker, _compute_output(), path truncation
-├── browser.py       # Deck A file browser — navigation and browse dialogs
-├── preview.py       # Deck B rename preview, hover tooltip, background scan
-├── playback.py      # audio playback via pygame-ce, transport controls
-└── builders.py      # all build_* UI functions, toggle_theme(), build_app()
+├── main.py              # entry point — DPI setup, creates root window, starts app
+├── state.py             # all shared mutable globals (widgets, vars, flags)
+├── constants.py         # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
+├── conversion.py        # audio conversion engine (pydub + ffmpeg)
+├── dpi.py               # Windows DPI awareness and _px() scaling helper
+├── theme.py             # colour constants, _apply_theme_colors(), setup_styles()
+├── log_panel.py         # operation log helpers
+├── operations.py        # file copy/move/conversion worker
+├── browser.py           # Deck A file browser — navigation and browse dialogs
+├── preview.py           # Deck B rename preview, hover tooltip, background scan
+├── playback.py          # audio playback via pygame-ce, transport controls
+├── builders.py          # all build_* UI functions, toggle_theme(), build_app()
+├── requirements.txt     # Python dependencies
+└── SAMPSON.spec         # PyInstaller configuration
 ```
 
 ---
@@ -132,4 +150,5 @@ SAMPSON/
 - Preview is capped at **500 rows** for performance; the file count still reflects the full total.
 - The file browser only shows non-hidden subfolders and audio files.
 - Destination collisions are not handled — if a renamed file already exists at the target it will be overwritten silently.
-- Windows only (DPI awareness and PyInstaller packaging are Windows-targeted; the source may run on macOS/Linux with minor adjustments).
+- Audio conversion requires ffmpeg to be installed separately.
+- macOS packaging requires macOS hardware for building (notarized apps require Apple Developer account).
