@@ -311,7 +311,8 @@ def build_center(parent):
     fmt_row.pack(fill="x", padx=10, pady=(8, 4))
     ctk.CTkLabel(fmt_row, text="Format:",
                  font=(theme.FONT_UI, 9),
-                 text_color=theme.FG_VARIANT).pack(side="left")
+                 text_color=theme.FG_VARIANT,
+                 width=_px(75)).pack(side="left")
     fmt_combo = ctk.CTkComboBox(fmt_row,
                                 values=["wav", "aiff"],
                                 variable=state.convert_format_var,
@@ -333,7 +334,8 @@ def build_center(parent):
     sr_row.pack(fill="x", padx=10, pady=4)
     ctk.CTkLabel(sr_row, text="Sample rate:",
                  font=(theme.FONT_UI, 9),
-                 text_color=theme.FG_VARIANT).pack(side="left")
+                 text_color=theme.FG_VARIANT,
+                 width=_px(75)).pack(side="left")
     sr_combo = ctk.CTkComboBox(sr_row,
                                values=["keep original", "44.1k", "48k", "96k"],
                                variable=state.convert_sample_rate_var,
@@ -355,7 +357,8 @@ def build_center(parent):
     bd_row.pack(fill="x", padx=10, pady=4)
     ctk.CTkLabel(bd_row, text="Bit depth:",
                  font=(theme.FONT_UI, 9),
-                 text_color=theme.FG_VARIANT).pack(side="left")
+                 text_color=theme.FG_VARIANT,
+                 width=_px(75)).pack(side="left")
     bd_combo = ctk.CTkComboBox(bd_row,
                                values=["keep", "16bit", "24bit", "32bit"],
                                variable=state.convert_bit_depth_var,
@@ -377,7 +380,8 @@ def build_center(parent):
     ch_row.pack(fill="x", padx=10, pady=(4, 8))
     ctk.CTkLabel(ch_row, text="Channels:",
                  font=(theme.FONT_UI, 9),
-                 text_color=theme.FG_VARIANT).pack(side="left")
+                 text_color=theme.FG_VARIANT,
+                 width=_px(75)).pack(side="left")
     ch_combo = ctk.CTkComboBox(ch_row,
                                values=["keep", "mono", "stereo"],
                                variable=state.convert_channels_var,
@@ -562,7 +566,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.3.3",
+    ctk.CTkLabel(frame, text="v0.3.4",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
