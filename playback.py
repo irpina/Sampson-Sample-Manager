@@ -13,6 +13,11 @@ _NSSound = None  # Lazy-loaded on first use
 _current_index = -1
 _ns_sound = None
 
+# Initialize pygame mixer on Windows/Linux
+if not _USE_NSSOUND:
+    import pygame.mixer as _mixer
+    _mixer.init(frequency=48000, size=-16, channels=2, buffer=512)
+
 
 def _ensure_nssound():
     """Lazy-load NSSound to avoid AppKit initialization race with tkinter."""
@@ -48,7 +53,6 @@ def _is_busy() -> bool:
     if _USE_NSSOUND:
         return _ns_sound is not None and _ns_sound.isPlaying()
     else:
-        import pygame.mixer as _mixer
         return _mixer.music.get_busy()
 
 
@@ -73,7 +77,6 @@ def play():
                 _update_transport_state()
                 state.root.after(200, _poll_playback)
         else:
-            import pygame.mixer as _mixer
             _mixer.music.load(str(state._playback_file))
             _mixer.music.play()
             state._is_playing = True
@@ -91,7 +94,6 @@ def stop():
             _ns_sound.stop()
         _ns_sound = None
     else:
-        import pygame.mixer as _mixer
         _mixer.music.stop()
     state._is_playing = False
     _update_transport_state()

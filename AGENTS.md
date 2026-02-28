@@ -38,17 +38,17 @@ SAMPSON is a Python desktop application built with tkinter and customtkinter. It
 | Language | Python | 3.10+ |
 | UI Framework | customtkinter | 5.2.2 — modern rounded widgets |
 | Standard UI | tkinter / ttk | Treeview, Progressbar, Text |
-| Audio Playback | pygame-ce | 2.5.0+ — SDL2-based audio playback |
+| Audio Playback | pygame-ce (Windows/Linux), NSSound (macOS) | 2.5.0+ — SDL2-based audio playback |
 | Audio Conversion | pydub | 0.25.1+ — with bundled ffmpeg |
 | FFmpeg Bundling | static-ffmpeg | 2.5.0+ — bundled ffmpeg + ffprobe binaries |
-| Packaging | PyInstaller | Single-file executable |
+| Packaging | PyInstaller | Single-file executable (Windows), .app bundle (macOS) |
 | Platforms | Windows, Linux, macOS | Cross-platform support |
 
 **Python 3.13+ Compatibility:**
 - `audioop-lts>=0.2.0` — provides `audioop` module (removed from Python 3.13 stdlib)
 
 **macOS-Specific:**
-- `pyobjc-framework-Cocoa>=10.0` — Required only on Darwin platform
+- `pyobjc-framework-Cocoa>=10.0` — Required only on Darwin platform for NSSound and NSScreen
 
 ---
 
@@ -66,11 +66,12 @@ SAMPSON/
 ├── operations.py              # File copy/move/conversion worker
 ├── browser.py                 # Deck A file browser — navigation and browse dialogs
 ├── preview.py                 # Deck B rename preview, hover tooltip, background scan
-├── playback.py                # Audio playback via pygame-ce, transport controls
+├── playback.py                # Audio playback via pygame-ce/NSSound, transport controls
 ├── builders.py                # All build_* UI functions, toggle_theme(), build_app()
 ├── requirements.txt           # Python dependencies
-├── SAMPSON.spec               # PyInstaller configuration (not in git)
-├── build_macos.sh             # macOS build script wrapper
+├── SAMPSON.spec               # PyInstaller configuration for Windows/Linux
+├── SAMPSON_mac.spec           # PyInstaller configuration for macOS .app bundle
+├── build_macos.sh             # macOS build script with code signing
 └── sampsontransparent2.png    # Application logo
 ```
 
@@ -89,7 +90,7 @@ log_panel.py   → state, theme
 conversion.py  → state
 operations.py  → state, theme, constants, log_panel, conversion
 browser.py     → state, theme, constants, preview
-preview.py     → state, theme, constants, dpi, operations
+preview.py     → state, theme, constants, dpi, operations  ← imports _compute_output
 playback.py    → state
 builders.py    → state, theme, dpi, browser, preview, playback, log_panel, operations
 main.py        → state, theme, dpi, builders
@@ -128,14 +129,14 @@ python main.py
 ### Package for Windows
 
 ```bash
-pyinstaller SAMPSON.spec
+pyinstaller SAMPSON.spec --clean
 # Output: dist/SAMPSON.exe
 ```
 
 ### Package for Linux
 
 ```bash
-pyinstaller SAMPSON.spec
+pyinstaller SAMPSON.spec --clean
 # Output: dist/SAMPSON ELF binary
 # Runtime deps: libsdl2-2.0-0 libsdl2-mixer-2.0-0
 ```
@@ -147,7 +148,7 @@ bash build_macos.sh
 # Output: dist/SAMPSON.app
 ```
 
-### Linux Runtime Dependencies
+**Linux Runtime Dependencies:**
 
 ```bash
 # Debian/Ubuntu
@@ -161,6 +162,7 @@ sudo dnf install SDL2 SDL2_mixer
 - `--collect-data pygame` bundles SDL DLLs for audio in the binary
 - `collect_data_files('static_ffmpeg')` bundles ffmpeg + ffprobe binaries
 - `sampsontransparent2.png` is bundled as a data file
+- macOS spec uses `BUNDLE()` for .app creation with Info.plist settings
 
 ---
 
@@ -201,6 +203,7 @@ The UI uses customtkinter for modern widgets alongside plain tk/ttk where CTK ha
 - **Do not** call `tk.call('tk', 'scaling', ...)` — CTK handles its own internal scaling
 - Windows: Uses `ctypes.windll.shcore.GetDpiForSystem() / 96.0`
 - Linux/macOS: Returns 1.0 (no scaling needed)
+- macOS: tkinter uses logical points; CTK handles Retina internally
 
 ---
 
@@ -269,7 +272,7 @@ Path limits truncate filenames so the full destination path fits within device c
 
 ### Auto-Apply Conversion Presets
 
-When a profile with a `conversion` preset is selected and `convert_follow_profile_var` is True, the conversion options are automatically populated.
+When a profile with a `conversion` preset is selected, the conversion options are automatically populated if `convert_follow_profile_var` is True.
 
 ---
 
@@ -289,6 +292,23 @@ The `conversion.py` module handles format conversion using pydub with ffmpeg bac
 1. static-ffmpeg bundled binaries (included with app)
 2. System PATH (allows user override)
 3. Common install locations (Windows winget, Program Files)
+
+---
+
+## Audio Playback
+
+`playback.py` uses different backends per platform:
+- **macOS**: `AppKit.NSSound` — native, zero extra deps, imported lazily to avoid race conditions with tkinter
+- **Windows/Linux**: `pygame.mixer` from `pygame-ce` — wider format support (MP3, OGG, FLAC)
+
+**Key functions in `playback.py`:**
+- `play()` — toggle play/stop
+- `stop()` — stop playback
+- `next_file()`, `prev_file()` — navigate and auto-play
+- `on_tree_select()` — click row to play
+- `on_arrow_key()` — arrow key navigation with auto-play
+
+**Transport state** stored in `state.transport_*_btn` and updated via `playback._update_transport_state()`.
 
 ---
 
@@ -323,21 +343,6 @@ When conversion is enabled:
 
 ---
 
-## Audio Playback
-
-Uses `pygame.mixer` from `pygame-ce` (Python 3.14 incompatible — use `pygame-ce`, not vanilla pygame).
-
-**Key functions in `playback.py`:**
-- `play()` — toggle play/stop
-- `stop()` — stop playback
-- `next_file()`, `prev_file()` — navigate and auto-play
-- `on_tree_select()` — click row to play
-- `on_arrow_key()` — arrow key navigation with auto-play
-
-**Transport state** stored in `state.transport_*_btn` and updated via `playback._update_transport_state()`.
-
----
-
 ## Development Conventions
 
 ### Variable Naming
@@ -352,7 +357,7 @@ Uses `pygame.mixer` from `pygame-ce` (Python 3.14 incompatible — use `pygame-c
 **Always increment the version** when finishing a change. The label lives in `build_status_bar()` in `builders.py`:
 
 ```python
-ctk.CTkLabel(frame, text="v0.3.2", ...)  # ← Update this
+ctk.CTkLabel(frame, text="v0.3.6", ...)  # ← Update this
 ```
 
 ### Tracing Variables
@@ -388,6 +393,7 @@ No automated test suite exists. Testing is manual:
 7. Test dry run vs actual copy/move
 8. Test theme toggle (preserve paths and settings)
 9. Test HiDPI on Windows (verify no blurriness)
+10. Test macOS aspect ratio enforcement (resize to narrow width, verify height correction)
 
 ---
 
@@ -400,13 +406,11 @@ No automated test suite exists. Testing is manual:
 
 ---
 
-## Git Workflow
+## Bug Tracker
 
-**Always commit** after completing a change (per `CLAUDE.md` workflow rules).
-
-### .gitignore Notes
-
-The `.gitignore` excludes `CLAUDE.md` itself (meta-documentation not for repo), along with standard Python artifacts, build outputs, and OS files.
+See `BUGS.md` for known issues:
+- **BUG-001**: Center panel collapses at small window sizes (Low)
+- **BUG-002**: macOS window oversized on Retina displays (Medium) — **FIXED in v0.3.3+**
 
 ---
 
@@ -423,6 +427,7 @@ The `.gitignore` excludes `CLAUDE.md` itself (meta-documentation not for repo), 
 | Change file operations | `operations.py` → `run_tool()`, `_run_worker()` |
 | Adjust preview limit | `constants.py` → `MAX_PREVIEW_ROWS` |
 | Add conversion formats | `conversion.py` → `convert_file()`, `get_target_extension()` |
+| Platform-specific code | Check `sys.platform` ( `"win32"`, `"darwin"`, `"linux"` ) |
 
 ---
 
@@ -434,6 +439,12 @@ The `.gitignore` excludes `CLAUDE.md` itself (meta-documentation not for repo), 
 - Single dependency for all audio needs
 - Well-tested with PyInstaller bundling
 - SDL2 backend is cross-platform
+
+### Why NSSound on macOS?
+
+- Native macOS audio playback with no extra dependencies
+- Avoids SDL/pygame audio issues on macOS
+- Lazy import prevents AppKit initialization race with tkinter
 
 ### Why static-ffmpeg for conversion?
 
@@ -453,3 +464,13 @@ The `.gitignore` excludes `CLAUDE.md` itself (meta-documentation not for repo), 
 - Avoids complex state management overhead
 - Attribute mutation on module object is visible everywhere
 - No risk of circular imports from passing state objects
+
+---
+
+## Git Workflow
+
+**Always commit** after completing a change (per `CLAUDE.md` workflow rules).
+
+### .gitignore Notes
+
+The `.gitignore` excludes `CLAUDE.md` itself (meta-documentation not for repo), along with standard Python artifacts, build outputs, and OS files.
