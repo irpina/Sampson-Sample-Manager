@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 .DS_Store
 *.spec
+
+# Session notes (may contain personal info / local paths)
+CLAUDE_SESSION.md
