@@ -33,14 +33,7 @@ def _compute_dpi_scale() -> float:
     macOS: Returns backingScaleFactor (1.0 on non-Retina, 2.0 on Retina).
     """
     if sys.platform == "darwin":
-        try:
-            from AppKit import NSScreen  # provided by pyobjc-framework-Cocoa
-            scale = NSScreen.mainScreen().backingScaleFactor()
-            if scale and scale > 0:
-                return float(scale)
-        except Exception:
-            pass
-        return 1.0
+        return 1.0  # tkinter uses logical points; CTK handles Retina internally
 
     if sys.platform != "win32":
         return 1.0
@@ -67,3 +60,28 @@ def _px(n: int) -> int:
 MIN_WINDOW_WIDTH = 900
 MIN_WINDOW_HEIGHT = 600
 MIN_ASPECT_RATIO = 1.38  # width/height - prevents extreme aspect ratios
+
+
+def _usable_screen_size(root, desired_w: int, desired_h: int) -> tuple[int, int]:
+    """
+    Return (width, height) clamped to the usable screen area.
+
+    On macOS, uses AppKit visibleFrame to exclude menu bar and dock.
+    On other platforms, uses tkinter screen dimensions with no adjustment.
+    """
+    if sys.platform == "darwin":
+        try:
+            from AppKit import NSScreen
+            frame = NSScreen.mainScreen().visibleFrame()
+            max_w = int(frame.size.width) - 40   # small side margin
+            max_h = int(frame.size.height) - 20  # small bottom margin
+            return min(desired_w, max_w), min(desired_h, max_h)
+        except Exception:
+            pass
+        # Fallback: tkinter screen size minus rough menu bar/dock estimate
+        root.update_idletasks()
+        sw = root.winfo_screenwidth()
+        sh = root.winfo_screenheight()
+        return min(desired_w, sw - 40), min(desired_h, sh - 95)
+
+    return desired_w, desired_h
