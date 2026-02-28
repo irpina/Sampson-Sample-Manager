@@ -47,7 +47,7 @@
 2. Installed PyInstaller: `pip install pyinstaller`
 3. Built executable:
    ```
-   C:\Users\zacha\AppData\Roaming\Python\Python314\Scripts\pyinstaller.exe SAMPSON.spec --clean
+   C:\Users\<user>\AppData\Roaming\Python\Python314\Scripts\pyinstaller.exe SAMPSON.spec --clean
    ```
 4. Output: `dist\SAMPSON.exe`
 
@@ -89,7 +89,7 @@
 3. **GitHub CLI:** `gh` is authenticated and ready for release management
 
 4. **PyInstaller Location:**
-   - Windows: `C:\Users\zacha\AppData\Roaming\Python\Python314\Scripts\pyinstaller.exe`
+   - Windows: `C:\Users\<user>\AppData\Roaming\Python\Python314\Scripts\pyinstaller.exe`
    - Or use `python -m PyInstaller` if on PATH
 
 5. **To return to main branch:**

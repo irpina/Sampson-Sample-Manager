@@ -8,7 +8,7 @@
 
 **Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux, macOS) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, convert formats for specific devices, preview exactly how they'll be renamed and structured, then copy or move them in one click.
 
-> Pre-built binaries (Windows .exe and Linux binary) available on the [Releases](https://github.com/irpina/Splice-Sample-Flattener/releases) page — no Python required.
+> Pre-built binaries for **Windows** (`.exe`), **macOS** (`.app`), and **Linux** available on the [Releases](https://github.com/irpina/Sampson-Sample-Manager/releases) page — no Python required.
 
 ---
 
@@ -51,7 +51,13 @@
 
 ## Download
 
-Grab the latest `SAMPSON.exe` from the [Releases](https://github.com/irpina/Splice-Sample-Flattener/releases) page and run it — no installation or Python needed.
+Grab the latest release for your platform from the [Releases](https://github.com/irpina/Sampson-Sample-Manager/releases) page — no installation or Python needed.
+
+| Platform | Download | Notes |
+|----------|----------|-------|
+| Windows | `SAMPSON.exe` | Portable executable |
+| macOS | `SAMPSON-vX.X.X-macOS.zip` | Apple Silicon, signed & notarized |
+| Linux | `SAMPSON` | Binary (requires SDL2)
 
 ---
 
@@ -63,10 +69,11 @@ python main.py
 ```
 
 Requires Python 3.10+. Core dependencies:
-- `pygame-ce` — audio playback
+- `pygame-ce` — audio playback (Windows/Linux)
+- `AppKit` (NSSound) — audio playback (macOS native)
 - `customtkinter` — modern UI widgets
 - `pydub` — audio conversion
-- `imageio-ffmpeg` — bundled ffmpeg binary (no separate install needed)
+- `static-ffmpeg` — bundled ffmpeg binary (no separate install needed)
 
 ---
 
@@ -127,6 +134,26 @@ Click **☀ Light** / **☾ Dark** in the top-right corner to switch themes. Sou
 
 ---
 
+## Platform Notes
+
+### macOS (v0.4.0+)
+
+The macOS build has been optimized for size and reliability:
+
+- **Build size reduced 50%** — from 158 MB down to ~79 MB
+- **Native audio playback** — Uses AppKit NSSound instead of SDL2/pygame
+- **Signed & Notarized** — No Gatekeeper warnings on launch
+- **Apple Silicon** — Native ARM64 build (M1/M2/M3)
+
+The size reduction was achieved through:
+1. Stripping debug symbols
+2. Removing unused stdlib modules
+3. Eliminating ffprobe (pydub now uses explicit format hints)
+4. Replacing pygame/SDL2 with native NSSound
+5. Cleaning Tcl/Tk data files
+
+---
+
 ## Project structure
 
 ```
@@ -141,7 +168,10 @@ SAMPSON/
 ├── operations.py        # file copy/move/conversion worker
 ├── browser.py           # Deck A file browser — navigation and browse dialogs
 ├── preview.py           # Deck B rename preview, hover tooltip, background scan
-├── playback.py          # audio playback via pygame-ce, transport controls
+├── playback.py          # audio playback via pygame-ce (Win/Linux) or NSSound (macOS)
+├── SAMPSON_mac.spec     # PyInstaller configuration for macOS builds
+├── build_macos.sh       # macOS build script with size optimization
+├── pyi_rth_tk_silence.py # Runtime hook for Tcl/Tk crash fix
 ├── builders.py          # all build_* UI functions, toggle_theme(), build_app()
 ├── requirements.txt     # Python dependencies
 └── SAMPSON.spec         # PyInstaller configuration
@@ -154,5 +184,17 @@ SAMPSON/
 - Preview is capped at **500 rows** for performance; the file count still reflects the full total.
 - The file browser only shows non-hidden subfolders and audio files.
 - Destination collisions are not handled — if a renamed file already exists at the target it will be overwritten silently.
-- Audio conversion requires ffmpeg to be installed separately.
-- macOS packaging requires macOS hardware for building (notarized apps require Apple Developer account).
+- Audio conversion uses bundled ffmpeg (via `static-ffmpeg`).
+- Preview is capped at **500 rows** for performance.
+
+---
+
+## Author
+
+Created by [@irpina](https://github.com/irpina)
+
+---
+
+## License
+
+MIT License — see LICENSE file for details.
