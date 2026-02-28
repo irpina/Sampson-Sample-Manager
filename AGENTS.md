@@ -1,6 +1,6 @@
 # AGENTS.md — SAMPSON Project Guide
 
-> This file provides guidance to AI coding agents working on the SAMPSON codebase.
+> This file provides guidance to AI coding agents working on the SAMPSON codebase.  
 > SAMPSON is a Universal Audio Sample Manager — a cross-platform desktop app for organizing audio sample libraries for hardware samplers.
 
 ---
@@ -10,14 +10,24 @@
 SAMPSON is a Python desktop application built with tkinter and customtkinter. It provides a dual-deck interface (Source → Destination) for browsing audio sample libraries, previewing files with audio playback, and copying/moving files with automatic renaming based on parent folder names.
 
 **Key Features:**
-- Audio playback (click to play, transport controls)
-- Hardware profiles with path-length enforcement (M8: 127 chars, MPC One/SP-404mkII: 255 chars)
+- Audio playback (click to play, transport controls ◀ ▶ ▶▶)
+- Hardware profiles with path-length enforcement and auto-conversion presets:
+  - **Generic**: No limits or conversion
+  - **M8**: 127-character SD path limit, auto-convert to 44.1kHz/16-bit WAV
+  - **MPC One**: 255-character limit
+  - **SP-404mkII**: 255-character limit
+  - **Elektron Digitakt**: Auto-convert to 48kHz/16-bit mono WAV
+  - **Elektron Analog Rytm**: Auto-convert to 48kHz/16-bit WAV
+  - **Elektron Syntakt**: Auto-convert to 48kHz/16-bit WAV
+- Audio conversion: WAV/AIFF output, configurable sample rate (44.1k/48k/96k), bit depth (16/24/32-bit), mono/stereo
 - Folder structure modes: Flat, Mirror, One folder per parent
 - Live rename preview with hover tooltips
-- Dark/Light theme toggle
+- Dark/Light theme toggle (preserves session)
 - HiDPI/4K support on Windows
 
-**Supported audio formats:** `.wav`, `.aiff`, `.aif`, `.flac`, `.mp3`, `.ogg`
+**Supported Audio Formats:**
+- **Input:** `.wav`, `.aiff`, `.aif`, `.flac`, `.mp3`, `.ogg`
+- **Output:** `.wav`, `.aif`
 
 ---
 
@@ -28,15 +38,17 @@ SAMPSON is a Python desktop application built with tkinter and customtkinter. It
 | Language | Python | 3.10+ |
 | UI Framework | customtkinter | 5.2.2 — modern rounded widgets |
 | Standard UI | tkinter / ttk | Treeview, Progressbar, Text |
-| Audio | pygame-ce | SDL2-based audio playback |
+| Audio Playback | pygame-ce | 2.5.0+ — SDL2-based audio playback |
+| Audio Conversion | pydub | 0.25.1+ — with bundled ffmpeg |
+| FFmpeg Bundling | static-ffmpeg | 2.5.0+ — bundled ffmpeg + ffprobe binaries |
 | Packaging | PyInstaller | Single-file executable |
-| Platforms | Windows, Linux | macOS possible with minor adjustments |
+| Platforms | Windows, Linux, macOS | Cross-platform support |
 
-**Dependencies:**
-```bash
-pip install pygame-ce
-# customtkinter is expected to be available (bundled or installed)
-```
+**Python 3.13+ Compatibility:**
+- `audioop-lts>=0.2.0` — provides `audioop` module (removed from Python 3.13 stdlib)
+
+**macOS-Specific:**
+- `pyobjc-framework-Cocoa>=10.0` — Required only on Darwin platform
 
 ---
 
@@ -44,19 +56,21 @@ pip install pygame-ce
 
 ```
 SAMPSON/
-├── main.py          # Entry point — DPI setup, creates root window, starts app
-├── state.py         # All shared mutable globals (widgets, vars, flags)
-├── constants.py     # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
-├── dpi.py           # Windows DPI awareness and _px() scaling helper
-├── theme.py         # Colour constants, _apply_theme_colors(), setup_styles()
-├── log_panel.py     # Operation log helpers (color-coded output)
-├── operations.py    # File copy/move worker, _compute_output(), path truncation
-├── browser.py       # Deck A file browser — navigation and browse dialogs
-├── preview.py       # Deck B rename preview, hover tooltip, background scan
-├── playback.py      # Audio playback via pygame-ce, transport controls
-├── builders.py      # All build_* UI functions, toggle_theme(), build_app()
-├── SAMPSON.spec     # PyInstaller specification
-└── sampsontransparent2.png  # Application logo
+├── main.py                    # Entry point — DPI setup, creates root window, starts app
+├── state.py                   # All shared mutable globals (widgets, vars, flags)
+├── constants.py               # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
+├── conversion.py              # Audio conversion engine (pydub + ffmpeg)
+├── dpi.py                     # Windows DPI awareness and _px() scaling helper
+├── theme.py                   # Colour constants, _apply_theme_colors(), setup_styles()
+├── log_panel.py               # Operation log helpers (color-coded output)
+├── operations.py              # File copy/move/conversion worker
+├── browser.py                 # Deck A file browser — navigation and browse dialogs
+├── preview.py                 # Deck B rename preview, hover tooltip, background scan
+├── playback.py                # Audio playback via pygame-ce, transport controls
+├── builders.py                # All build_* UI functions, toggle_theme(), build_app()
+├── requirements.txt           # Python dependencies
+├── SAMPSON.spec               # PyInstaller configuration
+└── sampsontransparent2.png    # Application logo
 ```
 
 ---
@@ -71,7 +85,7 @@ state.py       (no app imports)
 dpi.py         → state
 theme.py       → state, dpi
 log_panel.py   → state, theme
-operations.py  → state, theme, constants, log_panel
+operations.py  → state, theme, constants, log_panel, conversion
 browser.py     → state, theme, constants, preview
 preview.py     → state, theme, constants, dpi, operations
 playback.py    → state
@@ -102,26 +116,41 @@ This is the standard Python pattern for shared mutable globals across a multi-fi
 
 ## Build Commands
 
-### Run from source
+### Run from Source
+
 ```bash
+pip install -r requirements.txt
 python main.py
 ```
 
 ### Package for Windows
+
 ```bash
 pyinstaller SAMPSON.spec
 # Output: dist/SAMPSON.exe
 ```
 
 ### Package for Linux
+
 ```bash
 pyinstaller SAMPSON.spec
 # Output: dist/SAMPSON ELF binary
 # Runtime deps: libsdl2-2.0-0 libsdl2-mixer-2.0-0
 ```
 
-**PyInstaller notes:**
+### Linux Runtime Dependencies
+
+```bash
+# Debian/Ubuntu
+sudo apt install libsdl2-2.0-0 libsdl2-mixer-2.0-0
+
+# Fedora/RHEL
+sudo dnf install SDL2 SDL2_mixer
+```
+
+**PyInstaller Notes:**
 - `--collect-data pygame` bundles SDL DLLs for audio in the binary
+- `collect_data_files('static_ffmpeg')` bundles ffmpeg + ffprobe binaries
 - `sampsontransparent2.png` is bundled as a data file
 
 ---
@@ -181,11 +210,12 @@ All colors are module-level variables in `theme.py`:
 ### Theme Toggle
 
 `toggle_theme()` lives in `builders.py` (not `theme.py`) to avoid circular imports. It:
-1. Saves current paths/settings
-2. Destroys all children widgets
-3. Calls `ctk.set_appearance_mode()` and `theme._apply_theme_colors()`
-4. Rebuilds UI via `build_app()`
-5. Restores saved paths/settings
+1. Saves current paths/settings (source, dest, profile, conversion settings)
+2. Stops audio playback
+3. Destroys all children widgets
+4. Calls `ctk.set_appearance_mode()` and `theme._apply_theme_colors()`
+5. Rebuilds UI via `build_app()`
+6. Restores saved paths/settings
 
 ---
 
@@ -195,14 +225,61 @@ Defined in `constants.py`:
 
 ```python
 PROFILES = {
-    "Generic":    {"path_limit": None},
-    "M8":         {"path_limit": 127},
-    "MPC One":    {"path_limit": 255},
-    "SP-404mkII": {"path_limit": 255},
+    "Generic": {
+        "path_limit": None,
+        "conversion": None,
+    },
+    "M8": {
+        "path_limit": 127,
+        "conversion": {
+            "format": "wav",
+            "sample_rate": 44100,
+            "bit_depth": 16,
+            "channels": None,
+            "normalize": False,
+        }
+    },
+    "MPC One": {"path_limit": 255, "conversion": None},
+    "SP-404mkII": {"path_limit": 255, "conversion": None},
+    "Elektron Digitakt": {
+        "path_limit": None,
+        "conversion": {
+            "format": "wav",
+            "sample_rate": 48000,
+            "bit_depth": 16,
+            "channels": 1,  # Force mono
+            "normalize": False,
+        }
+    },
+    "Elektron Analog Rytm": {...},
+    "Elektron Syntakt": {...},
 }
 ```
 
 Path limits truncate filenames so the full destination path fits within device constraints. Extension is always preserved.
+
+### Auto-Apply Conversion Presets
+
+When a profile with a `conversion` preset is selected and `convert_follow_profile_var` is True, the conversion options are automatically populated.
+
+---
+
+## Audio Conversion
+
+The `conversion.py` module handles format conversion using pydub with ffmpeg backend.
+
+### Key Functions
+
+- `convert_file(src, dst, **options)` — Convert audio with specified parameters
+- `check_ffmpeg()` — Verify ffmpeg is available
+- `get_target_extension(format)` — Get file extension for output format
+- `parse_sample_rate(value)`, `parse_bit_depth(value)`, `parse_channels(value)` — Parse UI values
+
+### FFmpeg Discovery Priority
+
+1. static-ffmpeg bundled binaries (included with app)
+2. System PATH (allows user override)
+3. Common install locations (Windows winget, Program Files)
 
 ---
 
@@ -227,6 +304,13 @@ Disabled with **Keep original names** checkbox.
 ### Worker Thread
 
 File operations run in a daemon thread (`operations._run_worker`). All UI updates go through `root.after()` for thread safety.
+
+### Conversion During Operations
+
+When conversion is enabled:
+1. Source file is converted to target format/settings
+2. Converted file is written to destination
+3. If "Move files" is enabled, original source file is deleted after successful conversion
 
 ---
 
@@ -259,7 +343,7 @@ Uses `pygame.mixer` from `pygame-ce` (Python 3.14 incompatible — use `pygame-c
 **Always increment the version** when finishing a change. The label lives in `build_status_bar()` in `builders.py`:
 
 ```python
-ctk.CTkLabel(frame, text="v0.2.4", ...)  # ← Update this
+ctk.CTkLabel(frame, text="v0.3.1", ...)  # ← Update this
 ```
 
 ### Tracing Variables
@@ -269,6 +353,7 @@ UI updates that depend on variable changes use `trace_add("write", callback)`:
 ```python
 state.active_dir_var.trace_add("write", preview.on_active_dir_changed)
 state.no_rename_var.trace_add("write", lambda *_: preview.refresh_preview())
+state.profile_var.trace_add("write", _on_profile_changed)
 ```
 
 ### Background Threads
@@ -290,9 +375,10 @@ No automated test suite exists. Testing is manual:
 3. Test checkboxes (select/deselect all)
 4. Test audio playback (click preview rows, transport buttons, arrow keys)
 5. Test options (rename modes, folder structures, hardware profiles)
-6. Test dry run vs actual copy/move
-7. Test theme toggle (preserve paths)
-8. Test HiDPI on Windows (verify no blurriness)
+6. Test audio conversion (enable conversion, select format/sample rate/bit depth)
+7. Test dry run vs actual copy/move
+8. Test theme toggle (preserve paths and settings)
+9. Test HiDPI on Windows (verify no blurriness)
 
 ---
 
@@ -301,7 +387,7 @@ No automated test suite exists. Testing is manual:
 - Preview capped at 500 rows for performance
 - File browser only shows non-hidden subfolders and audio files
 - Destination collisions not handled — existing files will be overwritten silently
-- Windows-focused (DPI awareness and PyInstaller are Windows-targeted)
+- FFmpeg must be available (bundled with PyInstaller builds, or installed separately for dev)
 
 ---
 
@@ -327,3 +413,34 @@ The `.gitignore` excludes `CLAUDE.md` itself (meta-documentation not for repo), 
 | Modify UI layout | `builders.py` → `build_app()` and `build_*()` functions |
 | Change file operations | `operations.py` → `run_tool()`, `_run_worker()` |
 | Adjust preview limit | `constants.py` → `MAX_PREVIEW_ROWS` |
+| Add conversion formats | `conversion.py` → `convert_file()`, `get_target_extension()` |
+
+---
+
+## Architecture Decisions
+
+### Why pygame-ce over sounddevice/soundfile?
+
+- `pygame-ce` provides wider format support (MP3, OGG, FLAC)
+- Single dependency for all audio needs
+- Well-tested with PyInstaller bundling
+- SDL2 backend is cross-platform
+
+### Why static-ffmpeg for conversion?
+
+- Bundles ffmpeg + ffprobe binaries automatically
+- No separate installation required for end users
+- Falls back to system ffmpeg if available
+
+### Why mixed CTK + tk/ttk instead of pure CTK?
+
+- CTK has no Treeview equivalent (needed for file browser and preview)
+- CTK Text widget lacks color tag support (needed for log panel)
+- ttk Progressbar is more reliable for determinate progress
+
+### Why module-level globals in state.py?
+
+- Simple, Pythonic approach for a single-window desktop app
+- Avoids complex state management overhead
+- Attribute mutation on module object is visible everywhere
+- No risk of circular imports from passing state objects
