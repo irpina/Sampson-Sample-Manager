@@ -72,9 +72,11 @@ app = BUNDLE(
     icon=None,
     bundle_identifier='com.sampson.samplemanager',
     info_plist={
-        'CFBundleShortVersionString': '0.3.5',
-        'CFBundleVersion': '0.3.5',
+        'CFBundleShortVersionString': '0.3.6',
+        'CFBundleVersion': '0.3.6',
         'NSHighResolutionCapable': True,
         'LSBackgroundOnly': False,
+        # Prevent Tcl/Tk from trying to create console
+        'LSUIElement': False,
     },
 )
