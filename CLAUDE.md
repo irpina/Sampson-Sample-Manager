@@ -20,6 +20,8 @@ python main.py
 brew install python-tk@3.13   # or use python.org installer
 ```
 
+There is no test suite.
+
 ## Build
 
 ```bash
@@ -45,11 +47,13 @@ log_panel.py   → state, theme
 conversion.py  → state
 operations.py  → state, theme, constants, log_panel, conversion
 browser.py     → state, theme, constants, preview
-preview.py     → state, theme, constants, dpi, operations
+preview.py     → state, theme, constants, dpi, operations  ← imports _compute_output from operations
 playback.py    → state
 builders.py    → state, theme, dpi, browser, preview, playback, log_panel, operations
 main.py        → state, theme, dpi, builders
 ```
+
+**Key shared function:** `_compute_output()` in `operations.py` is used by both `operations._run_worker()` (actual execution) and `preview._populate_preview()` (preview display). It computes the final filename and subfolder for each source file given the current rename/struct/path-limit settings.
 
 ### State management
 
@@ -85,7 +89,17 @@ The app mixes customtkinter (modern rounded widgets) with plain tk/ttk where CTK
 - **Windows:** `_dpi_scale` = system DPI / 96 (e.g. 1.25 at 120 DPI, 2.0 at 192 DPI)
 - **Linux / macOS:** `_dpi_scale` must be `1.0` — tkinter coordinates are already in logical points on macOS and CTK handles Retina rendering internally. **Do not use `backingScaleFactor` for `_dpi_scale`** — it would double all dimensions (BUG-002).
 
-`MIN_ASPECT_RATIO = 1.38` is defined in `dpi.py` and should be enforced via a `<Configure>` binding on macOS to prevent the window from becoming too narrow when zoomed or resized.
+`MIN_ASPECT_RATIO = 1.38` is defined in `dpi.py` and is enforced via a `<Configure>` binding in `main.py` on macOS to prevent the window from becoming too narrow when zoomed or resized.
+
+### Audio conversion pipeline
+
+`conversion.py` wraps **pydub** (high-level audio processing) with **ffmpeg** as the backend:
+
+- **Bundled ffmpeg:** `static-ffmpeg` package ships ffmpeg + ffprobe binaries with the app.
+- **ffmpeg lookup priority** in `_find_ffmpeg_path()`: (1) static-ffmpeg bundled, (2) system PATH, (3) common install locations.
+- `convert_file()` applies changes in order: sample rate → channels → normalize → export with bit-depth codec flags.
+- Bit depth for WAV is passed as ffmpeg codec parameters (`pcm_s16le`, `pcm_s24le`, `pcm_s32le`); for AIFF it uses big-endian variants.
+- Conversion errors are stored in `state._last_conversion_error` for the main thread to retrieve after `convert_file()` returns `False`.
 
 ### Theme toggle
 
@@ -97,6 +111,21 @@ File scanning and operations run in daemon threads. All UI updates must go throu
 ```python
 state.root.after(0, lambda: state.status_var.set("Done"))
 ```
+
+Preview refresh is debounced: `on_active_dir_changed()` cancels any pending `after()` call and re-schedules `refresh_preview()` with a 300 ms delay before spawning the scan thread.
+
+### Playback
+
+`playback.py` uses `pygame-ce` (imported as `pygame.mixer`). The play/prev/next transport reads the hidden `srcpath` column from `state.preview_tree` to get the actual file path. Selecting a row in the preview tree (click or arrow key) auto-plays.
+
+### Log coloring
+
+`log_panel.log()` auto-assigns a color tag based on the message prefix:
+- `"[DRY]"` anywhere → yellow (`C_DRY`)
+- Starts with `"MOVE"` → red (`C_MOVE`)
+- Starts with `"COPY"` → green (`C_COPY`)
+- `"Done."` exactly → cyan bold (`C_DONE`)
+- Otherwise → plain foreground
 
 ## Key conventions
 
@@ -117,3 +146,4 @@ state.root.after(0, lambda: state.status_var.set("Done"))
 | Change file operations | `operations.py` → `run_tool()`, `_run_worker()` |
 | Audio conversion logic | `conversion.py` → `convert_file()` |
 | Adjust preview row limit | `constants.py` → `MAX_PREVIEW_ROWS` |
+| Add output structure mode | `operations._compute_output()` + `builders.build_center()` |
