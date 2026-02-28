@@ -1,1 +1,0 @@
-../../Resources/pygame/rwobject.pyi

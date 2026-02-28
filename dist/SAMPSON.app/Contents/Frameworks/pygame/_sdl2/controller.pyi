@@ -1,1 +1,0 @@
-../../../Resources/pygame/_sdl2/controller.pyi

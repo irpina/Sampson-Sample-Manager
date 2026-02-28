@@ -1,1 +1,0 @@
-../../Resources/pygame/rect.pyi

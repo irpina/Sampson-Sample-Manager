@@ -1,1 +1,0 @@
-../../Resources/pygame/pixelarray.pyi
