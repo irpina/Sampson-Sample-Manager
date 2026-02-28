@@ -316,7 +316,7 @@ def build_center(parent):
     fmt_combo = ctk.CTkComboBox(fmt_row,
                                 values=["wav", "aiff"],
                                 variable=state.convert_format_var,
-                                width=_px(90),
+                                width=_px(110),
                                 state="readonly",
                                 font=(theme.FONT_UI, 9),
                                 fg_color=theme.BG_SURF2,
@@ -362,7 +362,7 @@ def build_center(parent):
     bd_combo = ctk.CTkComboBox(bd_row,
                                values=["keep", "16bit", "24bit", "32bit"],
                                variable=state.convert_bit_depth_var,
-                               width=_px(90),
+                               width=_px(110),
                                state="readonly",
                                font=(theme.FONT_UI, 9),
                                fg_color=theme.BG_SURF2,
@@ -385,7 +385,7 @@ def build_center(parent):
     ch_combo = ctk.CTkComboBox(ch_row,
                                values=["keep", "mono", "stereo"],
                                variable=state.convert_channels_var,
-                               width=_px(90),
+                               width=_px(110),
                                state="readonly",
                                font=(theme.FONT_UI, 9),
                                fg_color=theme.BG_SURF2,
@@ -566,7 +566,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.3.4",
+    ctk.CTkLabel(frame, text="v0.3.5",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
