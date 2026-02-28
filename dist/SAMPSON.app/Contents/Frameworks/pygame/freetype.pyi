@@ -1,0 +1,1 @@
+../../Resources/pygame/freetype.pyi

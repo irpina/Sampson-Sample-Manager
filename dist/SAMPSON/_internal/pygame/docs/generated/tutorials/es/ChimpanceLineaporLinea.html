@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tutorial de Pygame - Ejemplo del Chimpancé, Línea Por Línea &#8212; pygame-ce v2.5.6 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygame.css?v=a9f2cf0f" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
+    <script src="../../_static/documentation_options.js?v=53b7011b"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/script.js?v=57918e6b"></script>
+    <link rel="icon" href="../../_static/pygame.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="pygame C API" href="../../c_api.html" />
+    <link rel="prev" title="한국어 튜토리얼" href="../ko/%EB%B9%A8%EA%B0%84%EB%B8%94%EB%A1%9D%20%EA%B2%80%EC%9D%80%EB%B8%94%EB%A1%9D/%EA%B0%9C%EC%9A%94.html" /> 
+  </head><body>  
+
+    <div class="document">
+
+  <div class="header">
+	<div class="flex-container">
+	<div class="logo">
+	  <a href="https://pyga.me/docs">
+	    <img src="../../_static/pygame_ce_tiny.webp"/>
+	  </a>
+	  <h5>pygame-ce documentation</h5>
+	</div>
+	<div class="pagelinks">
+	  <div class="top">
+      <div class="nav-top-wrapper">
+        <a href="https://pyga.me/docs">Pygame-ce Home</a> ||
+        <a href="../../index.html">Help Contents</a> ||
+        <a href="../../genindex.html">Reference Index</a>
+      </div>
+      <div class="searchbar-container">
+        <img class="theme-icon" data-theme="dark-theme" src="../../_static/light-theme-icon.svg" width="24" height="24" alt="Light Theme Icon">
+        <img class="theme-icon" data-theme="light-theme" src="../../_static/dark-theme-icon.svg" width="24" height="24" alt="Dark Theme Icon">
+        <form action="../../search.html" method="get" class="searchbar-form" style="display:inline;float:right;">
+          <input name="q" value="" type="text">
+          <img class="searchbar-button" src="../../_static/searchbar-icon.svg" alt="Search">
+          <input class="searchbar-submit" value="search" type="submit">
+        </form>
+      </div>
+	  </div>
+	  <hr style="color:black;border-bottom:none;border-style: dotted;border-bottom-style:none;">
+	  <p class="bottom"><b>Most useful stuff</b>:
+	    <a href="../../ref/color.html">Color</a> | 
+	    <a href="../../ref/display.html">display</a> | 
+	    <a href="../../ref/draw.html">draw</a> | 
+	    <a href="../../ref/event.html">event</a> | 
+	    <a href="../../ref/font.html">font</a> | 
+	    <a href="../../ref/image.html">image</a> | 
+	    <a href="../../ref/key.html">key</a> | 
+	    <a href="../../ref/locals.html">locals</a> | 
+	    <a href="../../ref/mixer.html">mixer</a> | 
+	    <a href="../../ref/mouse.html">mouse</a> | 
+	    <a href="../../ref/rect.html">Rect</a> | 
+	    <a href="../../ref/surface.html">Surface</a> | 
+	    <a href="../../ref/time.html">time</a> | 
+	    <a href="../../ref/music.html">music</a> | 
+	    <a href="../../ref/pygame.html">pygame</a>
+	  </p>
+
+	  <p class="bottom"><b>Advanced stuff</b>:
+	    <a href="../../ref/cursors.html">cursors</a> | 
+	    <a href="../../ref/joystick.html">joystick</a> | 
+	    <a href="../../ref/mask.html">mask</a> | 
+	    <a href="../../ref/sprite.html">sprite</a> | 
+	    <a href="../../ref/transform.html">transform</a> | 
+	    <a href="../../ref/bufferproxy.html">BufferProxy</a> | 
+	    <a href="../../ref/freetype.html">freetype</a> | 
+	    <a href="../../ref/gfxdraw.html">gfxdraw</a> | 
+	    <a href="../../ref/midi.html">midi</a> | 
+	    <a href="../../ref/pixelarray.html">PixelArray</a> | 
+	    <a href="../../ref/pixelcopy.html">pixelcopy</a> | 
+	    <a href="../../ref/sndarray.html">sndarray</a> | 
+	    <a href="../../ref/surfarray.html">surfarray</a> | 
+	    <a href="../../ref/math.html">math</a>
+	  </p>
+
+	  <p class="bottom"><b>Other</b>:
+	    <a href="../../ref/camera.html">camera</a> | 
+	    <a href="../../ref/sdl2_controller.html#module-pygame._sdl2.controller">controller</a> | 
+	    <a href="../../ref/examples.html">examples</a> | 
+	    <a href="../../ref/scrap.html">scrap</a> | 
+	    <a href="../../ref/system.html">system</a> | 
+	    <a href="../../ref/tests.html">tests</a> | 
+	    <a href="../../ref/touch.html">touch</a> | 
+	    <a href="../../ref/typing.html">typing</a> | 
+	    <a href="../../ref/pygame.html#module-pygame.version">version</a> | 
+	    <a href="../../ref/window.html">Window</a>
+	  </p>
+</div>
+</div>
+  </div>
+
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+<section id="tutorial-de-pygame-ejemplo-del-chimpance-linea-por-linea">
+<section id="chimpance-linea-por-linea">
+<h2>Chimpancé, Línea Por Línea<a class="headerlink" href="#chimpance-linea-por-linea" title="Link to this heading">¶</a></h2>
+<dl class="docinfo field-list simple">
+<dt class="field-odd">Autor<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Pete Shinners. Traducción al español: Estefania Pivaral Serrano</p>
+</dd>
+<dt class="field-even">Contacto<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="mailto:pete&#37;&#52;&#48;shinners&#46;org">pete<span>&#64;</span>shinners<span>&#46;</span>org</a></p>
+</dd>
+</dl>
+<div class="toctree-wrapper compound">
+</div>
+<section id="introduccion">
+<h3>Introducción<a class="headerlink" href="#introduccion" title="Link to this heading">¶</a></h3>
+<p>Entre los ejemplos de <em>pygame</em> hay un ejemplo simple llamado &quot;chimp&quot; (chimpancé).
+Este ejemplo simula un mono golpeable que se mueve alrededor de la pantalla
+con promesas de riquezas y recomepensas. El ejemplo en sí es muy simple y acarrea
+poco código de comprobación de error. Como modelo de programa, Chimp demuestra muchas
+de las bondades de pygame, como por ejemplo crear una ventana, cargar imágenes
+y sonidos, representar texto, y manejo de eventos básicos y del mouse.</p>
+<p>El programa y las imagenes se pueden encontrar dentro de la fuente estándar
+de distribución de pygame. Se puede ejecutar al correr <cite>python -m pygame.examples.chimp</cite>
+en la terminal.</p>
+<p>Este tutorial atravesará el código bloque a bloque, explicando cómo
+funciona el mismo. Además, se hará mención de cómo se puede
+mejorar el código y qué errores de comprobación podrían ser de ayuda.</p>
+<p>Este tutorial es excelente para aquellas personas que están buscando
+una primera aproximación a códigos de <em>pygame</em>. Una vez que <em>pygame</em>
+esté completamente instalado, podrás encontrar y ejecutar la demostración
+del chimpancé para ti mismo en el directorio de ejemplos.</p>
+<div class="fullwidth leading trailing docutils container">
+<p class="small-heading">(no, este no es un anuncio, es una captura de pantalla)</p>
+<img alt="chimp game banner" src="../../_images/chimpshot.webp" />
+<p><a class="reference internal" href="../chimp.py.html"><span class="doc">Full Source</span></a></p>
+</div>
+</section>
+<section id="importacion-de-modulos">
+<h3>Importación de Módulos<a class="headerlink" href="#importacion-de-modulos" title="Link to this heading">¶</a></h3>
+<p>Este es el código que importa todos los módulos necesarios del programa.
+Este código también comprueba la disponibilidad de algunos de los módulos opcionales
+de pygame.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import Modules</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pg</span>
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning, fonts disabled&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning, sound disabled&quot;</span><span class="p">)</span>
+
+<span class="n">main_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">main_dir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Primero, se importa el módulo estándar de python &quot;os&quot; (sistema operativo).
+Esto permite hacer cosas como crear rutas de archivos independientes de la
+platforma.</p>
+<p>En la sigueinte línea, se importa el paquete de pygame. En nuestro caso,
+importamos pygame como <code class="docutils literal notranslate"><span class="pre">pg</span></code>, para que todas las funciones de pygame puedan
+ser referenciadas desde el espacio de nombres <code class="docutils literal notranslate"><span class="pre">pg</span></code>.</p>
+<p>Algunos de los módulos de pygame son opcionales, y si no fueran encontrados,
+la evaluación será <code class="docutils literal notranslate"><span class="pre">False</span></code>. Es por eso que decidimos mostrar (print) un agradable
+mensaje de advertencia si los módulos <a class="reference internal" href="../../ref/font.html#module-pygame.font" title="pygame.font: pygame module for loading and rendering fonts"><code class="xref py py-mod docutils literal notranslate"><span class="pre">font</span></code></a> o
+<a class="reference internal" href="../../ref/mixer.html#module-pygame.mixer" title="pygame.mixer: pygame module for loading and playing sounds"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mixer</span></code></a> no están disponibles.
+(Aunque estos solo podrían no estar disponibles en situaciones poco comunes).</p>
+<p>Finalmente, se preparan dos rutas que serán usadas para el resto del código.
+Una de ellas es <code class="docutils literal notranslate"><span class="pre">main_dir</span></code>, que usa el módulo <cite>os.path</cite> y la variable  <cite>__file__</cite>
+asignada por Python para localizar el archivo de juegos de python, y extraer la carpeta
+desde esa ruta. Luego, ésta prepara la ruta <code class="docutils literal notranslate"><span class="pre">data_dir</span></code> para indicarle a las
+funciones de carga exactamente dónde buscar.</p>
+</section>
+<section id="carga-de-recursos">
+<h3>Carga de Recursos<a class="headerlink" href="#carga-de-recursos" title="Link to this heading">¶</a></h3>
+<p>A continuación, se presentan dos funciones que se pueden usar para cargar imágenes y sonidos.
+En esta sección examinaremos cada función individualmente.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_image</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">colorkey</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">fullname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span>
+
+    <span class="n">size</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_size</span><span class="p">()</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span><span class="p">,</span> <span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">scale</span><span class="p">)</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+
+    <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">convert</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">colorkey</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">colorkey</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">colorkey</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">get_at</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="n">image</span><span class="o">.</span><span class="n">set_colorkey</span><span class="p">(</span><span class="n">colorkey</span><span class="p">,</span> <span class="n">pg</span><span class="o">.</span><span class="n">RLEACCEL</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Esta función toma el nombre de la imagen a cargar. Opcionalmente, también
+toma un argumento que puede usar para definir la clave de color (colorkey) de
+la imagen, y un argumento para determinar la escala de la imagen.
+La clave de color se usa en la gráfica para representar un color en la imagen
+que es transparente.</p>
+<p>Lo que esta función hace en primera instancia es crearle al archivo un nombre
+de ruta completo.
+En este ejemplo, todos los recursos están en el subdirectorio &quot;data&quot;. Al usar
+la función <cite>os.path.join</cite>, se creará el nombre de ruta para cualquier plataforma
+en que se ejecute el juego.</p>
+<p>El paso siguiente es cargar la imagen usando la función <a class="tooltip reference internal" href="../../ref/image.html#pygame.image.load" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.image.load()</span></code><span class="tooltip-content">Load new image from a file (or file-like object).</span></a>.
+Luego de que la imagen se cargue, llamamos a la función
+<cite>convert()</cite>. Al hacer esto se crea una nueva copia del Surface y convierte
+su formato de color y la profundidad, de tal forma que coincida con el mostrado.
+Esto significa que el dibujo (blitting) de la imagen a la pantalla sucederá
+lo más rápido posible.</p>
+<p>Luego, usando la función <a class="tooltip reference internal" href="../../ref/transform.html#pygame.transform.scale" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.transform.scale()</span></code><span class="tooltip-content">Resize to new resolution.</span></a> se definirá el tamaño de
+la imagen. Esta función toma una Surface y el tamaño al cual se debería adecuar.
+Para darle tamaño con números escalares, se puede tomar la medida y determinar las
+dimensiones <em>x</em> e <em>y</em> con número escalar.</p>
+<p>Finalmente, definimos la clave de color para la imagen. Si el usuario suministró
+un valor para el parametro de la clave de color, usamos ese valor como la clave
+de color de la imagen. Usualmente, éste sería un valor de color RGB
+(red-green-blue = rojo-verde-azul), como (255, 255, 255) para el color blanco.
+También es posible pasar el valor -1 como la clave de color. En este caso, la
+función buscará el color en el píxel de arriba a la izquierda de la imagen,
+y lo usará para la clave de color.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_sound</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+    <span class="k">class</span><span class="w"> </span><span class="nc">NoneSound</span><span class="p">:</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">play</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">get_init</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">NoneSound</span><span class="p">()</span>
+
+    <span class="n">fullname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="n">sound</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mixer</span><span class="o">.</span><span class="n">Sound</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sound</span>
+</pre></div>
+</div>
+<p>La anterior, es la función para cargar un archivo de sonido. Lo primero que hace
+esta función es verificar si el módulo <a class="tooltip reference internal" href="../../ref/mixer.html#module-pygame.mixer" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.mixer</span></code><span class="tooltip-content">pygame module for loading and playing sounds</span></a> se importó correctamente.
+En caso de no ser así, la función va a devolver una instancia de reproducción de un
+sonido de error. Esto obrará como un objeto de Sonido normal para que el juego se
+ejecute sin ningún error de comprobación extra.</p>
+<p>Esta funcion es similar a la función de carga de imagen, pero maneja diferentes problemas.
+Primero, creamos una ruta completa al sonido de la imagen y cargamos el archivo
+de sonido. Luego, simplemente devolvemos el objeto de Sonido cargado.</p>
+</section>
+<section id="clases-de-objetos-para-juegos">
+<h3>Clases de Objetos para Juegos<a class="headerlink" href="#clases-de-objetos-para-juegos" title="Link to this heading">¶</a></h3>
+<p>En este caso creamos dos clases (classes) que representan los objetos en nuestro juego.
+Casi toda la logica del juego se organiza en estas dos clases. A continuación
+las revisaremos de a una.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Fist</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">sprite</span><span class="o">.</span><span class="n">Sprite</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;moves a clenched fist on the screen, following the mouse&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">sprite</span><span class="o">.</span><span class="n">Sprite</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>  <span class="c1"># call Sprite initializer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">load_image</span><span class="p">(</span><span class="s2">&quot;fist.webp&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fist_offset</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="mi">235</span><span class="p">,</span> <span class="o">-</span><span class="mi">80</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">punching</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;move the fist based on the mouse position&quot;&quot;&quot;</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">get_pos</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">topleft</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">move_ip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fist_offset</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">punching</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">move_ip</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">punch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;returns true if the fist collides with the target&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">punching</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">punching</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">hitbox</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">inflate</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">5</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">hitbox</span><span class="o">.</span><span class="n">colliderect</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">rect</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">unpunch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;called to pull the fist back&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">punching</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+<p>En este caso, creamos una clase (class) que representa el puño del jugador. Esta se
+deriva de la clase <cite>Sprite</cite> incluida en el módulo <a class="tooltip reference internal" href="../../ref/sprite.html#module-pygame.sprite" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.sprite</span></code><span class="tooltip-content">pygame module with basic game object classes</span></a>. La
+función <cite>__init__</cite> es llamada cuando se crean nuevas instancias de este clase.
+Esto le permite a la función <cite>__init__</cite> del Sprite preparar nuestro objeto para
+ser usado como una imagen (sprite).
+Este juego usa uno de los dibujos de sprite de la clase de Grupo. Estas clases
+pueden dibujar sprites que tienen un atributo &quot;imagen&quot; y uno &quot;rect&quot;. Al cambiar
+simplemente estos dos atributos, el compilador (renderer) dibujará la imagen actual
+en la posición actual.</p>
+<p>Todos los sprites tienen un método <cite>update()</cite>. Esta función es tipicamente
+llamada una vez por cuadro. Es en esta función donde se debería colocar el código
+que mueva y actualice las variables para el sprite. El método de <cite>update()</cite> para el
+movimiento del puño, mueve el puño al lugar donde se encuentre el puntero del mouse.
+Asímismo, compensa sutilmente la posición del puño sobre el objeto, si el puño está
+en condición de golpear.</p>
+<p>Las siguientes dos funciones <cite>punch()</cite> y <cite>unpunch()</cite> cambian la condición de
+golpeado del puño. El método <cite>punch()</cite> también devuelve un valor verdadero si
+el puño está chocando con el sprite objetivo.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Chimp</span><span class="p">(</span><span class="n">pg</span><span class="o">.</span><span class="n">sprite</span><span class="o">.</span><span class="n">Sprite</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;moves a monkey critter across the screen. it can spin the</span>
+<span class="sd">    monkey when it is punched.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pg</span><span class="o">.</span><span class="n">sprite</span><span class="o">.</span><span class="n">Sprite</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>  <span class="c1"># call Sprite intializer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">load_image</span><span class="p">(</span><span class="s2">&quot;chimp.webp&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">screen</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">get_surface</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="n">screen</span><span class="o">.</span><span class="n">get_rect</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">topleft</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">90</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">move</span> <span class="o">=</span> <span class="mi">18</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;walk or spin, depending on the monkeys state&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_spin</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_walk</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_walk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;move the monkey across the screen, and turn at the ends&quot;&quot;&quot;</span>
+        <span class="n">newpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">move</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">move</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">newpos</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="o">.</span><span class="n">left</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">right</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="o">.</span><span class="n">right</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">move</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">move</span>
+                <span class="n">newpos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">move</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">move</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="n">newpos</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_spin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;spin the monkey image&quot;&quot;&quot;</span>
+        <span class="n">center</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rect</span><span class="o">.</span><span class="n">center</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">+</span> <span class="mi">12</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">&gt;=</span> <span class="mi">360</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">original</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rotate</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">rotate</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">image</span> <span class="o">=</span> <span class="n">rotate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="n">center</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">punched</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;this will cause the monkey to start spinning&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dizzy</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">original</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image</span>
+</pre></div>
+</div>
+<p>Si bien la clase (class) <cite>Chimp</cite> está haciendo un poco más de trabajo que el
+puño, no resulta mucho más complejo. Esta clase moverá al chimpancé hacia adelante
+y hacia atrás, por la pantalla. Cuando el mono es golpeado, él girará
+con un efecto de emoción. Esta clase también es derivada de la base de clases
+<a class="reference internal" href="../../ref/sprite.html#pygame.sprite.Sprite" title="pygame.sprite.Sprite"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sprite</span></code></a> y es iniciada de igual manera que el puño.
+Mientras se inicia, la clase también establece el atributo &quot;area&quot; para que sea
+del tamaño de la pantalla de visualización.</p>
+<p>La función <cite>update</cite> para el chimpancé simplemente se fija en el estado actual
+del mono. Esta puede ser &quot;dizzy&quot; (mareado), la cual sería verdadera si el mono
+está girando a causa del golpe. La función llama al método <cite>_spin</cite> o <cite>_walk</cite>.
+Estas funciones son prefijadas con un guión bajo, lo cual en el idioma estándar
+de python sugiere que estos métodos deberían ser solo usados por la clase <cite>Chimp</cite>.
+Podríamos incluso hasta escribirlas con un doble guión bajo, lo cual indicaría a
+python que realmente intente hacerlas un método privado, pero no necesitamos tal
+protección. :)</p>
+<p>El método <cite>_walk</cite> crea una nueva posición para el mono al mover el 'rect' actual
+al centro del puño. Si la nueva posición se cruza hacia afuera del área
+de visualización de la pantalla, el movimiento del puño da marcha atrás.
+También imita la imagen usando la función <a class="tooltip reference internal" href="../../ref/transform.html#pygame.transform.flip" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.transform.flip()</span></code><span class="tooltip-content">Flip vertically and horizontally.</span></a>. Este es
+un efecto crudo que hace que el mono se vea como si estuviera cambiando de
+dirección.</p>
+<p>El método <cite>_spin</cite> es llamado cuando el mono está actualmente en estado &quot;dizzy&quot;
+(mareado). El atributo 'dizzy' es usado para guardar el monto de rotación.
+Cuando el mono ha rotado por completo en su eje (360 grados) se resetea la
+imagen a la versión original no rotada. Antes de llamar a la función
+<a class="tooltip reference internal" href="../../ref/transform.html#pygame.transform.rotate" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.transform.rotate()</span></code><span class="tooltip-content">Rotate an image.</span></a>, verás que el código hace una referencia local
+a la función simplemente llamanda &quot;rotate&quot;. No hay ncesidad de hacer eso en
+este ejemplo, aquí fue realizada para mantener la siguiente línea un poco
+más corta. Notese que al llamar a la función <cite>rotate</cite>, se está siempre rotando
+la imagen original del mono. Cuando rotamos, hay un pequeña pérdida de calidad.
+Rotar repetidamente la misma imagen genera que la calidad se deteriore cada vez
+más. Esto se debe a que las esquinas de la imagen van a haber sido rotadas de más,
+causando que la imagen se haga más grande. Nos aseguramos que la nueva imagen
+coincida con el centro de la vieja imagen, para que de esta forma se rote sin
+moverse.</p>
+<p>El último método es <cite>punched()</cite> el cual indica al sprite que entre en un estado de
+mareo. Esto causará que la imagen empice a girar. Además, también crea una copia de
+la actual imagen llamada &quot;original&quot;.</p>
+</section>
+<section id="inicializar-todo">
+<h3>Inicializar Todo<a class="headerlink" href="#inicializar-todo" title="Link to this heading">¶</a></h3>
+<p>Antes de poder hacer algo con pygame, necesitamos asegurarnos que los módulos
+estén inicializados. En este caso, vamos a abrir también una simple ventana de
+gráficos.
+Ahora estamos en la función <cite>main()</cite> del programa, la cual ejecuta todo.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pg</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+<span class="n">screen</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_mode</span><span class="p">((</span><span class="mi">1280</span><span class="p">,</span> <span class="mi">480</span><span class="p">),</span> <span class="n">pg</span><span class="o">.</span><span class="n">SCALED</span><span class="p">)</span>
+<span class="n">pg</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">set_caption</span><span class="p">(</span><span class="s2">&quot;Monkey Fever&quot;</span><span class="p">)</span>
+<span class="n">pg</span><span class="o">.</span><span class="n">mouse</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>La primera línea para inicializar <em>pygame</em> realiza algo de trabajo por nosotros.
+Verifica a través del módulo importado <em>pygame</em> e intenta inicializar cada uno de
+ellos. Es posible volver y verificar que los módulos que fallaron al iniciar, pero
+no vamos a molestarnos acá con eso. También es posible tomar mucho más control
+e inicializar cada módulo en especifico, uno a uno. Ese tipo de control no es
+necesario generalmente, pero está disponible en caso de ser deseado.</p>
+<p>Luego, se configura el modo de visualización de gráficos. Notse que el módulo
+<a class="tooltip reference internal" href="../../ref/display.html#module-pygame.display" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.display</span></code><span class="tooltip-content">Pygame module to control the display window and screen.</span></a> es usado para controlar todas las configuraciones de
+visualización. En este caso nosotros estamos buscando una ventana 1280x480,
+con <code class="docutils literal notranslate"><span class="pre">SCALED</span></code>, que es la señal de visualización (display flag)
+Esto aumenta proporcionalmente la ventana de visualización (display) más grande que la
+ventana. (window)</p>
+<p>Por último, establecemos el título de la ventana y apagamos el cursor del mouse
+para nuestra ventana. Es una acción básica y ahora tenemos una pequeña ventana negra
+que está lista para nuestras instrucciones (bidding) u ofertas. Generalmente, el cursor
+se mantiene visible por default, asi que no hay mucha necesidad de realmente
+establecer este estado a menos que querramos esconderlo.</p>
+</section>
+<section id="crear-el-fondo">
+<h3>Crear el Fondo<a class="headerlink" href="#crear-el-fondo" title="Link to this heading">¶</a></h3>
+<p>Nuestro programa va a tener un mensaje de texto en el fondo. Sería bueno
+crear un único surface que represente el fondo y lo use repetidas veces.
+El primer paso es crear el Surface.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">background</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">Surface</span><span class="p">(</span><span class="n">screen</span><span class="o">.</span><span class="n">get_size</span><span class="p">())</span>
+<span class="n">background</span> <span class="o">=</span> <span class="n">background</span><span class="o">.</span><span class="n">convert</span><span class="p">()</span>
+<span class="n">background</span><span class="o">.</span><span class="n">fill</span><span class="p">((</span><span class="mi">170</span><span class="p">,</span> <span class="mi">238</span><span class="p">,</span> <span class="mi">187</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Esto crea el nuevo surface, que en nuestro caso, es del mismo tamaño que
+la ventana de visualización. Notese el llamado extra a <cite>convert()</cite> luego
+de crear la Surface. La función <cite>convert()</cite> sin argumentos es para asegurarnos
+que nuestro fondo sea del mismo formato que la ventana de visualización,
+lo cual nos va a brindar resultados más rápidos.</p>
+<p>Lo que nosotros hicimos también, fue rellenar el fondo con un color verduzco.
+La función <cite>fill()</cite> suele tomar como argumento tres instancias de colores RGB,
+pero soporta muchos formatos de entrada. Para ver todos los formatos de color
+veasé <a class="tooltip reference internal" href="../../ref/color.html#pygame.Color" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.Color</span></code><span class="tooltip-content">pygame object for color representations</span></a>.</p>
+</section>
+<section id="centrar-texto-en-el-fondo">
+<h3>Centrar Texto en el Fondo<a class="headerlink" href="#centrar-texto-en-el-fondo" title="Link to this heading">¶</a></h3>
+<p>Ahora que tenemos el surface del fondo, vamos a representar el texto en él.
+Nosotros solo haremos esto si vemos que el módulo <a class="tooltip reference internal" href="../../ref/font.html#module-pygame.font" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.font</span></code><span class="tooltip-content">pygame module for loading and rendering fonts</span></a> se importó
+correctamente. De no ser así, hay que saltear esta sección.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="p">:</span>
+    <span class="n">font</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">font</span><span class="o">.</span><span class="n">Font</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">font</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="s2">&quot;Pummel The Chimp, And Win $$$&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+    <span class="n">textpos</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">get_rect</span><span class="p">(</span><span class="n">centerx</span><span class="o">=</span><span class="n">background</span><span class="o">.</span><span class="n">get_width</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">background</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">textpos</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Tal como pueden ver, hay un par de pasos para realizar esto. Primero, debemos
+crear la fuente del objeto y renderizarlo (representarlo) en una nueva Surface.
+Luego, buscamos el centro de esa nueva surface y lo pegamos (blit) al fondo.</p>
+<p>La fuente es creada con el constructor <cite>Font()</cite> del módulo <cite>font</cite>. Generalmente,
+uno va a poner el nombre de la fuente TrueType en esta función, pero también se
+puede poner <cite>None</cite>, como hicimos en este caso, y entonces se usará la fuente
+por predeterminada. El constructor <cite>Font</cite> también necesita la información
+del tamaño de la fuente que se quiere crear.</p>
+<p>Luego vamos a represetar (renderizar) la fuente en la nueva surface. La función
+<cite>render</cite> crea una nueva surface que es del tamaño apropiado para nuestro texto.
+En este caso, también le estamos pidiendo al render que cree un texto suavizado
+(para un lindo efecto de suavidad en la apariencia) y que use un color gris oscuro.</p>
+<p>Lo siguiente que necesitamos es encontrar la posición la posición central, para
+colocar el texto en el centro de la pantalla. Creamos un objeto &quot;Rect&quot; de las
+dimensiones del texto, lo cual nos permite asignarlo fácilmente al centro de la
+pantalla.</p>
+<p>Finalmente, blitteamos (pegamos o copiamos) el texto en la imagen de fondo.</p>
+</section>
+<section id="mostrar-el-fondo-mientras-termina-el-setup">
+<h3>Mostrar el Fondo mientras Termina el Setup<a class="headerlink" href="#mostrar-el-fondo-mientras-termina-el-setup" title="Link to this heading">¶</a></h3>
+<p>Todavía tenemos una ventana negra en la pantalla. Mostremos el fondo
+mientras esperamos que se carguen los otros recursos.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">background</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Esto va a blittear (pegar o copiar) nuestro fondo en la ventana de visualización.
+El blit se explica por sí mismo, pero ¿qué está haciendo esa rutina flip?</p>
+<p>En pygame, los cambios en la surface de visualización (display) no se hacen visibles
+inmediatamente. Normalmente, la pantalla debe ser actualizacada para que el usuario
+pueda ver los cambios realizados. En este caso la función <cite>flip()</cite> es perfecta para eso
+porque se encarga de toda el área de la pantalla.</p>
+</section>
+<section id="preparar-objetos-del-juego">
+<h3>Preparar Objetos del Juego<a class="headerlink" href="#preparar-objetos-del-juego" title="Link to this heading">¶</a></h3>
+<p>En este caso crearemos todos los objetos que el juego va a necesitar.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">whiff_sound</span> <span class="o">=</span> <span class="n">load_sound</span><span class="p">(</span><span class="s2">&quot;whiff.wav&quot;</span><span class="p">)</span>
+<span class="n">punch_sound</span> <span class="o">=</span> <span class="n">load_sound</span><span class="p">(</span><span class="s2">&quot;punch.wav&quot;</span><span class="p">)</span>
+<span class="n">chimp</span> <span class="o">=</span> <span class="n">Chimp</span><span class="p">()</span>
+<span class="n">fist</span> <span class="o">=</span> <span class="n">Fist</span><span class="p">()</span>
+<span class="n">allsprites</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">sprite</span><span class="o">.</span><span class="n">Group</span><span class="p">((</span><span class="n">chimp</span><span class="p">,</span> <span class="n">fist</span><span class="p">))</span>
+<span class="n">clock</span> <span class="o">=</span> <span class="n">pg</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">Clock</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Primero cargamos dos efectos de sonido usando la función <cite>load_sound</cite>, que se
+encuentra definida en código arriba. Luego, creamos una instancia para cada
+uno de los sprites de la clase. Por último, creamos el sprite
+<a class="reference internal" href="../../ref/sprite.html#pygame.sprite.Group" title="pygame.sprite.Group"><code class="xref py py-class docutils literal notranslate"><span class="pre">Group</span></code></a> que va a contener todos nuestros sprites.</p>
+<p>Nosotros creamos el grupo llamado &quot;allsprites&quot; al pasar una lista con todos los sprites que deberían
+pertenecer al grupo. Exise la posibilidad, si más adelante quisieramos, de agregar
+o sacar sprites de este grupo, pero para este juego no sería necesario.</p>
+<p>El objeto <cite>clock</cite> que creamos será usado para ayudar a controlar la frequencia de
+cuadros de nuestro juego. Vamos a usarlo en el bucle (loop) principal de nuestro
+juego para asegurarnos que no se ejecute demasiado rápido.</p>
+</section>
+<section id="bucle-principal-main-loop">
+<h3>Bucle principal (Main Loop)<a class="headerlink" href="#bucle-principal-main-loop" title="Link to this heading">¶</a></h3>
+<p>No hay mucho por acá, solo un loop infinito.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">going</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">while</span> <span class="n">going</span><span class="p">:</span>
+    <span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Todos los juegos se ejecutan sobre una especie de loop. El orden usual de las cosas
+es verificar el estado de la computadora y la entrada de usuario, mover y actualizar
+el estado de todos los objetos, y luego dibujarlos en la pantalla. Verás que este
+ejemplo no es diferente.</p>
+<p>También haremos un llamado a nuestro objeto <cite>clock</cite>, que asegurará que nuestro juego
+no se ejecute pasando los 60 cuadros por segundo.</p>
+</section>
+<section id="manejar-los-eventos-de-entrada">
+<h3>Manejar los Eventos de Entrada<a class="headerlink" href="#manejar-los-eventos-de-entrada" title="Link to this heading">¶</a></h3>
+<p>Este es un caso extremandamente simple para trabajar la cola de eventos.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pg</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pg</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
+        <span class="n">going</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pg</span><span class="o">.</span><span class="n">KEYDOWN</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">pg</span><span class="o">.</span><span class="n">K_ESCAPE</span><span class="p">:</span>
+        <span class="n">going</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pg</span><span class="o">.</span><span class="n">MOUSEBUTTONDOWN</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">fist</span><span class="o">.</span><span class="n">punch</span><span class="p">(</span><span class="n">chimp</span><span class="p">):</span>
+            <span class="n">punch_sound</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>  <span class="c1"># punch</span>
+            <span class="n">chimp</span><span class="o">.</span><span class="n">punched</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">whiff_sound</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>  <span class="c1"># miss</span>
+    <span class="k">elif</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pg</span><span class="o">.</span><span class="n">MOUSEBUTTONUP</span><span class="p">:</span>
+        <span class="n">fist</span><span class="o">.</span><span class="n">unpunch</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Primero obtenemos todos los Eventos (events) disponibles en pygame y los recorremos en loop.
+Las primeras dos pruebas es para ver si el usuario dejó nuestro juego, o si
+presionó la tecla de escape. En estos casos, configuramos <code class="docutils literal notranslate"><span class="pre">going</span></code> en <code class="docutils literal notranslate"><span class="pre">False</span></code>,
+permitiendonos salir del loop infinito.</p>
+<p>A continuación, verificamos si se presionó o si se soltó el botón del mouse. En el
+caso de que el botón se haya presionado, preguntamos al primer objeto si chocó con
+el mono. Se reproduce el sonido apropiado, y si el mono fue golpeado, le decimos
+que empiece a girar (al hacer un llamado a su método <cite>punched()</cite> )</p>
+</section>
+<section id="actualizar-los-sprites">
+<h3>Actualizar los Sprites<a class="headerlink" href="#actualizar-los-sprites" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">allsprites</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Los grupos de Sprite tienen un método <cite>update()</cite>, que simplemente llama al
+método de actualización para todos los sprites que contiene. Cada uno de los
+objetos se va a mover, dependiendo de cuál sea el estado en el que estén. Acá
+es donde el mono se va a mover de un lado a otro, o va a girar un poco más
+lejos si fue recientemente golpeado.</p>
+</section>
+<section id="dibujar-la-escena-completa">
+<h3>Dibujar la Escena Completa<a class="headerlink" href="#dibujar-la-escena-completa" title="Link to this heading">¶</a></h3>
+<p>Ahora que todos los objetos están en el lugar indicado, es el momento para
+dibujarlos.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">screen</span><span class="o">.</span><span class="n">blit</span><span class="p">(</span><span class="n">background</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">allsprites</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+<span class="n">pygame</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>La primera llamada de blit dibujará el fondo en toda la pantalla. Esto borra
+todo lo que vimos en el cuadro anterior (ligeramente ineficiente, pero
+suficientemnte bueno para este juego). A continuación, llamamos al método
+<cite>draw()</cite> del contenedor de sprites. Ya que este contenedor de sprites es
+en realidad una instancia del grupo de sprites &quot;DrawPlain&quot;, sabe como dibujar
+nuestros sprites. Por último, usamos el método <cite>flip()</cite> para voltear los contenidos
+del software de pygame. Se realiza el flip a través del cargado de la imagen en segundo
+plano. Esto hace que todo lo que dibujamos luego se visibilice de una vez.</p>
+</section>
+<section id="fin-del-juego">
+<h3>Fin del Juego<a class="headerlink" href="#fin-del-juego" title="Link to this heading">¶</a></h3>
+<p>El usuario ha salido del juego, hora de limpiar (clean up)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pg</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Hacer la limpieza, el cleanup, de la ejecución del juego en <em>pygame</em> es extremandamente
+simple. Ya que todas las variables son automáticamente destruidas, nosotros no
+tenemos que hacer realmnete nada, únicamente llamar a <cite>pg.quit()</cite> que explicitamente
+hace la limpieza de las partes internas del pygame.</p>
+</section>
+</section>
+</section>
+
+
+<br /><br />
+<hr />
+<a href="https://github.com/pygame-community/pygame-ce/edit/main/docs/reST/tutorials/es/ChimpanceLineaporLinea.rst" rel="nofollow">Edit on GitHub</a>
+            <div class="clearer"></div>
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../../c_api.html" title="pygame C API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../ko/%EB%B9%A8%EA%B0%84%EB%B8%94%EB%A1%9D%20%EA%B2%80%EC%9D%80%EB%B8%94%EB%A1%9D/%EA%B0%9C%EC%9A%94.html" title="한국어 튜토리얼"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">pygame-ce v2.5.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Tutorial de Pygame - Ejemplo del Chimpancé, Línea Por Línea</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2000-2022, pygame developers, 2023 pygame-ce developers.
+    </div>
+  </body>
+</html>

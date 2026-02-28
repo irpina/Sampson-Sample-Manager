@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pygame.typing &#8212; pygame-ce v2.5.6 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygame.css?v=a9f2cf0f" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
+    <script src="../_static/documentation_options.js?v=53b7011b"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/script.js?v=57918e6b"></script>
+    <link rel="icon" href="../_static/pygame.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pygame.Window" href="window.html" />
+    <link rel="prev" title="pygame.transform" href="transform.html" /> 
+  </head><body>  
+
+    <div class="document">
+
+  <div class="header">
+	<div class="flex-container">
+	<div class="logo">
+	  <a href="https://pyga.me/docs">
+	    <img src="../_static/pygame_ce_tiny.webp"/>
+	  </a>
+	  <h5>pygame-ce documentation</h5>
+	</div>
+	<div class="pagelinks">
+	  <div class="top">
+      <div class="nav-top-wrapper">
+        <a href="https://pyga.me/docs">Pygame-ce Home</a> ||
+        <a href="../index.html">Help Contents</a> ||
+        <a href="../genindex.html">Reference Index</a>
+      </div>
+      <div class="searchbar-container">
+        <img class="theme-icon" data-theme="dark-theme" src="../_static/light-theme-icon.svg" width="24" height="24" alt="Light Theme Icon">
+        <img class="theme-icon" data-theme="light-theme" src="../_static/dark-theme-icon.svg" width="24" height="24" alt="Dark Theme Icon">
+        <form action="../search.html" method="get" class="searchbar-form" style="display:inline;float:right;">
+          <input name="q" value="" type="text">
+          <img class="searchbar-button" src="../_static/searchbar-icon.svg" alt="Search">
+          <input class="searchbar-submit" value="search" type="submit">
+        </form>
+      </div>
+	  </div>
+	  <hr style="color:black;border-bottom:none;border-style: dotted;border-bottom-style:none;">
+	  <p class="bottom"><b>Most useful stuff</b>:
+	    <a href="color.html">Color</a> | 
+	    <a href="display.html">display</a> | 
+	    <a href="draw.html">draw</a> | 
+	    <a href="event.html">event</a> | 
+	    <a href="font.html">font</a> | 
+	    <a href="image.html">image</a> | 
+	    <a href="key.html">key</a> | 
+	    <a href="locals.html">locals</a> | 
+	    <a href="mixer.html">mixer</a> | 
+	    <a href="mouse.html">mouse</a> | 
+	    <a href="rect.html">Rect</a> | 
+	    <a href="surface.html">Surface</a> | 
+	    <a href="time.html">time</a> | 
+	    <a href="music.html">music</a> | 
+	    <a href="pygame.html">pygame</a>
+	  </p>
+
+	  <p class="bottom"><b>Advanced stuff</b>:
+	    <a href="cursors.html">cursors</a> | 
+	    <a href="joystick.html">joystick</a> | 
+	    <a href="mask.html">mask</a> | 
+	    <a href="sprite.html">sprite</a> | 
+	    <a href="transform.html">transform</a> | 
+	    <a href="bufferproxy.html">BufferProxy</a> | 
+	    <a href="freetype.html">freetype</a> | 
+	    <a href="gfxdraw.html">gfxdraw</a> | 
+	    <a href="midi.html">midi</a> | 
+	    <a href="pixelarray.html">PixelArray</a> | 
+	    <a href="pixelcopy.html">pixelcopy</a> | 
+	    <a href="sndarray.html">sndarray</a> | 
+	    <a href="surfarray.html">surfarray</a> | 
+	    <a href="math.html">math</a>
+	  </p>
+
+	  <p class="bottom"><b>Other</b>:
+	    <a href="camera.html">camera</a> | 
+	    <a href="sdl2_controller.html#module-pygame._sdl2.controller">controller</a> | 
+	    <a href="examples.html">examples</a> | 
+	    <a href="scrap.html">scrap</a> | 
+	    <a href="system.html">system</a> | 
+	    <a href="tests.html">tests</a> | 
+	    <a href="touch.html">touch</a> | 
+	    <a href="typing.html">typing</a> | 
+	    <a href="pygame.html#module-pygame.version">version</a> | 
+	    <a href="window.html">Window</a>
+	  </p>
+</div>
+</div>
+  </div>
+
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+<section id="module-pygame.typing">
+<span id="pygame-typing"></span><dl class="definition">
+<dt class="title module sig sig-object">
+<code class="docutils literal notranslate"><span class="pre">pygame.typing</span></code></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">pygame module providing common typehints</span></div>
+</div>
+<table class="toc docutils align-default">
+<tbody>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="typing.html#pygame.typing.FileLike">pygame.typing.FileLike</a></div>
+</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="typing.html#pygame.typing.SequenceLike">pygame.typing.SequenceLike</a></div>
+</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="typing.html#pygame.typing.Point">pygame.typing.Point</a></div>
+</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="typing.html#pygame.typing.IntPoint">pygame.typing.IntPoint</a></div>
+</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="typing.html#pygame.typing.ColorLike">pygame.typing.ColorLike</a></div>
+</td>
+<td>—</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="typing.html#pygame.typing.RectLike">pygame.typing.RectLike</a></div>
+</td>
+<td>—</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.2.</span></p>
+</div>
+<p>A lot of pygame functions and methods allow the user to provide different types
+for the same value like colors or points. This module exports the most common
+type aliases for proper typehint annotations.</p>
+<blockquote>
+<div><dl class="py data definition">
+<dt class="sig sig-object py title" id="pygame.typing.FileLike">
+<span class="sig-prename descclassname"><span class="pre">pygame.typing.</span></span><span class="sig-name descname"><span class="pre">FileLike</span></span><a class="headerlink" href="#pygame.typing.FileLike" title="Link to this definition">¶</a></dt>
+<dd><p>An object representing a file. This includes both path-like
+objects and file-like objects, i.e.:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;my/string/path.txt&quot;</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">open(&quot;my/file/path.txt&quot;)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pathlib.Path(&quot;my/pathlib/path.txt&quot;)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">io.BytesIO(b&quot;my</span> <span class="pre">data:</span> <span class="pre">\x00\x01&quot;)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">b&quot;my/bytes/path.txt&quot;</span></code></p></li>
+<li><p>Any object implementing the path protocol or file protocol.</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py data definition">
+<dt class="sig sig-object py title" id="pygame.typing.SequenceLike">
+<span class="sig-prename descclassname"><span class="pre">pygame.typing.</span></span><span class="sig-name descname"><span class="pre">SequenceLike</span></span><a class="headerlink" href="#pygame.typing.SequenceLike" title="Link to this definition">¶</a></dt>
+<dd><p>A variant of the standard <code class="docutils literal notranslate"><span class="pre">Sequence</span></code> ABC only requiring <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code>
+and <code class="docutils literal notranslate"><span class="pre">__len__</span></code>. This includes custom sequences or builtin ones, i.e.:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;abcdefg&quot;</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[a,</span> <span class="pre">b,</span> <span class="pre">c,</span> <span class="pre">d,</span> <span class="pre">...]</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(a,</span> <span class="pre">b,</span> <span class="pre">c,</span> <span class="pre">d,</span> <span class="pre">...)</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>Being a generic, subscribing it will signal further precision such as
+<code class="docutils literal notranslate"><span class="pre">SequenceLike[str]</span></code> or <code class="docutils literal notranslate"><span class="pre">SequenceLike[float]</span></code>.</p>
+</dd></dl>
+
+<dl class="py data definition">
+<dt class="sig sig-object py title" id="pygame.typing.Point">
+<span class="sig-prename descclassname"><span class="pre">pygame.typing.</span></span><span class="sig-name descname"><span class="pre">Point</span></span><a class="headerlink" href="#pygame.typing.Point" title="Link to this definition">¶</a></dt>
+<dd><p>A sequence of two numbers (floats or ints), i.e:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pygame.Vector2(a,</span> <span class="pre">b)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[a,</span> <span class="pre">b]</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(a,</span> <span class="pre">b)</span></code></p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py data definition">
+<dt class="sig sig-object py title" id="pygame.typing.IntPoint">
+<span class="sig-prename descclassname"><span class="pre">pygame.typing.</span></span><span class="sig-name descname"><span class="pre">IntPoint</span></span><a class="headerlink" href="#pygame.typing.IntPoint" title="Link to this definition">¶</a></dt>
+<dd><p>A sequence of strictly two integers such as <code class="docutils literal notranslate"><span class="pre">[a,</span> <span class="pre">b]</span></code> or <code class="docutils literal notranslate"><span class="pre">(a,</span> <span class="pre">b)</span></code>.</p>
+</dd></dl>
+
+<dl class="py data definition">
+<dt class="sig sig-object py title" id="pygame.typing.ColorLike">
+<span class="sig-prename descclassname"><span class="pre">pygame.typing.</span></span><span class="sig-name descname"><span class="pre">ColorLike</span></span><a class="headerlink" href="#pygame.typing.ColorLike" title="Link to this definition">¶</a></dt>
+<dd><p>An object representing a color such as a mapped integer, a string or
+a sequence of three or four integers in range 0-255, types supported by
+every function accepting a color argument. i.e.:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pygame.Color(ColorLike)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(r,</span> <span class="pre">g,</span> <span class="pre">b)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(r,</span> <span class="pre">g,</span> <span class="pre">b,</span> <span class="pre">a)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[r,</span> <span class="pre">g,</span> <span class="pre">b,</span> <span class="pre">a]</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;green&quot;</span></code> (<a class="reference internal" href="color_list.html"><span class="doc">Named Colors</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;#rrggbbaa&quot;</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code> (mapped color)</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py data definition">
+<dt class="sig sig-object py title" id="pygame.typing.RectLike">
+<span class="sig-prename descclassname"><span class="pre">pygame.typing.</span></span><span class="sig-name descname"><span class="pre">RectLike</span></span><a class="headerlink" href="#pygame.typing.RectLike" title="Link to this definition">¶</a></dt>
+<dd><p>An object representing a rect such as a sequence of numbers or points
+or an object with a rect attribute or a method returning a rect. These types
+are supported by every function accepting a rect as argument. i.e.:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">w,</span> <span class="pre">h)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(Point,</span> <span class="pre">Point)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pygame.Rect(RectLike)</span></code></p></li>
+<li><p>Any object with a <code class="docutils literal notranslate"><span class="pre">.rect</span></code> attribute which is a <code class="docutils literal notranslate"><span class="pre">RectLike</span></code> or a function
+returning a <code class="docutils literal notranslate"><span class="pre">RectLike</span></code></p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</div></blockquote>
+</dd></dl>
+
+</section>
+
+
+<br /><br />
+<hr />
+<a href="https://github.com/pygame-community/pygame-ce/edit/main/docs/reST/ref/typing.rst" rel="nofollow">Edit on GitHub</a>
+            <div class="clearer"></div>
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="window.html" title="pygame.Window"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="transform.html" title="pygame.transform"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pygame-ce v2.5.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.typing</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2000-2022, pygame developers, 2023 pygame-ce developers.
+    </div>
+  </body>
+</html>

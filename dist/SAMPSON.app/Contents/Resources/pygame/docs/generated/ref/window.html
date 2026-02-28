@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pygame.Window &#8212; pygame-ce v2.5.6 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygame.css?v=a9f2cf0f" />
+    <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=fd3f3429" />
+    <script src="../_static/documentation_options.js?v=53b7011b"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/script.js?v=57918e6b"></script>
+    <link rel="icon" href="../_static/pygame.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Pygame Tutorials - Line By Line Chimp Example" href="../tutorials/en/chimp-explanation.html" />
+    <link rel="prev" title="pygame.typing" href="typing.html" /> 
+  </head><body>  
+
+    <div class="document">
+
+  <div class="header">
+	<div class="flex-container">
+	<div class="logo">
+	  <a href="https://pyga.me/docs">
+	    <img src="../_static/pygame_ce_tiny.webp"/>
+	  </a>
+	  <h5>pygame-ce documentation</h5>
+	</div>
+	<div class="pagelinks">
+	  <div class="top">
+      <div class="nav-top-wrapper">
+        <a href="https://pyga.me/docs">Pygame-ce Home</a> ||
+        <a href="../index.html">Help Contents</a> ||
+        <a href="../genindex.html">Reference Index</a>
+      </div>
+      <div class="searchbar-container">
+        <img class="theme-icon" data-theme="dark-theme" src="../_static/light-theme-icon.svg" width="24" height="24" alt="Light Theme Icon">
+        <img class="theme-icon" data-theme="light-theme" src="../_static/dark-theme-icon.svg" width="24" height="24" alt="Dark Theme Icon">
+        <form action="../search.html" method="get" class="searchbar-form" style="display:inline;float:right;">
+          <input name="q" value="" type="text">
+          <img class="searchbar-button" src="../_static/searchbar-icon.svg" alt="Search">
+          <input class="searchbar-submit" value="search" type="submit">
+        </form>
+      </div>
+	  </div>
+	  <hr style="color:black;border-bottom:none;border-style: dotted;border-bottom-style:none;">
+	  <p class="bottom"><b>Most useful stuff</b>:
+	    <a href="color.html">Color</a> | 
+	    <a href="display.html">display</a> | 
+	    <a href="draw.html">draw</a> | 
+	    <a href="event.html">event</a> | 
+	    <a href="font.html">font</a> | 
+	    <a href="image.html">image</a> | 
+	    <a href="key.html">key</a> | 
+	    <a href="locals.html">locals</a> | 
+	    <a href="mixer.html">mixer</a> | 
+	    <a href="mouse.html">mouse</a> | 
+	    <a href="rect.html">Rect</a> | 
+	    <a href="surface.html">Surface</a> | 
+	    <a href="time.html">time</a> | 
+	    <a href="music.html">music</a> | 
+	    <a href="pygame.html">pygame</a>
+	  </p>
+
+	  <p class="bottom"><b>Advanced stuff</b>:
+	    <a href="cursors.html">cursors</a> | 
+	    <a href="joystick.html">joystick</a> | 
+	    <a href="mask.html">mask</a> | 
+	    <a href="sprite.html">sprite</a> | 
+	    <a href="transform.html">transform</a> | 
+	    <a href="bufferproxy.html">BufferProxy</a> | 
+	    <a href="freetype.html">freetype</a> | 
+	    <a href="gfxdraw.html">gfxdraw</a> | 
+	    <a href="midi.html">midi</a> | 
+	    <a href="pixelarray.html">PixelArray</a> | 
+	    <a href="pixelcopy.html">pixelcopy</a> | 
+	    <a href="sndarray.html">sndarray</a> | 
+	    <a href="surfarray.html">surfarray</a> | 
+	    <a href="math.html">math</a>
+	  </p>
+
+	  <p class="bottom"><b>Other</b>:
+	    <a href="camera.html">camera</a> | 
+	    <a href="sdl2_controller.html#module-pygame._sdl2.controller">controller</a> | 
+	    <a href="examples.html">examples</a> | 
+	    <a href="scrap.html">scrap</a> | 
+	    <a href="system.html">system</a> | 
+	    <a href="tests.html">tests</a> | 
+	    <a href="touch.html">touch</a> | 
+	    <a href="typing.html">typing</a> | 
+	    <a href="pygame.html#module-pygame.version">version</a> | 
+	    <a href="window.html">Window</a>
+	  </p>
+</div>
+</div>
+  </div>
+
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+<section id="pygame-window">
+<dl class="py class definition">
+<dt class="sig sig-object py title" id="pygame.Window">
+<span class="sig-prename descclassname"><span class="pre">pygame.</span></span><span class="sig-name descname"><span class="pre">Window</span></span><a class="headerlink" href="#pygame.Window" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Pygame object that represents a window.</span></div>
+<div class="line"><span class="signature">Window(title='pygame window', size=(640, 480), position=WINDOWPOS_UNDEFINED, *, fullscreen=..., fullscreen_desktop=..., opengl=..., vulkan=..., hidden=..., borderless=..., resizable=..., minimized=..., maximized=..., mouse_grabbed=..., keyboard_grabbed=..., input_focus=..., mouse_focus=..., allow_high_dpi=..., mouse_capture=..., always_on_top=..., utility=...) -&gt; Window</span></div>
+</div>
+<table class="toc docutils align-default">
+<tbody>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.grab_mouse">pygame.Window.grab_mouse</a></div>
+</td>
+<td>—</td>
+<td>Get or set the window's mouse grab mode.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.grab_keyboard">pygame.Window.grab_keyboard</a></div>
+</td>
+<td>—</td>
+<td>Get or set the window's keyboard grab mode.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.mouse_grabbed">pygame.Window.mouse_grabbed</a></div>
+</td>
+<td>—</td>
+<td>Get if the mouse cursor is confined to the window (**read-only**).</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.keyboard_grabbed">pygame.Window.keyboard_grabbed</a></div>
+</td>
+<td>—</td>
+<td>Get if the keyboard shortcuts are captured by the window (**read-only**).</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.focused">pygame.Window.focused</a></div>
+</td>
+<td>—</td>
+<td>Get if the window is focused (**read-only**).</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.title">pygame.Window.title</a></div>
+</td>
+<td>—</td>
+<td>Get or set the window title.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.resizable">pygame.Window.resizable</a></div>
+</td>
+<td>—</td>
+<td>Get or set whether the window is resizable.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.borderless">pygame.Window.borderless</a></div>
+</td>
+<td>—</td>
+<td>Gets or sets whether the window is borderless.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.always_on_top">pygame.Window.always_on_top</a></div>
+</td>
+<td>—</td>
+<td>Get or set whether the window is always on top.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.id">pygame.Window.id</a></div>
+</td>
+<td>—</td>
+<td>Get the unique window ID (**read-only**).</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.mouse_rect">pygame.Window.mouse_rect</a></div>
+</td>
+<td>—</td>
+<td>Get or set the mouse confinement rectangle of the window.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.size">pygame.Window.size</a></div>
+</td>
+<td>—</td>
+<td>Get or set the window size in pixels.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.minimum_size">pygame.Window.minimum_size</a></div>
+</td>
+<td>—</td>
+<td>Get or set the minimum size of the window's client area.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.maximum_size">pygame.Window.maximum_size</a></div>
+</td>
+<td>—</td>
+<td>Get or set the maximum size of the window's client area.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.position">pygame.Window.position</a></div>
+</td>
+<td>—</td>
+<td>Get or set the window position in screen coordinates.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.opacity">pygame.Window.opacity</a></div>
+</td>
+<td>—</td>
+<td>Get or set the window opacity, between 0.0 (fully transparent) and 1.0 (fully opaque).</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.opengl">pygame.Window.opengl</a></div>
+</td>
+<td>—</td>
+<td>Get if the window supports OpenGL.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.utility">pygame.Window.utility</a></div>
+</td>
+<td>—</td>
+<td>Get if the window is an utility window (**read-only**).</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.from_display_module">pygame.Window.from_display_module</a></div>
+</td>
+<td>—</td>
+<td>Create a Window object using window data from display module.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.get_surface">pygame.Window.get_surface</a></div>
+</td>
+<td>—</td>
+<td>Get the window surface.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.flip">pygame.Window.flip</a></div>
+</td>
+<td>—</td>
+<td>Update the display surface to the window.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.set_windowed">pygame.Window.set_windowed</a></div>
+</td>
+<td>—</td>
+<td>Enable windowed mode (exit fullscreen).</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.set_fullscreen">pygame.Window.set_fullscreen</a></div>
+</td>
+<td>—</td>
+<td>Enter fullscreen.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.destroy">pygame.Window.destroy</a></div>
+</td>
+<td>—</td>
+<td>Destroy the window.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.hide">pygame.Window.hide</a></div>
+</td>
+<td>—</td>
+<td>Hide the window.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.show">pygame.Window.show</a></div>
+</td>
+<td>—</td>
+<td>Show the window.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.focus">pygame.Window.focus</a></div>
+</td>
+<td>—</td>
+<td>Set the window to be focused.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.restore">pygame.Window.restore</a></div>
+</td>
+<td>—</td>
+<td>Restore the size and position of a minimized or maximized window.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.maximize">pygame.Window.maximize</a></div>
+</td>
+<td>—</td>
+<td>Maximize the window.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.minimize">pygame.Window.minimize</a></div>
+</td>
+<td>—</td>
+<td>Minimize the window.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.set_icon">pygame.Window.set_icon</a></div>
+</td>
+<td>—</td>
+<td>Set the window icon.</td>
+</tr>
+<tr class="row-even"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.set_modal_for">pygame.Window.set_modal_for</a></div>
+</td>
+<td>—</td>
+<td>Set the window as a modal for a parent window.</td>
+</tr>
+<tr class="row-odd"><td><div class="line"><a class="toc reference external" href="window.html#pygame.Window.flash">pygame.Window.flash</a></div>
+</td>
+<td>—</td>
+<td>Flash a window to demand attention from the user.</td>
+</tr>
+</tbody>
+</table>
+<p>The Window class (formerly known as _sdl2.video.Window), is a newly
+published feature of pygame-ce 2.5.2. This class allows for programs
+to drive multiple windows on-screen at once, something not possible with
+the <a class="tooltip reference internal" href="display.html#pygame.display.set_mode" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.display.set_mode()</span></code><span class="tooltip-content">Initialize a window or screen for display.</span></a> API. Not everything possible with
+<a class="tooltip reference internal" href="display.html#module-pygame.display" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.display</span></code><span class="tooltip-content">Pygame module to control the display window and screen.</span></a> is possible yet in the Window API, but the new
+window class will continue to be developed, and we're excited to share
+the new functionality this class offers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>title</strong> (<em>str</em>) -- The title of the window.</p></li>
+<li><p><strong>size</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>)</em>) -- The size of the window, in screen coordinates.</p></li>
+<li><p><strong>position</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>) or </em><em>int</em>) -- A tuple specifying the window position, or
+<code class="docutils literal notranslate"><span class="pre">WINDOWPOS_CENTERED</span></code>, or <code class="docutils literal notranslate"><span class="pre">WINDOWPOS_UNDEFINED</span></code>.</p></li>
+<li><p><strong>fullscreen</strong> (<em>bool</em>) -- Create a fullscreen window using the window size as
+the resolution (videomode change).</p></li>
+<li><p><strong>fullscreen_desktop</strong> (<em>bool</em>) -- Create a fullscreen window using the current
+desktop resolution.</p></li>
+<li><p><strong>opengl</strong> (<em>bool</em>) -- Create a window with support for an OpenGL context.</p></li>
+<li><p><strong>vulkan</strong> (<em>bool</em>) -- Create a window with support for a Vulkan instance.</p></li>
+<li><p><strong>hidden</strong> (<em>bool</em>) -- Create a hidden window.</p></li>
+<li><p><strong>borderless</strong> (<em>bool</em>) -- Create a window without borders.</p></li>
+<li><p><strong>resizable</strong> (<em>bool</em>) -- Create a resizable window.</p></li>
+<li><p><strong>minimized</strong> (<em>bool</em>) -- Create a mimized window.</p></li>
+<li><p><strong>maximized</strong> (<em>bool</em>) -- Create a maximized window.</p></li>
+<li><p><strong>mouse_grabbed</strong> (<em>bool</em>) -- Create a window with grabbed mouse input.</p></li>
+<li><p><strong>keyboard_grabbed</strong> (<em>bool</em>) -- Create a window with grabbed keyboard input.</p></li>
+<li><p><strong>input_focus</strong> (<em>bool</em>) -- Create a window with input focus.</p></li>
+<li><p><strong>mouse_focus</strong> (<em>bool</em>) -- Create a window with mouse focus.</p></li>
+<li><p><strong>allow_high_dpi</strong> (<em>bool</em>) -- Create a window in high-DPI mode if supported.</p></li>
+<li><p><strong>mouse_capture</strong> (<em>bool</em>) -- Create a window that has the mouse captured
+(unrelated to INPUT_GRABBED).</p></li>
+<li><p><strong>always_on_top</strong> (<em>bool</em>) -- Create a window that is always presented above
+others.</p></li>
+<li><p><strong>utility</strong> (<em>bool</em>) -- Create a window that doesn't appear in the task bar.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Event behavior if one Window is created: When the close button is pressed,
+the <code class="docutils literal notranslate"><span class="pre">QUIT</span></code> event will be sent to the event queue.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+
+<span class="n">window</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Window</span><span class="p">()</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span>
+</pre></div>
+</div>
+<p>Event behavior if multiple windows are created: When the close button is
+pressed, a <code class="docutils literal notranslate"><span class="pre">WINDOWCLOSE</span></code> event is sent. You need to explicitly destroy
+the window. Note that the event <code class="docutils literal notranslate"><span class="pre">QUIT</span></code> will only be sent if all
+windows have been destroyed.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+
+<span class="n">window1</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Window</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">))</span>
+<span class="n">window2</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Window</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">700</span><span class="p">,</span><span class="mi">100</span><span class="p">))</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">WINDOWCLOSE</span><span class="p">:</span>
+        <span class="nb">id</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">id</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;WINDOWCLOSE event sent to Window #</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Last window is destroyed. QUIT event was sent.&quot;</span><span class="p">)</span>
+        <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span>
+</pre></div>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.5.0: </span>when <code class="docutils literal notranslate"><span class="pre">opengl</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the <code class="docutils literal notranslate"><span class="pre">Window</span></code> has an OpenGL context created by pygame</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in pygame-ce 2.5.1: </span>Window is now a base class, allowing subclassing</p>
+</div>
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame.Window.grab_mouse">
+<span class="sig-name descname"><span class="pre">grab_mouse</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.grab_mouse" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the window's mouse grab mode.</span></div>
+<div class="line"><span class="signature">grab_mouse -&gt; bool</span></div>
+</div>
+<p>When this attribute is set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the window will try to confine the mouse
+cursor to itself.</p>
+<p>Note this only set the &quot;mode&quot; of grab. The mouse may be confined to another window
+depending on the window focus. To get if the mouse is currently restricted to this
+window, please use <a class="reference internal" href="#pygame.Window.mouse_grabbed" title="pygame.Window.mouse_grabbed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mouse_grabbed</span></code></a>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.mouse_grabbed" title="pygame.Window.mouse_grabbed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">mouse_grabbed</span></code></a></p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame.Window.grab_keyboard">
+<span class="sig-name descname"><span class="pre">grab_keyboard</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.grab_keyboard" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the window's keyboard grab mode.</span></div>
+<div class="line"><span class="signature">grab_keyboard -&gt; bool</span></div>
+</div>
+<p>When this attribute is set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the window will try to capture system
+keyboard shortcuts like <code class="docutils literal notranslate"><span class="pre">Alt+Tab</span></code> or the <code class="docutils literal notranslate"><span class="pre">Meta/Super</span></code> key.</p>
+<p>This attribute only set the &quot;mode&quot; of grab. The keyboard may be captured by
+another window depending on the window focus. To get if keyboard is currently
+captured by this window, please use <a class="reference internal" href="#pygame.Window.keyboard_grabbed" title="pygame.Window.keyboard_grabbed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">keyboard_grabbed</span></code></a>.</p>
+<p>Note that not all system keyboard shortcuts can be captured by applications
+(one example is <code class="docutils literal notranslate"><span class="pre">Ctrl+Alt+Del</span></code> on Windows).</p>
+<p>When keyboard grab is enabled, pygame will continue to handle <code class="docutils literal notranslate"><span class="pre">Alt+Tab</span></code> when
+the window is full-screen to ensure the user is not trapped in your application.
+If you have a custom keyboard shortcut to exit fullscreen mode, you may suppress
+this behavior with an environment variable, e.g.
+<code class="docutils literal notranslate"><span class="pre">os.environ[&quot;SDL_ALLOW_ALT_TAB_WHILE_GRABBED&quot;]</span> <span class="pre">=</span> <span class="pre">&quot;0&quot;</span></code>.</p>
+<p>This attribute requires SDL 2.0.16+.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.keyboard_grabbed" title="pygame.Window.keyboard_grabbed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">keyboard_grabbed</span></code></a></p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.mouse_grabbed">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mouse_grabbed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.mouse_grabbed" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get if the mouse cursor is confined to the window (**read-only**).</span></div>
+<div class="line"><span class="signature">mouse_grabbed -&gt; bool</span></div>
+</div>
+<p>Get if the mouse cursor is currently grabbed and confined to the window.</p>
+<p>Roughly equivalent to this expression:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">win</span><span class="o">.</span><span class="n">grab_mouse</span> <span class="ow">and</span> <span class="p">(</span><span class="n">win</span> <span class="ow">is</span> <span class="n">get_grabbed_window</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.grab_mouse" title="pygame.Window.grab_mouse"><code class="xref py py-attr docutils literal notranslate"><span class="pre">grab_mouse</span></code></a></p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.keyboard_grabbed">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">keyboard_grabbed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.keyboard_grabbed" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get if the keyboard shortcuts are captured by the window (**read-only**).</span></div>
+<div class="line"><span class="signature">keyboard_grabbed -&gt; bool</span></div>
+</div>
+<p>Get if the keyboard shortcuts are currently grabbed and captured by the window.</p>
+<p>Roughly equivalent to this expression:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">win</span><span class="o">.</span><span class="n">grab_keyboard</span> <span class="ow">and</span> <span class="p">(</span><span class="n">win</span> <span class="ow">is</span> <span class="n">get_grabbed_window</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>This attribute requires SDL 2.0.16+.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.grab_keyboard" title="pygame.Window.grab_keyboard"><code class="xref py py-attr docutils literal notranslate"><span class="pre">grab_keyboard</span></code></a></p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.focused">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">focused</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.focused" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get if the window is focused (**read-only**).</span></div>
+<div class="line"><span class="signature">focused -&gt; bool</span></div>
+</div>
+<p>Get if the window is currently focused. The same result can be achieved using
+the <code class="docutils literal notranslate"><span class="pre">WINDOWFOCUSGAINED</span></code> and <code class="docutils literal notranslate"><span class="pre">WINDOWFOCUSLOST</span></code> events.</p>
+<p>Use <a class="reference internal" href="#pygame.Window.focus" title="pygame.Window.focus"><code class="xref py py-meth docutils literal notranslate"><span class="pre">focus()</span></code></a> to focus and raise the window.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.2.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame.Window.title">
+<span class="sig-name descname"><span class="pre">title</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#pygame.Window.title" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the window title.</span></div>
+<div class="line"><span class="signature">title -&gt; str</span></div>
+</div>
+<p>An empty string means that no title is set.</p>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame.Window.resizable">
+<span class="sig-name descname"><span class="pre">resizable</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.resizable" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set whether the window is resizable.</span></div>
+<div class="line"><span class="signature">resizable -&gt; bool</span></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame.Window.borderless">
+<span class="sig-name descname"><span class="pre">borderless</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.borderless" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Gets or sets whether the window is borderless.</span></div>
+<div class="line"><span class="signature">borderless -&gt; bool</span></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can't change the border state of a fullscreen window.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame.Window.always_on_top">
+<span class="sig-name descname"><span class="pre">always_on_top</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.always_on_top" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set whether the window is always on top.</span></div>
+<div class="line"><span class="signature">always_on_top -&gt; bool</span></div>
+</div>
+<p>Setting the always-on-top mode requires SDL 2.0.16+.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Setting this property is not supported on some video drivers (like wayland)
+and a <a class="tooltip reference internal" href="pygame.html#pygame.error" title=""><code class="xref py py-exc docutils literal notranslate"><span class="pre">pygame.error</span></code><span class="tooltip-content">standard pygame exception</span></a> exception may be raised in such cases.</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.3.1.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#pygame.Window.id" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the unique window ID (**read-only**).</span></div>
+<div class="line"><span class="signature">id -&gt; int</span></div>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.mouse_rect">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">mouse_rect</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">pygame.rect.Rect</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#pygame.Window.mouse_rect" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the mouse confinement rectangle of the window.</span></div>
+<div class="line"><span class="signature">mouse_rect -&gt; Optional[Rect]</span></div>
+</div>
+<p>Setting this attribute to a rect-like object confines the
+cursor to the specified area of this window.</p>
+<p>This attribute can be None, meaning that there is no mouse rect.</p>
+<p>Note that this does NOT grab the cursor, it only defines the area a
+cursor is restricted to when the window has mouse focus.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pygame.Window.size" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the window size in pixels.</span></div>
+<div class="line"><span class="signature">size -&gt; tuple[int, int]</span></div>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.minimum_size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">minimum_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pygame.Window.minimum_size" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the minimum size of the window's client area.</span></div>
+<div class="line"><span class="signature">minimum_size -&gt; tuple[int, int]</span></div>
+</div>
+<p>Initial value in most cases is <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code>. If <a class="reference internal" href="#pygame.Window.from_display_module" title="pygame.Window.from_display_module"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_display_module()</span></code></a>
+was used to create the window and <a class="tooltip reference internal" href="display.html#pygame.display.set_mode" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.display.set_mode()</span></code><span class="tooltip-content">Initialize a window or screen for display.</span></a> was
+called with the <code class="docutils literal notranslate"><span class="pre">SCALED</span></code> flag, the initial value is the size used in
+that call.</p>
+<p>Raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if negative values are provided or
+if the width or height provided are greater than set
+maximum width or height respectively. Unless maximum size
+is <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code> (initial value).</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.maximum_size" title="pygame.Window.maximum_size"><code class="xref py py-attr docutils literal notranslate"><span class="pre">maximum_size</span></code></a>.</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.maximum_size">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">maximum_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pygame.Window.maximum_size" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the maximum size of the window's client area.</span></div>
+<div class="line"><span class="signature">maximum_size -&gt; tuple[int, int]</span></div>
+</div>
+<p>Initial value is <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0)</span></code>.</p>
+<p>Raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if negative values are provided or
+if the width or height provided are less than set minimum
+width or height respectively.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.minimum_size" title="pygame.Window.minimum_size"><code class="xref py py-attr docutils literal notranslate"><span class="pre">minimum_size</span></code></a>.</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.position">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#pygame.Window.position" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the window position in screen coordinates.</span></div>
+<div class="line"><span class="signature">position -&gt; tuple[int, int]</span></div>
+</div>
+<p>The position may be a tuple of (x, y) coordinates or <code class="docutils literal notranslate"><span class="pre">WINDOWPOS_CENTERED</span></code> or
+<code class="docutils literal notranslate"><span class="pre">WINDOWPOS_UNDEFINED</span></code>. The origin is the topleft of the main display.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Setting this property is not supported on some video drivers (like wayland)
+and a <a class="tooltip reference internal" href="pygame.html#pygame.error" title=""><code class="xref py py-exc docutils literal notranslate"><span class="pre">pygame.error</span></code><span class="tooltip-content">standard pygame exception</span></a> exception may be raised in such cases.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute definition">
+<dt class="sig sig-object py title" id="pygame.Window.opacity">
+<span class="sig-name descname"><span class="pre">opacity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#pygame.Window.opacity" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get or set the window opacity, between 0.0 (fully transparent) and 1.0 (fully opaque).</span></div>
+<div class="line"><span class="signature">opacity -&gt; float</span></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Setting this property is not supported on some video drivers (like wayland)
+and a <a class="tooltip reference internal" href="pygame.html#pygame.error" title=""><code class="xref py py-exc docutils literal notranslate"><span class="pre">pygame.error</span></code><span class="tooltip-content">standard pygame exception</span></a> exception may be raised in such cases.</p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.opengl">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">opengl</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.opengl" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get if the window supports OpenGL.</span></div>
+<div class="line"><span class="signature">opengl -&gt; bool</span></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the <code class="docutils literal notranslate"><span class="pre">Window</span></code> has an OpenGL context associated with it, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py property definition">
+<dt class="sig sig-object py title" id="pygame.Window.utility">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">utility</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#pygame.Window.utility" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get if the window is an utility window (**read-only**).</span></div>
+<div class="line"><span class="signature">utility -&gt; bool</span></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the window doesn't appear in the task bar, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.
+This only works for X11 and Windows, for other platforms, creating <code class="docutils literal notranslate"><span class="pre">Window(utility=True)</span></code> won't change anything.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.3.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.from_display_module">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_display_module</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.from_display_module" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Create a Window object using window data from display module.</span></div>
+<div class="line"><span class="signature">from_display_module() -&gt; Window</span></div>
+</div>
+<p><strong>DON'T USE THIS!</strong> If you want to draw to a surface and use the window
+API, use <a class="reference internal" href="#pygame.Window.get_surface" title="pygame.Window.get_surface"><code class="xref py py-func docutils literal notranslate"><span class="pre">Window.get_surface()</span></code></a> and <a class="reference internal" href="#pygame.Window.flip" title="pygame.Window.flip"><code class="xref py py-func docutils literal notranslate"><span class="pre">Window.flip()</span></code></a>.</p>
+<p>Create a Window object that uses the same window data from the <a class="tooltip reference internal" href="display.html#module-pygame.display" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.display</span></code><span class="tooltip-content">Pygame module to control the display window and screen.</span></a> module, created upon calling
+<a class="tooltip reference internal" href="display.html#pygame.display.set_mode" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.display.set_mode()</span></code><span class="tooltip-content">Initialize a window or screen for display.</span></a>.</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.get_surface">
+<span class="sig-name descname"><span class="pre">get_surface</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.get_surface" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Get the window surface.</span></div>
+<div class="line"><span class="signature">get_surface() -&gt; Surface</span></div>
+</div>
+<p>Returns a &quot;display surface&quot; for this Window. The surface returned is
+analogous to the surface returned by <a class="tooltip reference internal" href="display.html#pygame.display.set_mode" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.display.set_mode()</span></code><span class="tooltip-content">Initialize a window or screen for display.</span></a>.</p>
+<p>This method allows software rendering (classic pygame rendering) on top
+of the Window API. This method should not be called when using hardware
+rendering (coming soon).</p>
+<p>Similarly to the &quot;display surface&quot; returned by <a class="tooltip reference internal" href="display.html#module-pygame.display" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.display</span></code><span class="tooltip-content">Pygame module to control the display window and screen.</span></a>,
+this surface will change size with the Window, and will become invalid
+after the Window's destruction.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.flip" title="pygame.Window.flip"><code class="xref py py-func docutils literal notranslate"><span class="pre">flip()</span></code></a></p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.flip">
+<span class="sig-name descname"><span class="pre">flip</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.flip" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Update the display surface to the window.</span></div>
+<div class="line"><span class="signature">flip() -&gt; None</span></div>
+</div>
+<p>Update pixel data from memory to be displayed in the window. This is the Window
+class equivalent of <a class="tooltip reference internal" href="display.html#pygame.display.flip" title=""><code class="xref py py-func docutils literal notranslate"><span class="pre">pygame.display.flip()</span></code><span class="tooltip-content">Update the full display Surface to the screen.</span></a>.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">get_surface()</span></code> this method allows software rendering (classic pygame rendering) flipping pixel data
+from an associated surface in memory to be displayed in the window. Alternatively, when this window has an
+associated OpenGL context, this method will instead perform a GL buffer swap to the window.</p>
+<p>Here is a runnable example of using <code class="docutils literal notranslate"><span class="pre">get_surface</span></code> and <code class="docutils literal notranslate"><span class="pre">flip</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+
+<span class="n">win</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Window</span><span class="p">()</span>
+<span class="n">surf</span> <span class="o">=</span> <span class="n">win</span><span class="o">.</span><span class="n">get_surface</span><span class="p">()</span>  <span class="c1"># get the window surface</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+   <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">pygame</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+      <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">pygame</span><span class="o">.</span><span class="n">QUIT</span><span class="p">:</span>
+            <span class="n">pygame</span><span class="o">.</span><span class="n">quit</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">SystemExit</span>
+
+   <span class="c1"># draw something on the surface</span>
+   <span class="n">surf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+
+   <span class="n">win</span><span class="o">.</span><span class="n">flip</span><span class="p">()</span>  <span class="c1"># update the surface to the window</span>
+</pre></div>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.4.0.</span></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.set_windowed">
+<span class="sig-name descname"><span class="pre">set_windowed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.set_windowed" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Enable windowed mode (exit fullscreen).</span></div>
+<div class="line"><span class="signature">set_windowed() -&gt; None</span></div>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.set_fullscreen" title="pygame.Window.set_fullscreen"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_fullscreen()</span></code></a></p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.set_fullscreen">
+<span class="sig-name descname"><span class="pre">set_fullscreen</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.set_fullscreen" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Enter fullscreen.</span></div>
+<div class="line"><span class="signature">set_fullscreen(desktop=False) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>desktop</strong> (<em>bool</em>) -- If <code class="docutils literal notranslate"><span class="pre">True</span></code>, use the current desktop resolution.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, change the fullscreen resolution to the window size.</p>
+</dd>
+</dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="#pygame.Window.set_windowed" title="pygame.Window.set_windowed"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_windowed()</span></code></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.destroy">
+<span class="sig-name descname"><span class="pre">destroy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.destroy" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Destroy the window.</span></div>
+<div class="line"><span class="signature">destroy() -&gt; None</span></div>
+</div>
+<p>Destroys the internal window data of this Window object. This method is
+called automatically when this Window object is garbage collected, so
+there usually aren't any reasons to call it manually.</p>
+<p>Other methods that try to manipulate that window data will raise an error.</p>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.hide">
+<span class="sig-name descname"><span class="pre">hide</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.hide" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Hide the window.</span></div>
+<div class="line"><span class="signature">hide() -&gt; None</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.show">
+<span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.show" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Show the window.</span></div>
+<div class="line"><span class="signature">show() -&gt; None</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.focus">
+<span class="sig-name descname"><span class="pre">focus</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.focus" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the window to be focused.</span></div>
+<div class="line"><span class="signature">focus(input_only=False) -&gt; None</span></div>
+</div>
+<p>Raises the window above other windows and sets the input focus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>input_only</strong> -- if <code class="docutils literal notranslate"><span class="pre">True</span></code>, the window will be given input focus
+but may be completely obscured by other windows.
+Only supported on X11. This has been deprecated and
+may be removed in a future version.</p>
+</dd>
+</dl>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since pygame-ce 2.5.3: </span><code class="docutils literal notranslate"><span class="pre">input_only</span></code> argument</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.restore">
+<span class="sig-name descname"><span class="pre">restore</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.restore" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Restore the size and position of a minimized or maximized window.</span></div>
+<div class="line"><span class="signature">restore() -&gt; None</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.maximize">
+<span class="sig-name descname"><span class="pre">maximize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.maximize" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Maximize the window.</span></div>
+<div class="line"><span class="signature">maximize() -&gt; None</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.minimize">
+<span class="sig-name descname"><span class="pre">minimize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.minimize" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Minimize the window.</span></div>
+<div class="line"><span class="signature">minimize() -&gt; None</span></div>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.set_icon">
+<span class="sig-name descname"><span class="pre">set_icon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.set_icon" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the window icon.</span></div>
+<div class="line"><span class="signature">set_icon(icon, /) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>surface</strong> (<a class="reference internal" href="surface.html#pygame.Surface" title="pygame.Surface"><em>Surface</em></a>) -- A Surface to use as the icon.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.set_modal_for">
+<span class="sig-name descname"><span class="pre">set_modal_for</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.set_modal_for" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Set the window as a modal for a parent window.</span></div>
+<div class="line"><span class="signature">set_modal_for(parent, /) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parent</strong> (<a class="reference internal" href="#pygame.Window" title="pygame.Window"><em>Window</em></a>) -- The parent window.</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function is only supported on X11.</p>
+</div>
+</dd></dl>
+
+<dl class="py method definition">
+<dt class="sig sig-object py title" id="pygame.Window.flash">
+<span class="sig-name descname"><span class="pre">flash</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pygame.Window.flash" title="Link to this definition">¶</a></dt>
+<dd><div class="line-block">
+<div class="line"><span class="summaryline">Flash a window to demand attention from the user.</span></div>
+<div class="line"><span class="signature">flash(operation, /) -&gt; None</span></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>operation</strong> (<em>int</em>) -- The flash operation.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Supported flash operations are:</dt><dd><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pygame.FLASH_CANCEL</span></code>: Cancel the current flash state if present</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pygame.FLASH_BRIEFLY</span></code>: Flash for a short amount of time to get attention</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pygame.FLASH_UNTIL_FOCUSED</span></code>: Keep flashing until the window is focused</p></li>
+</ul>
+</dd>
+</dl>
+<p>Window flashing requires SDL 2.0.16+. A <a class="tooltip reference internal" href="pygame.html#pygame.error" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.error</span></code><span class="tooltip-content">standard pygame exception</span></a> exception will be raised
+otherwise.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This function is only supported on Windows, X11, Wayland and Cocoa (MacOS).
+A <a class="tooltip reference internal" href="pygame.html#pygame.error" title=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.error</span></code><span class="tooltip-content">standard pygame exception</span></a> exception will be raised if it's not supported therefore it's
+advised to wrap it in a try block.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pygame</span>
+<span class="n">window</span> <span class="o">=</span> <span class="n">pygame</span><span class="o">.</span><span class="n">Window</span><span class="p">()</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">window</span><span class="o">.</span><span class="n">flash</span><span class="p">(</span><span class="n">pygame</span><span class="o">.</span><span class="n">FLASH_BRIEFLY</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">pygame</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Window flashing not supported&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified added">New in pygame-ce 2.5.2.</span></p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+<br /><br />
+<hr />
+<a href="https://github.com/pygame-community/pygame-ce/edit/main/docs/reST/ref/window.rst" rel="nofollow">Edit on GitHub</a>
+            <div class="clearer"></div>
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../tutorials/en/chimp-explanation.html" title="Pygame Tutorials - Line By Line Chimp Example"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="typing.html" title="pygame.typing"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">pygame-ce v2.5.6 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href=""><code class="xref py py-mod docutils literal notranslate"><span class="pre">pygame.Window</span></code></a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2000-2022, pygame developers, 2023 pygame-ce developers.
+    </div>
+  </body>
+</html>

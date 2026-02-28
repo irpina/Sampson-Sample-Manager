@@ -1,0 +1,1 @@
+../../../Resources/pygame/_sdl2/sdl2.pyi
