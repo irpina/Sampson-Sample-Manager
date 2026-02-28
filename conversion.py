@@ -243,14 +243,13 @@ def convert_file(
         import pydub
         pydub.AudioSegment.converter = ffmpeg_path
         
-        # Also set ffprobe (needed for reading file info)
-        ffprobe_path = _find_ffprobe_path(ffmpeg_path)
-        if ffprobe_path:
-            pydub.utils.ffprobe = ffprobe_path
-        
         # Now load pydub and process the audio
+        # Pass format explicitly so pydub uses -f flag with ffmpeg directly,
+        # making ffprobe unnecessary in the bundle.
         AudioSegment = _get_pydub()
-        audio = AudioSegment.from_file(str(src))
+        _ext = src.suffix.lower().lstrip('.')
+        _fmt = 'aiff' if _ext in ('aif', 'aiff') else _ext  # ffmpeg uses 'aiff' not 'aif'
+        audio = AudioSegment.from_file(str(src), format=_fmt)
         
         # Apply conversions in order
         if sample_rate and audio.frame_rate != sample_rate:
