@@ -69,7 +69,8 @@ SAMPSON/
 ├── playback.py                # Audio playback via pygame-ce, transport controls
 ├── builders.py                # All build_* UI functions, toggle_theme(), build_app()
 ├── requirements.txt           # Python dependencies
-├── SAMPSON.spec               # PyInstaller configuration
+├── SAMPSON.spec               # PyInstaller configuration (not in git)
+├── build_macos.sh             # macOS build script wrapper
 └── sampsontransparent2.png    # Application logo
 ```
 
@@ -85,6 +86,7 @@ state.py       (no app imports)
 dpi.py         → state
 theme.py       → state, dpi
 log_panel.py   → state, theme
+conversion.py  → state
 operations.py  → state, theme, constants, log_panel, conversion
 browser.py     → state, theme, constants, preview
 preview.py     → state, theme, constants, dpi, operations
@@ -136,6 +138,13 @@ pyinstaller SAMPSON.spec
 pyinstaller SAMPSON.spec
 # Output: dist/SAMPSON ELF binary
 # Runtime deps: libsdl2-2.0-0 libsdl2-mixer-2.0-0
+```
+
+### Package for macOS
+
+```bash
+bash build_macos.sh
+# Output: dist/SAMPSON.app
 ```
 
 ### Linux Runtime Dependencies
@@ -235,7 +244,7 @@ PROFILES = {
             "format": "wav",
             "sample_rate": 44100,
             "bit_depth": 16,
-            "channels": None,
+            "channels": None,  # Keep original
             "normalize": False,
         }
     },
@@ -343,7 +352,7 @@ Uses `pygame.mixer` from `pygame-ce` (Python 3.14 incompatible — use `pygame-c
 **Always increment the version** when finishing a change. The label lives in `build_status_bar()` in `builders.py`:
 
 ```python
-ctk.CTkLabel(frame, text="v0.3.1", ...)  # ← Update this
+ctk.CTkLabel(frame, text="v0.3.2", ...)  # ← Update this
 ```
 
 ### Tracing Variables
