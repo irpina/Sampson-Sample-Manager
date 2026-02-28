@@ -42,6 +42,28 @@ Option A preferred — it also prevents the decks from collapsing.
 
 ---
 
+---
+
+### BUG-002 · macOS window oversized and clipped behind menu bar / dock
+
+**Status:** Open
+**Reported:** 2026-02-27
+**Severity:** Medium — UI partially hidden on launch; content inaccessible until manually resized
+
+**Symptom:**
+On macOS (Retina), the window launches too large and overflows behind the system menu bar at the top and the dock. The bottom panels (status bar, log) and right-side content can be hidden. Additionally, when maximized via the green traffic-light zoom button, the window does not respect the minimum aspect ratio (`MIN_ASPECT_RATIO = 1.38`), potentially collapsing into an unusable tall/narrow shape.
+
+**Root cause:**
+`_compute_dpi_scale()` in `dpi.py` returns `NSScreen.mainScreen().backingScaleFactor()` — which is `2.0` on Retina displays. This value is then used by `_px()` to double all window/widget pixel values. However, **tkinter on macOS already works in logical points** (1 pt = 2 physical pixels on Retina); CTK also handles Retina scaling internally. The `backingScaleFactor` multiplier is therefore applied twice, making the initial window `2200×1560` logical points — larger than most Mac screens (typically 1280–1800 pts wide).
+
+**Files affected:**
+- [dpi.py](dpi.py) — `_compute_dpi_scale()` macOS branch returns wrong value
+- [main.py](main.py) — startup geometry and minsize use `_px()` which is 2× on macOS; no screen-clamp; no aspect-ratio binding
+
+**Fix:** See [PLAN_MACOS_SCALING.md](PLAN_MACOS_SCALING.md) for the full implementation plan.
+
+---
+
 ## Resolved
 
 *(none yet)*
