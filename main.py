@@ -1,4 +1,10 @@
 import sys
+import os
+
+# Fix for Tcl/Tk 9.0 console crash in bundled app
+os.environ['TK_SILENCE_DEPRECATION'] = '1'
+os.environ['TCL_NO_STACK_TRACE'] = '1'
+
 import tkinter as tk
 import customtkinter as ctk
 
