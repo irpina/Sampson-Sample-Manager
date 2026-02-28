@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="sampsontransparent2.png" alt="SAMPSON Logo" width="400">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="sampsontransparentwhite.png">
+    <source media="(prefers-color-scheme: light)" srcset="sampsontransparent2.png">
+    <img src="sampsontransparent2.png" alt="SAMPSON Logo" width="400">
+  </picture>
 </p>
 
 **Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux, macOS) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, convert formats for specific devices, preview exactly how they'll be renamed and structured, then copy or move them in one click.
