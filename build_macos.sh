@@ -2,6 +2,11 @@
 set -e
 echo "Building SAMPSON.app..."
 
+# Get signing identity from environment or use ad-hoc
+CODESIGN_ID="${APPLE_CODESIGN_IDENTITY:--}"
+
+echo "Using signing identity: ${CODESIGN_ID:0:50}..."
+
 # Pre-download static-ffmpeg binaries (cached after first run)
 python -c "import static_ffmpeg; static_ffmpeg.add_paths()"
 
@@ -30,5 +35,9 @@ if [ -d "$TCL_DATA" ]; then
     rm -rf "$TCL_DATA/http"*
     rm -rf "$TCL_DATA/tcltest"*
 fi
+
+# Re-sign the app bundle after modifications
+echo "Re-signing app bundle..."
+codesign --force --sign "$CODESIGN_ID" --deep --preserve-metadata=identifier,entitlements,runtime "dist/SAMPSON.app"
 
 echo "Done: dist/SAMPSON.app ($(du -sh dist/SAMPSON.app | cut -f1))"
