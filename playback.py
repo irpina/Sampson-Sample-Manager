@@ -1,19 +1,31 @@
-import pygame.mixer as _mixer
+"""macOS playback via AppKit.NSSound (replaces pygame.mixer)."""
+
+import sys
 from pathlib import Path
 
 import state
 
-_mixer.init()
-_current_index = -1   # index into preview tree item list
+# ── Backend selection ────────────────────────────────────────────────────────
+# NSSound on macOS (zero extra deps); pygame fallback for Windows/Linux.
+if sys.platform == "darwin":
+    from AppKit import NSSound as _NSSound
+    _USE_NSSOUND = True
+else:
+    import pygame.mixer as _mixer
+    _mixer.init()
+    _USE_NSSOUND = False
 
+_current_index = -1   # index into preview tree item list
+_ns_sound      = None # active NSSound instance (macOS only)
+
+
+# ── Internal helpers ─────────────────────────────────────────────────────────
 
 def _tree_items():
-    """Return list of all item IDs in preview tree."""
     return list(state.preview_tree.get_children())
 
 
 def _load_index(idx):
-    """Select and prepare the file at tree index idx without playing."""
     global _current_index
     items = _tree_items()
     if not items or not (0 <= idx < len(items)):
@@ -27,39 +39,64 @@ def _load_index(idx):
     _update_transport_state()
 
 
+def _is_busy() -> bool:
+    """Return True if audio is currently playing."""
+    if _USE_NSSOUND:
+        return _ns_sound is not None and _ns_sound.isPlaying()
+    else:
+        return _mixer.music.get_busy()
+
+
+# ── Public transport API ─────────────────────────────────────────────────────
+
 def play():
     """Play the currently selected file; if already playing, stop (toggle)."""
-    if _mixer.music.get_busy():
+    global _ns_sound
+    if _is_busy():
         stop()
         return
     if not state._playback_file or not state._playback_file.is_file():
         return
     try:
-        _mixer.music.load(str(state._playback_file))
-        _mixer.music.play()
-        state._is_playing = True
-        _update_transport_state()
-        state.root.after(200, _poll_playback)
+        if _USE_NSSOUND:
+            _ns_sound = _NSSound.alloc().initWithContentsOfFile_byReference_(
+                str(state._playback_file), True)
+            if _ns_sound:
+                _ns_sound.play()
+                state._is_playing = True
+                _update_transport_state()
+                state.root.after(200, _poll_playback)
+        else:
+            _mixer.music.load(str(state._playback_file))
+            _mixer.music.play()
+            state._is_playing = True
+            _update_transport_state()
+            state.root.after(200, _poll_playback)
     except Exception:
         state._is_playing = False
 
 
 def stop():
     """Stop playback and update transport state."""
-    _mixer.music.stop()
+    global _ns_sound
+    if _USE_NSSOUND:
+        if _ns_sound and _ns_sound.isPlaying():
+            _ns_sound.stop()
+        _ns_sound = None
+    else:
+        _mixer.music.stop()
     state._is_playing = False
     _update_transport_state()
 
 
 def reset():
-    """Stop playback and reset the current index (call on source navigate)."""
+    """Stop playback and reset current index (call on source navigate)."""
     global _current_index
     stop()
     _current_index = -1
 
 
 def next_file():
-    """Stop, advance to the next file, and auto-play."""
     stop()
     items = _tree_items()
     if not items:
@@ -70,7 +107,6 @@ def next_file():
 
 
 def prev_file():
-    """Stop, retreat to the previous file, and auto-play."""
     stop()
     idx = max(_current_index - 1, 0)
     _load_index(idx)
@@ -78,7 +114,6 @@ def prev_file():
 
 
 def on_tree_select(event):
-    """ButtonRelease-1 handler on the preview tree — select and auto-play."""
     state.preview_tree.focus_set()
     iid = state.preview_tree.identify_row(event.y)
     if not iid:
@@ -91,7 +126,6 @@ def on_tree_select(event):
 
 
 def on_arrow_key(event):
-    """KeyRelease-Up/Down handler — play whichever row the arrow moved to."""
     state.preview_tree.focus_set()
     iid = state.preview_tree.focus()
     if not iid:
@@ -104,8 +138,7 @@ def on_arrow_key(event):
 
 
 def _poll_playback():
-    """Re-check every 200 ms; update button icon when track ends naturally."""
-    if _mixer.music.get_busy():
+    if _is_busy():
         state.root.after(200, _poll_playback)
     else:
         state._is_playing = False
@@ -113,7 +146,6 @@ def _poll_playback():
 
 
 def _update_transport_state():
-    """Sync play/stop icon and enable/disable prev & next buttons."""
     if state.transport_play_btn:
         icon = "■" if state._is_playing else "▶"
         state.transport_play_btn.configure(text=icon)
