@@ -29,9 +29,22 @@ def _compute_dpi_scale() -> float:
     120 DPI → 1.25  (125 %)
     144 DPI → 1.5   (150 %)
     192 DPI → 2.0   (200 %)
+
+    macOS: Returns backingScaleFactor (1.0 on non-Retina, 2.0 on Retina).
     """
+    if sys.platform == "darwin":
+        try:
+            from AppKit import NSScreen  # provided by pyobjc-framework-Cocoa
+            scale = NSScreen.mainScreen().backingScaleFactor()
+            if scale and scale > 0:
+                return float(scale)
+        except Exception:
+            pass
+        return 1.0
+
     if sys.platform != "win32":
         return 1.0
+
     try:
         return ctypes.windll.shcore.GetDpiForSystem() / 96.0
     except (AttributeError, OSError):
