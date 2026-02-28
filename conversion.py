@@ -13,35 +13,36 @@ from typing import Optional, NamedTuple
 
 import state
 
-# Lazy import imageio_ffmpeg to avoid startup overhead
-_imageio_ffmpeg = None
+# Track whether static_ffmpeg paths have been added to PATH
+_static_ffmpeg_initialized = False
 
 
-def _get_imageio_ffmpeg():
-    """Lazy load imageio_ffmpeg and return ffmpeg path."""
-    global _imageio_ffmpeg
-    if _imageio_ffmpeg is None:
+def _init_static_ffmpeg() -> bool:
+    """Add static_ffmpeg binaries (ffmpeg + ffprobe) to PATH. Returns True on success."""
+    global _static_ffmpeg_initialized
+    if not _static_ffmpeg_initialized:
         try:
-            import imageio_ffmpeg
-            _imageio_ffmpeg = imageio_ffmpeg
-        except ImportError:
-            _imageio_ffmpeg = False
-    return _imageio_ffmpeg
+            import static_ffmpeg
+            static_ffmpeg.add_paths()
+            _static_ffmpeg_initialized = True
+        except Exception:
+            pass
+    return _static_ffmpeg_initialized
 
 
 def _find_ffmpeg_path() -> Optional[str]:
     """Find ffmpeg executable path.
-    
+
     Priority:
-    1. imageio-ffmpeg bundled binary (preferred - always bundled)
+    1. static-ffmpeg bundled binaries (includes both ffmpeg + ffprobe)
     2. System PATH (user override)
     3. Common install locations
     """
-    # 1. Try imageio-ffmpeg bundled binary first (bundled with app)
+    # 1. Try static-ffmpeg bundled binaries first (bundled with app)
     try:
-        imageio = _get_imageio_ffmpeg()
-        if imageio:
-            bundled = imageio.get_ffmpeg_exe()
+        if _init_static_ffmpeg():
+            ffmpeg_exe = "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg"
+            bundled = shutil.which(ffmpeg_exe)
             if bundled and os.path.isfile(bundled):
                 return bundled
     except Exception:
