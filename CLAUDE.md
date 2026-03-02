@@ -89,7 +89,7 @@ The app mixes customtkinter (modern rounded widgets) with plain tk/ttk where CTK
 - **Windows:** `_dpi_scale` = system DPI / 96 (e.g. 1.25 at 120 DPI, 2.0 at 192 DPI)
 - **Linux / macOS:** `_dpi_scale` must be `1.0` — tkinter coordinates are already in logical points on macOS and CTK handles Retina rendering internally. **Do not use `backingScaleFactor` for `_dpi_scale`** — it would double all dimensions (BUG-002).
 
-`MIN_ASPECT_RATIO = 1.38` is defined in `dpi.py` and is enforced via a `<Configure>` binding in `main.py` on macOS to prevent the window from becoming too narrow when zoomed or resized.
+`MIN_ASPECT_RATIO = 1.38`, `MIN_WINDOW_WIDTH = 900`, and `MIN_WINDOW_HEIGHT = 600` are defined in `dpi.py`. The aspect ratio is enforced via a `<Configure>` binding in `main.py` on macOS. `_usable_screen_size()` in `dpi.py` uses `AppKit.NSScreen.visibleFrame()` on macOS to clamp the initial window size below the menu bar and dock.
 
 ### Audio conversion pipeline
 
@@ -116,7 +116,11 @@ Preview refresh is debounced: `on_active_dir_changed()` cancels any pending `aft
 
 ### Playback
 
-`playback.py` uses `pygame-ce` (imported as `pygame.mixer`). The play/prev/next transport reads the hidden `srcpath` column from `state.preview_tree` to get the actual file path. Selecting a row in the preview tree (click or arrow key) auto-plays.
+`playback.py` uses **platform-specific backends**:
+- **macOS:** `AppKit.NSSound` — native, zero extra deps; imported lazily to avoid AppKit/tkinter initialization race conditions
+- **Windows/Linux:** `pygame-ce` (`pygame.mixer`) — wider format support (MP3, OGG, FLAC)
+
+The play/prev/next transport reads the hidden `srcpath` column from `state.preview_tree` to get the actual file path. Selecting a row in the preview tree (click or arrow key) auto-plays.
 
 ### Log coloring
 
@@ -127,13 +131,31 @@ Preview refresh is debounced: `on_active_dir_changed()` cancels any pending `aft
 - `"Done."` exactly → cyan bold (`C_DONE`)
 - Otherwise → plain foreground
 
+### Rename pattern
+
+By default, files are prefixed with their immediate parent folder name:
+```
+Source:       Drums/Kicks/kick_01.wav
+Destination:  Kicks_kick_01.wav
+```
+Disabled with the **Keep original names** checkbox (`state.no_rename_var`).
+
+### Folder structure modes
+
+Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
+- **flat** — all files land directly in destination
+- **mirror** — preserves full source directory tree relative to source root
+- **parent** — each file goes in a subfolder named after its immediate parent
+
 ## Key conventions
 
 - **Version label**: Update the `"v0.x.x"` string in `build_status_bar()` in `builders.py` when finishing any change.
-- **Add hardware profile**: Only `constants.py` → `PROFILES` dict needs changing.
+- **Add hardware profile**: Only `constants.py` → `PROFILES` dict needs changing. Each profile has `path_limit` (int or None) and `conversion` (dict or None). When `convert_follow_profile_var` is True, selecting a profile with a `conversion` preset auto-populates the conversion UI.
 - **Add audio input format**: Only `constants.py` → `AUDIO_EXTS` set.
 - **Prefer** `pygame-ce` (not vanilla `pygame`) — required for Python 3.14+ compatibility.
 - `audioop-lts` is required for Python 3.13+ (stdlib removed `audioop`).
+- `pyobjc-framework-Cocoa` is required on macOS for `NSSound` (playback) and `NSScreen` (window sizing).
+- `pyi_rth_tk_silence.py` is a PyInstaller runtime hook that must run before tkinter imports to suppress the Tcl/Tk 9.0 deprecation warning in signed macOS bundles.
 
 ## Quick reference
 
@@ -147,3 +169,10 @@ Preview refresh is debounced: `on_active_dir_changed()` cancels any pending `aft
 | Audio conversion logic | `conversion.py` → `convert_file()` |
 | Adjust preview row limit | `constants.py` → `MAX_PREVIEW_ROWS` |
 | Add output structure mode | `operations._compute_output()` + `builders.build_center()` |
+| macOS code signing / notarization | `notarize.sh` |
+
+## Known limitations
+
+- Preview capped at `MAX_PREVIEW_ROWS` (500) for performance.
+- Destination collisions not handled — existing files are overwritten silently.
+- FFmpeg must be available (bundled with PyInstaller builds; installed separately for dev runs that use conversion).
