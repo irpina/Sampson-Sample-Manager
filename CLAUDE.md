@@ -73,6 +73,8 @@ The app mixes customtkinter (modern rounded widgets) with plain tk/ttk where CTK
 - Operation log: `tk.Text` (needs color tag support)
 - Everything else: CTK widgets
 
+The outer `root_frame` is `tk.Frame` (not CTK) to avoid CTK canvas z-order issues with layered panels.
+
 **CTK API differences from ttk:**
 - Colors: `fg_color=`, `text_color=`, `border_color=` (not `bg=`, `fg=`)
 - Enable/disable: `widget.configure(state="disabled")` (not `.state(["disabled"])`)
@@ -81,6 +83,7 @@ The app mixes customtkinter (modern rounded widgets) with plain tk/ttk where CTK
   lbl = ctk.CTkLabel(frame, text=var.get())
   var.trace_add("write", lambda *_: lbl.configure(text=var.get()))
   ```
+- `ctk.CTkScrollbar` uses `orientation=` (not `orient=`) and `button_color=`, `button_hover_color=`
 
 ### DPI scaling
 
@@ -91,6 +94,15 @@ The app mixes customtkinter (modern rounded widgets) with plain tk/ttk where CTK
 
 `MIN_ASPECT_RATIO = 1.38`, `MIN_WINDOW_WIDTH = 900`, and `MIN_WINDOW_HEIGHT = 600` are defined in `dpi.py`. The aspect ratio is enforced via a `<Configure>` binding in `main.py` on macOS. `_usable_screen_size()` in `dpi.py` uses `AppKit.NSScreen.visibleFrame()` on macOS to clamp the initial window size below the menu bar and dock.
 
+### PyInstaller asset resolution
+
+For any data file bundled with PyInstaller (e.g., the logo image), resolve the path with:
+```python
+import sys
+base = Path(sys._MEIPASS) if hasattr(sys, '_MEIPASS') else Path(".")
+logo_path = base / "sampsontransparent2.png"
+```
+
 ### Audio conversion pipeline
 
 `conversion.py` wraps **pydub** (high-level audio processing) with **ffmpeg** as the backend:
@@ -100,6 +112,7 @@ The app mixes customtkinter (modern rounded widgets) with plain tk/ttk where CTK
 - `convert_file()` applies changes in order: sample rate → channels → normalize → export with bit-depth codec flags.
 - Bit depth for WAV is passed as ffmpeg codec parameters (`pcm_s16le`, `pcm_s24le`, `pcm_s32le`); for AIFF it uses big-endian variants.
 - Conversion errors are stored in `state._last_conversion_error` for the main thread to retrieve after `convert_file()` returns `False`.
+- When **Move** mode is on and conversion succeeds, the original source file is deleted after the converted file is written.
 
 ### Theme toggle
 
@@ -176,3 +189,4 @@ Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
 - Preview capped at `MAX_PREVIEW_ROWS` (500) for performance.
 - Destination collisions not handled — existing files are overwritten silently.
 - FFmpeg must be available (bundled with PyInstaller builds; installed separately for dev runs that use conversion).
+- **BUG-001** (open): Center panel collapses at very small window widths — root cause is `minsize` in `build_app()` column config in `builders.py`.
