@@ -6,6 +6,7 @@ from tkinter import messagebox
 import state
 import theme
 import constants
+import bpm as bpm_module
 from log_panel import log
 from conversion import (
     check_ffmpeg, convert_file, get_target_extension,
@@ -13,26 +14,31 @@ from conversion import (
 )
 
 
-def _apply_path_limit(new_name: str, dest_path_str: str, limit: int) -> str:
+def _apply_path_limit(new_name: str, dest_path_str: str, limit: int,
+                      protect_suffix: str = "") -> str:
     """
     Truncate new_name so that the full destination path stays within `limit` chars.
 
     The extension is always preserved; only the stem is shortened.
+    protect_suffix (e.g. "_120bpm") is kept intact at the end of the stem.
     """
     full = str(Path(dest_path_str) / new_name)
     if len(full) <= limit:
         return new_name
     p     = Path(new_name)
     ext   = p.suffix
-    avail = limit - len(str(Path(dest_path_str))) - 1 - len(ext)
+    avail = limit - len(str(Path(dest_path_str))) - 1 - len(ext) - len(protect_suffix)
     if avail < 1:
         avail = 1
-    return p.stem[:avail] + ext
+    stem = p.stem
+    if protect_suffix and stem.endswith(protect_suffix):
+        stem = stem[:-len(protect_suffix)]
+    return stem[:avail] + protect_suffix + ext
 
 
 def _compute_output(f: Path, source_root: Path, dest: Path,
                     no_rename: bool, struct_mode: str,
-                    path_limit) -> tuple:
+                    path_limit, bpm=None, append_bpm=False) -> tuple:
     """
     Return (new_filename, rel_subfolder) for a single source file.
 
@@ -44,6 +50,7 @@ def _compute_output(f: Path, source_root: Path, dest: Path,
 
     struct_mode is one of "flat", "mirror", "parent".
     path_limit is int | None (from the active hardware profile).
+    bpm / append_bpm control the optional _120bpm suffix.
     """
     # Filename
     new_name = f.name if no_rename else f"{f.parent.name}_{f.name}"
@@ -61,10 +68,17 @@ def _compute_output(f: Path, source_root: Path, dest: Path,
     else:                          # "flat" or unrecognised
         rel_sub = ""
 
+    # BPM suffix (applied before path-limit truncation so it can be protected)
+    bpm_suffix = f"_{int(round(bpm))}bpm" if (bpm is not None and append_bpm) else ""
+    if bpm_suffix:
+        p        = Path(new_name)
+        new_name = p.stem + bpm_suffix + p.suffix
+
     # Path limit
     effective_dest = str(Path(dest) / rel_sub) if rel_sub else str(dest)
     if path_limit is not None:
-        new_name = _apply_path_limit(new_name, effective_dest, path_limit)
+        new_name = _apply_path_limit(new_name, effective_dest, path_limit,
+                                     protect_suffix=bpm_suffix)
 
     return new_name, rel_sub
 
@@ -120,15 +134,20 @@ def run_tool():
             "normalize": state.convert_normalize_var.get() if state.convert_normalize_var else False,
         }
     
+    bpm_enabled = state.bpm_enabled_var.get() if state.bpm_enabled_var else False
+    bpm_append  = state.bpm_append_var.get()  if state.bpm_append_var  else False
+
     threading.Thread(
         target=_run_worker,
         args=(source, dest, state.move_var.get(), state.dry_var.get(),
-              path_limit, state.no_rename_var.get(), struct_mode, convert_options),
+              path_limit, state.no_rename_var.get(), struct_mode, convert_options,
+              bpm_enabled, bpm_append),
         daemon=True,
     ).start()
 
 
-def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode, convert_options=None):
+def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode,
+                convert_options=None, bpm_enabled=False, bpm_append=False):
     files = []
     for folder_path in state._selected_folders:
         p = Path(folder_path)
@@ -150,8 +169,10 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     conv_label = " [convert]" if convert_options else ""
 
     for i, f in enumerate(files, 1):
+        bpm_val = bpm_module.detect_bpm(f) if bpm_enabled else None
         new_name, rel_sub = _compute_output(f, source, dest,
-                                            no_rename, struct_mode, path_limit)
+                                            no_rename, struct_mode, path_limit,
+                                            bpm=bpm_val, append_bpm=bpm_append)
         
         # Apply extension change if converting
         if convert_options:
@@ -190,6 +211,9 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
                     shutil.move(str(f), str(target))
                 else:
                     shutil.copy2(str(f), str(target))
+
+    if bpm_enabled:
+        bpm_module.flush_cache()
 
     s = "s" if total != 1 else ""
     state.root.after(0, lambda: log("Done."))

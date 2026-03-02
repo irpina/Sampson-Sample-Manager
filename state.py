@@ -50,3 +50,7 @@ transport_next_btn = None
 
 # Conversion error tracking
 _last_conversion_error = None  # Stores last conversion error details
+
+# BPM detection options
+bpm_enabled_var = None   # tk.BooleanVar — master toggle for BPM detection
+bpm_append_var  = None   # tk.BooleanVar — append _120bpm to output filename

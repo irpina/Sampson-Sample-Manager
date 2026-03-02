@@ -5,6 +5,7 @@ import tkinter as tk
 import state
 import theme
 import constants
+import bpm as bpm_module
 from dpi import _px
 from operations import _compute_output
 from conversion import get_target_extension
@@ -135,27 +136,48 @@ def _populate_preview(files, source_root):
     sub_width = 0 if struct_mode == "flat" else _px(140)
     state.preview_tree.column("subfolder", width=sub_width, minwidth=0, stretch=False)
 
+    # Show BPM column only when BPM detection is enabled
+    bpm_enabled = bool(state.bpm_enabled_var and state.bpm_enabled_var.get())
+    bpm_append  = bool(state.bpm_append_var  and state.bpm_append_var.get())
+    state.preview_tree.column("bpm", width=_px(60) if bpm_enabled else 0,
+                               minwidth=0, stretch=False)
+
     # Check if conversion is enabled
-    convert_enabled = (state.convert_enabled_var and 
+    convert_enabled = (state.convert_enabled_var and
                        state.convert_enabled_var.get())
     target_format = state.convert_format_var.get() if state.convert_format_var else "wav"
-    
+
     for i, f in enumerate(files[:shown]):
+        # BPM: cache lookup only (no detection in preview)
+        bpm_val     = bpm_module.get_cached_bpm(f) if bpm_enabled else None
+        bpm_display = str(int(round(bpm_val))) if bpm_val is not None \
+                      else ("???" if bpm_enabled else "")
+
         new_name, rel_sub = _compute_output(
             f, source_root, dest_path, no_rename, struct_mode, path_limit)
-        
+
+        if bpm_enabled and bpm_append:
+            if bpm_val is not None:
+                new_name, rel_sub = _compute_output(
+                    f, source_root, dest_path, no_rename, struct_mode, path_limit,
+                    bpm=bpm_val, append_bpm=True)
+            else:
+                # Visual placeholder — never written to disk
+                p        = Path(new_name)
+                new_name = p.stem + "_???bpm" + p.suffix
+
         # Apply extension change and conversion indicator if converting
         if convert_enabled:
-            # Change extension to target format
             new_name_stem = Path(new_name).stem
-            new_name = new_name_stem + get_target_extension(target_format)
-            display_name = f"{new_name} [c]"
+            new_name      = new_name_stem + get_target_extension(target_format)
+            display_name  = f"{new_name} [c]"
         else:
             display_name = new_name
-        
+
         tag = "odd" if i % 2 else "even"
         state.preview_tree.insert("", "end",
-                                  values=(f.name, display_name, rel_sub, str(f)),
+                                  values=(f.name, display_name, rel_sub,
+                                          bpm_display, str(f)),
                                   tags=(tag,))
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)

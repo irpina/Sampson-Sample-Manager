@@ -411,12 +411,56 @@ def build_center(parent):
     state.convert_enabled_var.trace_add("write", _toggle_conv_opts)
     _toggle_conv_opts()  # Set initial state
 
-    # Row 12 is the expanding spacer
-    frame.rowconfigure(12, weight=1)
+    # ── BPM Analysis ──────────────────────────────────────────────────────────
+    ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
+        row=12, column=0, columnspan=2, sticky="ew", padx=16, pady=(10, 8))
+
+    ctk.CTkLabel(frame, text="BPM analysis",
+                 font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
+                 anchor="center").grid(row=13, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
+
+    state.bpm_enabled_var = tk.BooleanVar(value=False)
+    state.bpm_append_var  = tk.BooleanVar(value=False)
+
+    bpm_cb = ctk.CTkCheckBox(frame, text="Detect BPM",
+                              variable=state.bpm_enabled_var,
+                              fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
+                              checkmark_color=theme.BG_ROOT,
+                              border_color=theme.OUTLINE_VAR,
+                              text_color=theme.FG_ON_SURF,
+                              corner_radius=4,
+                              font=(theme.FONT_UI, 10))
+    bpm_cb.grid(row=14, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    _add_tooltip(bpm_cb, "Detect BPM during Run; results cached for future runs")
+
+    bpm_opts = ctk.CTkFrame(frame, fg_color=theme.BG_SURF1,
+                             corner_radius=8, border_width=1,
+                             border_color=theme.OUTLINE_VAR)
+    bpm_opts.grid(row=15, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
+
+    append_cb = ctk.CTkCheckBox(bpm_opts, text="Append BPM to filename",
+                                 variable=state.bpm_append_var,
+                                 fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
+                                 checkmark_color=theme.BG_ROOT,
+                                 border_color=theme.OUTLINE_VAR,
+                                 text_color=theme.FG_ON_SURF,
+                                 corner_radius=4,
+                                 font=(theme.FONT_UI, 10))
+    append_cb.pack(padx=10, pady=(8, 8), anchor="w")
+    _add_tooltip(append_cb, "Adds _120bpm suffix to output filename (e.g. Kicks_kick_01_120bpm.wav)")
+
+    def _toggle_bpm_opts(*_):
+        s = "normal" if state.bpm_enabled_var.get() else "disabled"
+        append_cb.configure(state=s)
+    state.bpm_enabled_var.trace_add("write", _toggle_bpm_opts)
+    _toggle_bpm_opts()
+
+    # Row 16 is the expanding spacer
+    frame.rowconfigure(16, weight=1)
 
     # ── Transport controls ────────────────────────────────────────────────────
     transport_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    transport_frame.grid(row=13, column=0, columnspan=2, pady=(10, 10))
+    transport_frame.grid(row=17, column=0, columnspan=2, pady=(10, 10))
 
     _tr_kw = dict(
         width=_px(36), corner_radius=8,
@@ -438,32 +482,31 @@ def build_center(parent):
     state.transport_next_btn.configure(state="disabled")
 
     ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=14, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
+        row=18, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ctk.CTkButton(frame, text="Run",
                                    font=(theme.FONT_UI, 12, "bold"),
                                    fg_color=theme.CYAN, text_color=theme.BG_ROOT,
                                    hover_color=theme.CYAN_CONT, corner_radius=8,
                                    command=operations.run_tool)
-    state.run_btn.grid(row=15, column=0, columnspan=2, padx=16, sticky="ew")
+    state.run_btn.grid(row=19, column=0, columnspan=2, padx=16, sticky="ew")
 
     ctk.CTkButton(frame, text="Clear log",
                   fg_color="transparent", text_color=theme.FG_MUTED,
                   hover_color=theme.BG_SURF2, border_width=1,
                   border_color=theme.OUTLINE_VAR, corner_radius=8,
-                  command=log_panel.clear_log).grid(row=16, column=0, columnspan=2, padx=16, pady=(10, 16))
+                  command=log_panel.clear_log).grid(row=20, column=0, columnspan=2, padx=16, pady=(10, 16))
 
-    # Ensure critical UI elements don't collapse on resize
-    # Row 12 is the expanding spacer - it can shrink
-    # Rows 6-7 (profile), 9-11 (conversion), 13 (transport), 15-16 (buttons) need minimum height
-    frame.rowconfigure(6, weight=0, minsize=_px(20))
-    frame.rowconfigure(7, weight=0, minsize=_px(40))
-    frame.rowconfigure(9, weight=0, minsize=_px(20))
+    # Minimum sizes to prevent UI collapse on resize
+    frame.rowconfigure(6,  weight=0, minsize=_px(20))
+    frame.rowconfigure(7,  weight=0, minsize=_px(40))
+    frame.rowconfigure(9,  weight=0, minsize=_px(20))
     frame.rowconfigure(11, weight=0, minsize=_px(140))
-    frame.rowconfigure(12, weight=1)
-    frame.rowconfigure(13, weight=0, minsize=_px(50))
-    frame.rowconfigure(15, weight=0, minsize=_px(45))
-    frame.rowconfigure(16, weight=0, minsize=_px(50))
+    frame.rowconfigure(15, weight=0, minsize=_px(60))
+    frame.rowconfigure(16, weight=1)
+    frame.rowconfigure(17, weight=0, minsize=_px(50))
+    frame.rowconfigure(19, weight=0, minsize=_px(45))
+    frame.rowconfigure(20, weight=0, minsize=_px(50))
 
     return frame
 
@@ -514,16 +557,18 @@ def build_deck_b(parent):
 
     # Treeview — stays ttk (no CTK equivalent)
     state.preview_tree = ttk.Treeview(frame, style="Preview.Treeview",
-                                      columns=("original", "renamed", "subfolder", "srcpath"),
+                                      columns=("original", "renamed", "subfolder", "bpm", "srcpath"),
                                       show="headings", selectmode="browse")
     state.preview_tree.heading("original",  text="Original name")
     state.preview_tree.heading("renamed",   text="Will become")
     state.preview_tree.heading("subfolder", text="Subfolder")
-    state.preview_tree.column("original",  width=_px(160), anchor="w", minwidth=_px(80))
-    state.preview_tree.column("renamed",   width=_px(200), anchor="w", minwidth=_px(80))
-    state.preview_tree.column("subfolder", width=0,        anchor="w", minwidth=0, stretch=False)
-    state.preview_tree.column("srcpath",   width=0,        anchor="w", minwidth=0, stretch=False)
-    state.preview_tree.heading("srcpath", text="")
+    state.preview_tree.heading("bpm",       text="BPM")
+    state.preview_tree.heading("srcpath",   text="")
+    state.preview_tree.column("original",  width=_px(160), anchor="w",      minwidth=_px(80))
+    state.preview_tree.column("renamed",   width=_px(200), anchor="w",      minwidth=_px(80))
+    state.preview_tree.column("subfolder", width=0,        anchor="w",      minwidth=0, stretch=False)
+    state.preview_tree.column("bpm",       width=0,        anchor="center", minwidth=0, stretch=False)
+    state.preview_tree.column("srcpath",   width=0,        anchor="w",      minwidth=0, stretch=False)
     state.preview_tree.grid(row=3, column=0, sticky="nsew", padx=(12, 0), pady=(0, 12))
 
     vsb = ctk.CTkScrollbar(frame, orientation="vertical",
@@ -566,7 +611,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.4.0",
+    ctk.CTkLabel(frame, text="v0.5.0",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
@@ -634,6 +679,10 @@ def toggle_theme():
     saved_conv_bd = state.convert_bit_depth_var.get() if state.convert_bit_depth_var else "keep"
     saved_conv_ch = state.convert_channels_var.get() if state.convert_channels_var else "keep"
 
+    # Save BPM settings
+    saved_bpm_enabled = state.bpm_enabled_var.get() if state.bpm_enabled_var else False
+    saved_bpm_append  = state.bpm_append_var.get()  if state.bpm_append_var  else False
+
     state._is_dark = not state._is_dark
     theme._apply_theme_colors(state._is_dark)
     ctk.set_appearance_mode("dark" if state._is_dark else "light")
@@ -665,6 +714,12 @@ def toggle_theme():
         state.convert_bit_depth_var.set(saved_conv_bd)
     if state.convert_channels_var:
         state.convert_channels_var.set(saved_conv_ch)
+
+    # Restore BPM settings
+    if state.bpm_enabled_var:
+        state.bpm_enabled_var.set(saved_bpm_enabled)
+    if state.bpm_append_var:
+        state.bpm_append_var.set(saved_bpm_append)
 
     if saved_active and saved_active != saved_source and Path(saved_active).is_dir():
         state.root.after(50, lambda: browser.navigate_to(saved_active))
@@ -705,6 +760,8 @@ def build_app():
     state.source_var.trace_add("write", browser.on_source_var_changed)
     state.no_rename_var.trace_add("write",   lambda *_: preview.refresh_preview())
     state.struct_mode_var.trace_add("write", lambda *_: preview.refresh_preview())
+    state.bpm_enabled_var.trace_add("write", lambda *_: preview.refresh_preview())
+    state.bpm_append_var.trace_add("write",  lambda *_: preview.refresh_preview())
     state.root.bind("<Return>", lambda _e: operations.run_tool())
 
     # Profile change handler - auto-apply conversion preset + refresh preview
