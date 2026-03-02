@@ -70,7 +70,8 @@ def get_cached_bpm(path: Path):
 
 def detect_bpm(path: Path):
     """
-    Return BPM for path. Checks cache first; runs aubio tempo detection on miss.
+    Return BPM for path. Checks cache first; runs librosa beat tracking on miss.
+    Loads only the first 60 s at 22050 Hz (mono) for speed.
     Stores result in cache (flush_cache() must be called to persist).
     Returns float or None on failure.
     """
@@ -79,21 +80,12 @@ def detect_bpm(path: Path):
     if cached is not None:
         return cached
     try:
-        from aubio import source, tempo
-        from numpy import diff, median
-        samplerate, hop_s = 44100, 512
-        src        = source(str(path), samplerate, hop_s)
-        samplerate = src.samplerate
-        o          = tempo("default", 2048, hop_s, samplerate)
-        beats      = []
-        while True:
-            samples, read = src()
-            if o(samples):
-                beats.append(o.get_last_s())
-            if read < hop_s:
-                break
-        if len(beats) > 1:
-            bpm_val = float(median(60 / diff(beats)))
+        import librosa
+        y, sr   = librosa.load(str(path), sr=22050, mono=True, duration=60)
+        tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+        # tempo may be a scalar or a 1-element array depending on librosa version
+        bpm_val = float(tempo[0] if hasattr(tempo, "__len__") else tempo)
+        if bpm_val > 0:
             _store(path, bpm_val)
             return bpm_val
     except Exception:
