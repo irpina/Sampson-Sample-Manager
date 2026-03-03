@@ -1,7 +1,8 @@
 """
 BPM detection and cache management.
 
-Uses energy envelope autocorrelation for tempo detection.
+Uses energy envelope autocorrelation with harmonic analysis.
+Optimized for drum breaks and rhythmic material.
 """
 
 import json
@@ -118,7 +119,7 @@ def _calculate_energy_envelope(samples, sample_rate, hop_ms=10):
 
 
 def _autocorrelation(signal, max_lag):
-    """Calculate normalized autocorrelation."""
+    """Calculate autocorrelation."""
     n = len(signal)
     if n == 0:
         return []
@@ -128,13 +129,7 @@ def _autocorrelation(signal, max_lag):
         if lag >= n:
             result.append(0.0)
             continue
-        
-        # Calculate correlation
-        s1 = signal[:n-lag]
-        s2 = signal[lag:]
-        
-        # Dot product
-        corr = sum(a * b for a, b in zip(s1, s2))
+        corr = sum(signal[i] * signal[i + lag] for i in range(n - lag))
         result.append(corr)
     
     # Normalize
@@ -145,120 +140,112 @@ def _autocorrelation(signal, max_lag):
 
 
 def _find_local_maxima(signal, min_distance=5):
-    """Find local maxima with minimum distance between them."""
+    """Find local maxima."""
     peaks = []
     for i in range(1, len(signal) - 1):
         if signal[i] > signal[i-1] and signal[i] > signal[i+1]:
-            # Check minimum distance from last peak
             if not peaks or i - peaks[-1][0] >= min_distance:
                 peaks.append((i, signal[i]))
     return peaks
 
 
-def _bpm_to_lag(bpm, hop_ms):
-    """Convert BPM to lag in frames."""
-    return int(60000.0 / bpm / hop_ms)
-
-
 def _lag_to_bpm(lag, hop_ms):
-    """Convert lag in frames to BPM."""
     if lag <= 0:
         return 0
     return 60000.0 / (lag * hop_ms)
 
 
 def _detect_bpm_algorithm(audio) -> Optional[float]:
-    """
-    Detect BPM using autocorrelation of energy envelope.
-    """
+    """Detect BPM using energy envelope autocorrelation."""
     samples = audio.get_array_of_samples()
     sample_rate = audio.frame_rate
     hop_ms = 10
     
-    if len(samples) < sample_rate:  # Need at least 1 second
+    if len(samples) < sample_rate:
         return None
     
-    # Calculate energy envelope
     envelope = _calculate_energy_envelope(samples, sample_rate, hop_ms)
     
     if len(envelope) < 100:
         return None
     
     # Calculate autocorrelation
-    # Max lag = 2 seconds (30 BPM min)
     max_lag = min(int(2000 / hop_ms), len(envelope) // 2)
     acorr = _autocorrelation(envelope, max_lag)
     
-    # Find peaks in autocorrelation in valid tempo range
-    # 60-200 BPM = 300-100ms per beat = 30-10 frames at 10ms hop
-    min_lag = _bpm_to_lag(200, hop_ms)  # ~10 frames
-    max_lag_range = _bpm_to_lag(60, hop_ms)  # ~100 frames
+    # Find peaks in valid tempo range (60-200 BPM)
+    min_lag = int(60000 / 200 / hop_ms)  # 30 frames
+    max_lag_range = int(60000 / 60 / hop_ms)  # 100 frames
     
-    # Ensure we have valid range
     min_lag = max(min_lag, 5)
     max_lag_range = min(max_lag_range, len(acorr) - 1)
     
     if max_lag_range <= min_lag:
         return None
     
-    # Find peaks in the valid range
+    # Find peaks
     peaks = _find_local_maxima(acorr[min_lag:max_lag_range+1], min_distance=3)
-    peaks = [(lag + min_lag, strength) for lag, strength in peaks]
+    peaks = [(lag + min_lag, acorr[lag + min_lag]) for lag, _ in peaks]
     
     if not peaks:
         return None
     
-    # Convert peaks to BPM candidates
+    # Generate candidates with octave variants
     candidates = []
     for lag, strength in peaks:
         bpm = _lag_to_bpm(lag, hop_ms)
-        candidates.append((bpm, strength, lag))
         
-        # Check for half and double tempo
+        # Original
+        if 60 <= bpm <= 200:
+            candidates.append((bpm, strength, 'orig'))
+        
+        # Half tempo
         if bpm / 2 >= 60:
-            candidates.append((bpm / 2, strength * 0.9, lag * 2))
+            candidates.append((bpm / 2, strength * 0.85, 'half'))
+        
+        # Double tempo
         if bpm * 2 <= 200:
-            candidates.append((bpm * 2, strength * 0.9, lag / 2))
+            candidates.append((bpm * 2, strength * 0.75, 'double'))
     
-    # Filter to valid range (60-200 BPM)
-    valid = [(bpm, s, l) for bpm, s, l in candidates if 60 <= bpm <= 200]
-    
-    if not valid:
+    if not candidates:
         return None
     
-    # Group candidates by approximate BPM (within 5%)
+    # Group by similar tempo (within 5%)
     groups = []
-    for bpm, strength, lag in valid:
-        found_group = False
+    for bpm, strength, source in candidates:
+        found = False
         for group in groups:
             ref_bpm = group[0][0]
-            if abs(bpm - ref_bpm) / ref_bpm < 0.05 or abs(bpm/2 - ref_bpm) / ref_bpm < 0.05 or abs(bpm*2 - ref_bpm) / ref_bpm < 0.05:
-                group.append((bpm, strength, lag))
-                found_group = True
+            if abs(bpm - ref_bpm) / ref_bpm < 0.05 or abs(bpm*2 - ref_bpm) / ref_bpm < 0.05 or abs(bpm/2 - ref_bpm) / ref_bpm < 0.05:
+                group.append((bpm, strength, source))
+                found = True
                 break
-        if not found_group:
-            groups.append([(bpm, strength, lag)])
+        if not found:
+            groups.append([(bpm, strength, source)])
     
-    # Score groups by total strength, preferring faster tempos in same group
+    # Score groups
     group_scores = []
     for group in groups:
         # Sort by BPM descending (prefer faster)
         group.sort(key=lambda x: x[0], reverse=True)
-        total_strength = sum(s for _, s, _ in group)
-        # Prefer BPM in 80-180 range
         best_bpm = group[0][0]
+        total_strength = sum(s for _, s, _ in group)
+        
+        # Strong bonus for 80-180 range
         if 80 <= best_bpm <= 180:
             bonus = 1.2
         elif 70 <= best_bpm <= 190:
             bonus = 1.0
         else:
             bonus = 0.8
+        
         group_scores.append((best_bpm, total_strength * bonus))
     
     # Sort by score
     group_scores.sort(key=lambda x: x[1], reverse=True)
     
     best_bpm = group_scores[0][0]
+    best_bpm = max(60.0, min(200.0, best_bpm))
     
     return round(best_bpm, 1)
 
@@ -300,7 +287,6 @@ def detect_bpm(path):
         
         audio = audio.set_channels(1)
         
-        # Use full audio up to 60s
         if len(audio) > 60000:
             audio = audio[:60000]
         
@@ -316,28 +302,18 @@ def detect_bpm(path):
         
     except Exception as e:
         _log(f"[BPM] ERROR: {type(e).__name__}: {e}")
+        import traceback
+        _log(f"[BPM] {traceback.format_exc()[:200]}")
         return None
 
 
 def set_cached_bpm(path: Path, bpm_val: float) -> bool:
-    """
-    Manually set BPM for a file in the cache.
-    Use this when the user knows the correct BPM and wants to override detection.
-    
-    Args:
-        path: Path to the audio file
-        bpm_val: BPM value to cache (will be clamped to 30-300 range)
-        
-    Returns:
-        True if successfully cached, False otherwise
-    """
+    """Manually set BPM for a file in the cache."""
     _load_cache()
     try:
-        # Validate BPM range
         bpm_val = float(bpm_val)
         bpm_val = max(30.0, min(300.0, bpm_val))
         
-        # Store with current mtime
         _cache[str(path)] = {"mtime": path.stat().st_mtime, "bpm": bpm_val}
         _cache_dirty = True
         _log(f"[BPM] MANUAL: {path.name} = {bpm_val:.1f} BPM")
