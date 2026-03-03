@@ -8,6 +8,7 @@ Public API:
   get_cached_bpm(path) -> float | None   read-only cache lookup (preview)
   detect_bpm(path)     -> float | None   check cache then run analysis (run worker)
   flush_cache()                          write cache to disk if dirty (end of run)
+  get_log_messages()   -> list[str]      retrieve and clear accumulated log messages
 """
 
 import json
@@ -23,6 +24,22 @@ _cache: dict        = {}
 _cache_dirty: bool  = False
 _cache_loaded: bool = False
 
+# Debug log messages accumulated during detection
+_log_messages: list[str] = []
+
+
+def _log(msg: str):
+    """Accumulate a log message for later retrieval."""
+    _log_messages.append(msg)
+
+
+def get_log_messages() -> list[str]:
+    """Retrieve and clear accumulated log messages."""
+    global _log_messages
+    msgs = _log_messages.copy()
+    _log_messages.clear()
+    return msgs
+
 
 def _load_cache():
     global _cache, _cache_loaded
@@ -32,7 +49,9 @@ def _load_cache():
     try:
         if _CACHE_FILE.exists():
             _cache = json.loads(_CACHE_FILE.read_text(encoding="utf-8"))
-    except Exception:
+            _log(f"[BPM] Loaded cache with {len(_cache)} entries from {_CACHE_FILE}")
+    except Exception as e:
+        _log(f"[BPM] Cache load failed: {e}")
         _cache = {}
 
 
@@ -42,7 +61,12 @@ def _entry_valid(path: Path) -> bool:
     if key not in _cache:
         return False
     try:
-        return _cache[key]["mtime"] == path.stat().st_mtime
+        cached_mtime = _cache[key]["mtime"]
+        current_mtime = path.stat().st_mtime
+        if cached_mtime == current_mtime:
+            return True
+        _log(f"[BPM] Cache stale for {path.name} (mtime changed)")
+        return False
     except Exception:
         return False
 
@@ -74,7 +98,8 @@ def get_cached_bpm(path: Path):
     """
     _load_cache()
     if _entry_valid(path):
-        return float(_cache[str(path)]["bpm"])
+        bpm = float(_cache[str(path)]["bpm"])
+        return bpm
     return None
 
 
@@ -88,7 +113,11 @@ def detect_bpm(path: Path):
     _load_cache()
     cached = get_cached_bpm(path)
     if cached is not None:
+        _log(f"[BPM] CACHE HIT: {path.name} = {cached:.1f} BPM")
         return cached
+    
+    _log(f"[BPM] Analyzing: {path.name}")
+    
     try:
         AudioSegment = _get_pydub()
         
@@ -97,29 +126,51 @@ def detect_bpm(path: Path):
         if fmt == 'aif':
             fmt = 'aiff'
         
+        _log(f"[BPM]   Format: {fmt}")
+        
         # Load audio and downmix to mono for analysis
-        audio = AudioSegment.from_file(str(path), format=fmt)
+        try:
+            audio = AudioSegment.from_file(str(path), format=fmt)
+        except Exception as e:
+            _log(f"[BPM]   ERROR: Failed to load file - {e}")
+            return None
+        
+        _log(f"[BPM]   Loaded: {len(audio)}ms, {audio.channels}ch, {audio.frame_rate}Hz")
+        
         audio = audio.set_channels(1)
         
         # Limit analysis to first 60 seconds for speed
         if len(audio) > 60000:
             audio = audio[:60000]
+            _log(f"[BPM]   Trimmed to first 60s for analysis")
         
         # High-pass filter at 200Hz to focus on transients (kicks/snares)
         filtered = audio.high_pass_filter(200)
+        _log(f"[BPM]   Applied 200Hz high-pass filter")
         
         # Split into small chunks and analyze RMS energy
         chunk_ms = 10  # 10ms chunks for decent time resolution
         chunks = [filtered[i:i+chunk_ms] for i in range(0, len(filtered), chunk_ms)]
         rms_values = [chunk.rms for chunk in chunks if len(chunk) > 0]
         
-        if not rms_values or max(rms_values) == 0:
+        _log(f"[BPM]   Analyzed {len(rms_values)} chunks")
+        
+        if not rms_values:
+            _log(f"[BPM]   ERROR: No audio data after chunking")
+            return None
+            
+        max_rms = max(rms_values)
+        if max_rms == 0:
+            _log(f"[BPM]   ERROR: Silent audio (RMS = 0)")
             return None
         
         # Calculate dynamic threshold
         mean_rms = statistics.mean(rms_values)
         std_rms = statistics.stdev(rms_values) if len(rms_values) > 1 else 0
         threshold = mean_rms + (1.5 * std_rms)
+        
+        _log(f"[BPM]   RMS stats: mean={mean_rms:.1f}, max={max_rms:.1f}, std={std_rms:.1f}")
+        _log(f"[BPM]   Peak threshold: {threshold:.1f}")
         
         # Find peaks above threshold with local maximum check
         peaks = []
@@ -134,7 +185,10 @@ def detect_bpm(path: Path):
                 if is_peak:
                     peaks.append(i * chunk_ms / 1000.0)  # Convert to seconds
         
+        _log(f"[BPM]   Found {len(peaks)} peaks")
+        
         if len(peaks) < 2:
+            _log(f"[BPM]   ERROR: Not enough peaks for BPM detection (need ≥2, got {len(peaks)})")
             return None
         
         # Calculate inter-onset intervals
@@ -144,7 +198,10 @@ def detect_bpm(path: Path):
         # 30 BPM = 2.0s per beat, 300 BPM = 0.2s per beat
         valid_intervals = [i for i in intervals if 0.2 <= i <= 2.0]
         
+        _log(f"[BPM]   Valid intervals: {len(valid_intervals)}/{len(intervals)} (0.2-2.0s range)")
+        
         if len(valid_intervals) < 2:
+            _log(f"[BPM]   ERROR: Not enough valid intervals (need ≥2, got {len(valid_intervals)})")
             return None
         
         # Use median for robustness against outliers
@@ -155,10 +212,14 @@ def detect_bpm(path: Path):
         bpm_val = round(bpm_val, 1)
         bpm_val = max(30.0, min(300.0, bpm_val))
         
+        _log(f"[BPM]   DETECTED: {bpm_val:.1f} BPM (interval={median_interval:.3f}s)")
+        
         _store(path, bpm_val)
+        _log(f"[BPM]   Cached result for {path.name}")
         return bpm_val
         
-    except Exception:
+    except Exception as e:
+        _log(f"[BPM]   ERROR: Exception during analysis - {type(e).__name__}: {e}")
         return None
 
 
@@ -166,10 +227,12 @@ def flush_cache():
     """Write the in-memory cache to ~/.sampson/bpm_cache.json if dirty."""
     global _cache_dirty
     if not _cache_dirty:
+        _log(f"[BPM] Cache unchanged, no write needed")
         return
     try:
         _CACHE_DIR.mkdir(parents=True, exist_ok=True)
         _CACHE_FILE.write_text(json.dumps(_cache, indent=2), encoding="utf-8")
         _cache_dirty = False
-    except Exception:
-        pass
+        _log(f"[BPM] Cache saved: {_CACHE_FILE} ({len(_cache)} entries)")
+    except Exception as e:
+        _log(f"[BPM] ERROR: Failed to save cache - {e}")

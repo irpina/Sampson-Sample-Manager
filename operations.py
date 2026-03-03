@@ -170,6 +170,11 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
 
     for i, f in enumerate(files, 1):
         bpm_val = bpm_module.detect_bpm(f) if bpm_enabled else None
+        
+        # Output any BPM detection log messages
+        for bpm_log_msg in bpm_module.get_log_messages():
+            state.root.after(0, lambda m=bpm_log_msg: log(m))
+        
         new_name, rel_sub = _compute_output(f, source, dest,
                                             no_rename, struct_mode, path_limit,
                                             bpm=bpm_val, append_bpm=bpm_append)
@@ -214,8 +219,15 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
 
     if bpm_enabled:
         bpm_module.flush_cache()
+        # Output any cache save log messages
+        for bpm_log_msg in bpm_module.get_log_messages():
+            state.root.after(0, lambda m=bpm_log_msg: log(m))
 
     s = "s" if total != 1 else ""
+    if bpm_enabled:
+        # Count how many files had BPM detected from this run
+        detected_count = sum(1 for f in files if bpm_module.get_cached_bpm(f) is not None)
+        state.root.after(0, lambda dc=detected_count: log(f"[BPM] Detected BPM for {dc}/{total} file{s}"))
     state.root.after(0, lambda: log("Done."))
     state.root.after(0, lambda: state.status_var.set(f"Complete \u2014 {total} file{s} processed."))
     state.root.after(0, lambda: state.run_btn.configure(text="Run"))
