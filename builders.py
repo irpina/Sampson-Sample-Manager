@@ -162,7 +162,7 @@ def build_deck_a(parent):
     return frame
 
 
-# ── Centre — Options ─────────────────────────────────────────────────────────
+# ── Tooltip helper ───────────────────────────────────────────────────────────
 
 def _add_tooltip(widget, text):
     """Add a hover tooltip to a widget."""
@@ -183,12 +183,124 @@ def _add_tooltip(widget, text):
     widget.bind("<Leave>", on_leave)
 
 
+# ── Section header helper (collapsible) ──────────────────────────────────────
+
+def _section_header(parent, row, label, content_widgets, default_open=True, key=None):
+    """
+    Place a collapsible section header at `row` in `parent`.
+
+    content_widgets — list of widgets already placed in `parent`'s grid;
+                      their grid info is snapshotted so grid() restores them
+                      to the original position.
+    key             — optional string key used to look up saved open/close
+                      state from state._section_open (theme-toggle persistence).
+    Returns the toggle function.
+    """
+    # Snapshot grid info before any possible grid_remove call
+    _grid_info = {w: w.grid_info() for w in content_widgets}
+
+    # Honour saved state from theme toggle
+    if key and key in state._section_open:
+        default_open = state._section_open[key]
+
+    _open = [default_open]   # mutable cell avoids nonlocal on Python ≤ 3.9
+
+    def _toggle(*_):
+        _open[0] = not _open[0]
+        btn.configure(text=f"{'▼' if _open[0] else '▶'}  {label}")
+        if key:
+            state._section_open[key] = _open[0]
+        for w in content_widgets:
+            if _open[0]:
+                w.grid(**_grid_info[w])
+            else:
+                w.grid_remove()
+
+    btn = ctk.CTkButton(
+        parent,
+        text=f"{'▼' if default_open else '▶'}  {label}",
+        fg_color=theme.BG_SURF1,
+        text_color=theme.FG_MUTED,
+        hover_color=theme.BG_SURF2,
+        anchor="w",
+        corner_radius=4,
+        height=_px(24),
+        font=(theme.FONT_UI, 9),
+        command=_toggle,
+        border_width=0,
+    )
+    btn.grid(row=row, column=0, columnspan=2, sticky="ew", padx=12, pady=(6, 2))
+
+    if not default_open:
+        for w in content_widgets:
+            w.grid_remove()
+
+    return _toggle
+
+
+# ── Centre — Options ─────────────────────────────────────────────────────────
+
 def build_center(parent):
-    frame = ctk.CTkFrame(parent, fg_color=theme.BG_SURFACE,
-                         corner_radius=12,
-                         border_width=1, border_color=theme.CARD_BORDER)
+    """
+    Build the center options panel with collapsible sections and conditional scrollbar.
+    """
+    # Outer card frame
+    outer_frame = ctk.CTkFrame(parent, fg_color=theme.BG_SURFACE,
+                               corner_radius=12,
+                               border_width=1, border_color=theme.CARD_BORDER)
+    outer_frame.columnconfigure(0, weight=1)
+    outer_frame.rowconfigure(0, weight=1)
+
+    # Create canvas for scrolling with conditional scrollbar
+    canvas = tk.Canvas(outer_frame, bg=theme.BG_SURFACE, highlightthickness=0)
+    canvas.grid(row=0, column=0, sticky="nsew", padx=(0, 0), pady=(0, 0))
+
+    # Inner frame that holds all content
+    frame = ctk.CTkFrame(canvas, fg_color=theme.BG_SURFACE, corner_radius=0)
     frame.columnconfigure(0, weight=1)
     frame.columnconfigure(1, weight=1)
+
+    # Create window in canvas to hold the frame
+    canvas_window = canvas.create_window((0, 0), window=frame, anchor="nw", width=parent.winfo_width())
+
+    # Scrollbar (initially hidden - will show only if needed)
+    scrollbar = ctk.CTkScrollbar(outer_frame, orientation="vertical",
+                                  command=canvas.yview,
+                                  button_color=theme.FG_MUTED,
+                                  button_hover_color=theme.CYAN)
+
+    def _update_scrollbar():
+        """Show scrollbar only when content exceeds visible area."""
+        canvas.update_idletasks()
+        bbox = canvas.bbox("all")
+        if bbox:
+            content_height = bbox[3] - bbox[1]
+            canvas_height = canvas.winfo_height()
+            if content_height > canvas_height:
+                scrollbar.grid(row=0, column=1, sticky="ns", padx=(0, 2), pady=2)
+                canvas.configure(yscrollcommand=scrollbar.set)
+            else:
+                scrollbar.grid_forget()
+                canvas.configure(yscrollcommand=None)
+
+    def _on_configure(event):
+        """Update canvas window width and scrollbar visibility on resize."""
+        canvas.itemconfig(canvas_window, width=event.width)
+        _update_scrollbar()
+
+    canvas.bind("<Configure>", _on_configure)
+
+    # Mouse wheel scrolling
+    def _on_mousewheel(event):
+        # Check if scrollbar is visible (content overflows)
+        bbox = canvas.bbox("all")
+        if bbox:
+            content_height = bbox[3] - bbox[1]
+            canvas_height = canvas.winfo_height()
+            if content_height > canvas_height:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
     state.move_var        = tk.BooleanVar(value=False)
     state.dry_var         = tk.BooleanVar(value=True)
@@ -222,14 +334,7 @@ def build_center(parent):
     cb_rename.grid(row=1, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 4))
     _add_tooltip(cb_rename, "Don't add parent folder prefix to filenames")
 
-    ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=2, column=0, columnspan=2, sticky="ew", padx=16, pady=(8, 6))
-
-    # ── Folder structure (compact horizontal layout) ──────────────────────────
-    ctk.CTkLabel(frame, text="Output structure",
-                 font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
-                 anchor="center").grid(row=3, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
-
+    # ── Folder structure (collapsible) ────────────────────────────────────────
     _rb_kw = dict(
         fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
         border_color=theme.OUTLINE_VAR,
@@ -237,7 +342,7 @@ def build_center(parent):
         font=(theme.FONT_UI, 10),
     )
     struct_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    struct_frame.grid(row=4, column=0, columnspan=2, sticky="ew", padx=12)
+    struct_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=12)
 
     rb_flat = ctk.CTkRadioButton(struct_frame, text="Flat", variable=state.struct_mode_var,
                                   value="flat", **_rb_kw)
@@ -254,31 +359,23 @@ def build_center(parent):
     rb_parent.pack(side="left", padx=4)
     _add_tooltip(rb_parent, "One folder per parent directory")
 
-    ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=5, column=0, columnspan=2, sticky="ew", padx=16, pady=(8, 6))
+    # Section header (row 2) - placed after content so grid_info is available
+    _section_header(frame, 2, "Output structure", [struct_frame], default_open=True, key="struct")
 
-    # ── Hardware profile ──────────────────────────────────────────────────────
-    ctk.CTkLabel(frame, text="Target device",
-                 font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
-                 anchor="center").grid(row=6, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
-
-    ctk.CTkOptionMenu(frame, variable=state.profile_var,
+    # ── Hardware profile (collapsible) ────────────────────────────────────────
+    profile_menu = ctk.CTkOptionMenu(frame, variable=state.profile_var,
                       values=constants.PROFILE_NAMES,
                       fg_color=theme.BG_SURF2, text_color=theme.FG_ON_SURF,
                       button_color=theme.CYAN_CONT, button_hover_color=theme.CYAN,
                       dropdown_fg_color=theme.BG_SURF1,
                       dropdown_text_color=theme.FG_ON_SURF,
                       dropdown_hover_color=theme.CYAN_CONT,
-                      corner_radius=8).grid(row=7, column=0, columnspan=2, sticky="ew", padx=16)
+                      corner_radius=8)
+    profile_menu.grid(row=5, column=0, columnspan=2, sticky="ew", padx=16)
 
-    # ── Audio Conversion ──────────────────────────────────────────────────────
-    ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=8, column=0, columnspan=2, sticky="ew", padx=16, pady=(10, 8))
+    _section_header(frame, 4, "Target device", [profile_menu], default_open=True, key="device")
 
-    ctk.CTkLabel(frame, text="Audio conversion",
-                 font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
-                 anchor="center").grid(row=9, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
-
+    # ── Audio Conversion (collapsible) ────────────────────────────────────────
     # Initialize conversion variables
     state.convert_enabled_var = tk.BooleanVar(value=False)
     state.convert_format_var = tk.StringVar(value="wav")
@@ -297,14 +394,14 @@ def build_center(parent):
                               text_color=theme.FG_ON_SURF,
                               corner_radius=4,
                               font=(theme.FONT_UI, 10))
-    conv_cb.grid(row=10, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    conv_cb.grid(row=7, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
     _add_tooltip(conv_cb, "Convert audio files to target format/sample rate")
 
     # Conversion options frame
     conv_opts = ctk.CTkFrame(frame, fg_color=theme.BG_SURF1,
                              corner_radius=8, border_width=1,
                              border_color=theme.OUTLINE_VAR)
-    conv_opts.grid(row=11, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
+    conv_opts.grid(row=8, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
 
     # Format row
     fmt_row = ctk.CTkFrame(conv_opts, fg_color="transparent")
@@ -411,14 +508,9 @@ def build_center(parent):
     state.convert_enabled_var.trace_add("write", _toggle_conv_opts)
     _toggle_conv_opts()  # Set initial state
 
-    # ── BPM Analysis ──────────────────────────────────────────────────────────
-    ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=12, column=0, columnspan=2, sticky="ew", padx=16, pady=(10, 8))
+    _section_header(frame, 6, "Audio conversion", [conv_cb, conv_opts], default_open=True, key="conversion")
 
-    ctk.CTkLabel(frame, text="BPM analysis",
-                 font=(theme.FONT_UI, 9), text_color=theme.FG_MUTED,
-                 anchor="center").grid(row=13, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 4))
-
+    # ── BPM Analysis (collapsible) ────────────────────────────────────────────
     state.bpm_enabled_var = tk.BooleanVar(value=False)
     state.bpm_append_var  = tk.BooleanVar(value=False)
 
@@ -430,13 +522,13 @@ def build_center(parent):
                               text_color=theme.FG_ON_SURF,
                               corner_radius=4,
                               font=(theme.FONT_UI, 10))
-    bpm_cb.grid(row=14, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    bpm_cb.grid(row=10, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
     _add_tooltip(bpm_cb, "Detect BPM during Run; results cached for future runs")
 
     bpm_opts = ctk.CTkFrame(frame, fg_color=theme.BG_SURF1,
                              corner_radius=8, border_width=1,
                              border_color=theme.OUTLINE_VAR)
-    bpm_opts.grid(row=15, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
+    bpm_opts.grid(row=11, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
 
     append_cb = ctk.CTkCheckBox(bpm_opts, text="Append BPM to filename",
                                  variable=state.bpm_append_var,
@@ -455,12 +547,14 @@ def build_center(parent):
     state.bpm_enabled_var.trace_add("write", _toggle_bpm_opts)
     _toggle_bpm_opts()
 
-    # Row 16 is the expanding spacer
-    frame.rowconfigure(16, weight=1)
+    _section_header(frame, 9, "BPM analysis", [bpm_cb, bpm_opts], default_open=True, key="bpm")
+
+    # Expanding spacer before transport
+    frame.rowconfigure(12, weight=1)
 
     # ── Transport controls ────────────────────────────────────────────────────
     transport_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    transport_frame.grid(row=17, column=0, columnspan=2, pady=(10, 10))
+    transport_frame.grid(row=13, column=0, columnspan=2, pady=(10, 10))
 
     _tr_kw = dict(
         width=_px(36), corner_radius=8,
@@ -482,33 +576,32 @@ def build_center(parent):
     state.transport_next_btn.configure(state="disabled")
 
     ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=18, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
+        row=14, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ctk.CTkButton(frame, text="Run",
                                    font=(theme.FONT_UI, 12, "bold"),
                                    fg_color=theme.CYAN, text_color=theme.BG_ROOT,
                                    hover_color=theme.CYAN_CONT, corner_radius=8,
                                    command=operations.run_tool)
-    state.run_btn.grid(row=19, column=0, columnspan=2, padx=16, sticky="ew")
+    state.run_btn.grid(row=15, column=0, columnspan=2, padx=16, sticky="ew")
 
     ctk.CTkButton(frame, text="Clear log",
                   fg_color="transparent", text_color=theme.FG_MUTED,
                   hover_color=theme.BG_SURF2, border_width=1,
                   border_color=theme.OUTLINE_VAR, corner_radius=8,
-                  command=log_panel.clear_log).grid(row=20, column=0, columnspan=2, padx=16, pady=(10, 16))
+                  command=log_panel.clear_log).grid(row=16, column=0, columnspan=2, padx=16, pady=(10, 16))
 
-    # Minimum sizes to prevent UI collapse on resize
-    frame.rowconfigure(6,  weight=0, minsize=_px(20))
-    frame.rowconfigure(7,  weight=0, minsize=_px(40))
-    frame.rowconfigure(9,  weight=0, minsize=_px(20))
-    frame.rowconfigure(11, weight=0, minsize=_px(140))
-    frame.rowconfigure(15, weight=0, minsize=_px(60))
-    frame.rowconfigure(16, weight=1)
-    frame.rowconfigure(17, weight=0, minsize=_px(50))
-    frame.rowconfigure(19, weight=0, minsize=_px(45))
-    frame.rowconfigure(20, weight=0, minsize=_px(50))
+    # Update scroll region and scrollbar visibility after all content is created
+    def _after_content():
+        frame.update_idletasks()
+        bbox = frame.bbox("all")
+        if bbox:
+            canvas.configure(scrollregion=bbox)
+        _update_scrollbar()
 
-    return frame
+    frame.after(10, _after_content)
+
+    return outer_frame
 
 
 # ── Deck B — Destination ─────────────────────────────────────────────────────
@@ -611,7 +704,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.0",
+    ctk.CTkLabel(frame, text="v0.5.1",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 

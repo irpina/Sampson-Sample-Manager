@@ -54,3 +54,6 @@ _last_conversion_error = None  # Stores last conversion error details
 # BPM detection options
 bpm_enabled_var = None   # tk.BooleanVar — master toggle for BPM detection
 bpm_append_var  = None   # tk.BooleanVar — append _120bpm to output filename
+
+# Collapsible section states (persists across theme toggles)
+_section_open = {}   # {"struct": True, "device": True, "conversion": True, "bpm": True}
