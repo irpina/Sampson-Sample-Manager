@@ -69,10 +69,18 @@ SAMPSON/
 ├── playback.py                # Audio playback via pygame-ce/NSSound, transport controls
 ├── builders.py                # All build_* UI functions, toggle_theme(), build_app()
 ├── requirements.txt           # Python dependencies
-├── SAMPSON.spec               # PyInstaller configuration for Windows/Linux
 ├── SAMPSON_mac.spec           # PyInstaller configuration for macOS .app bundle
 ├── build_macos.sh             # macOS build script with code signing
-└── sampsontransparent2.png    # Application logo
+├── notarize.sh                # macOS notarization script (gitignored, user-specific)
+├── pyi_rth_tk_silence.py      # Runtime hook for Tcl/Tk crash fix
+├── sampsontransparent2.png    # Application logo (dark background)
+├── sampsontransparentwhite.png # Application logo (light background)
+├── README.md                  # User-facing documentation
+├── BUGS.md                    # Known issues tracker
+├── TASKS.md                   # Development task history
+├── PLAN_BPM.md                # Planning documentation
+├── CLAUDE.md                  # Workflow instructions (meta, gitignored)
+└── .gitignore                 # Excludes build outputs, CLAUDE.md, etc.
 ```
 
 ---
@@ -128,6 +136,8 @@ python main.py
 
 ### Package for Windows
 
+**Note:** Windows spec file is currently not in the repository. Create `SAMPSON.spec` based on `SAMPSON_mac.spec`, adapting for Windows (include pygame, no AppKit, no BUNDLE).
+
 ```bash
 pyinstaller SAMPSON.spec --clean
 # Output: dist/SAMPSON.exe
@@ -148,6 +158,13 @@ bash build_macos.sh
 # Output: dist/SAMPSON.app
 ```
 
+**macOS Build Details:**
+The build script:
+1. Pre-downloads static-ffmpeg binaries
+2. Runs PyInstaller with `SAMPSON_mac.spec`
+3. Cleans unused Tcl/Tk data files (msgs, encodings, optional packages)
+4. Re-signs the app bundle after modifications
+
 **Linux Runtime Dependencies:**
 
 ```bash
@@ -159,10 +176,11 @@ sudo dnf install SDL2 SDL2_mixer
 ```
 
 **PyInstaller Notes:**
-- `--collect-data pygame` bundles SDL DLLs for audio in the binary
+- `--collect-data pygame` bundles SDL DLLs for audio in the binary (Windows/Linux only)
 - `collect_data_files('static_ffmpeg')` bundles ffmpeg + ffprobe binaries
 - `sampsontransparent2.png` is bundled as a data file
 - macOS spec uses `BUNDLE()` for .app creation with Info.plist settings
+- macOS spec excludes pygame (uses NSSound instead), sqlite3, readline, and other unused modules
 
 ---
 
@@ -272,7 +290,7 @@ Path limits truncate filenames so the full destination path fits within device c
 
 ### Auto-Apply Conversion Presets
 
-When a profile with a `conversion` preset is selected, the conversion options are automatically populated if `convert_follow_profile_var` is True.
+When a profile with a `conversion` preset is selected, the conversion options are automatically populated if `convert_follow_profile_var` is True (controlled by the `_on_profile_changed` callback in `builders.py`).
 
 ---
 
@@ -292,6 +310,13 @@ The `conversion.py` module handles format conversion using pydub with ffmpeg bac
 1. static-ffmpeg bundled binaries (included with app)
 2. System PATH (allows user override)
 3. Common install locations (Windows winget, Program Files)
+
+### Conversion Implementation Details
+
+- pydub is lazy-loaded via `_get_pydub()` to avoid startup overhead
+- ffmpeg path is explicitly set via `pydub.AudioSegment.converter`
+- Audio format is passed explicitly to `AudioSegment.from_file()` to avoid ffprobe dependency
+- Bit depth is set via ffmpeg codec parameters (pcm_s16le/pcm_s24le/pcm_s32le for WAV, pcm_s16be/pcm_s24be/pcm_s32be for AIFF)
 
 ---
 
@@ -357,7 +382,16 @@ When conversion is enabled:
 **Always increment the version** when finishing a change. The label lives in `build_status_bar()` in `builders.py`:
 
 ```python
-ctk.CTkLabel(frame, text="v0.3.6", ...)  # ← Update this
+ctk.CTkLabel(frame, text="v0.4.0", ...)  # ← Update this
+```
+
+Also update the version in `SAMPSON_mac.spec` Info.plist:
+```python
+info_plist={
+    'CFBundleShortVersionString': '0.4.0',
+    'CFBundleVersion': '0.4.0',
+    ...
+}
 ```
 
 ### Tracing Variables
@@ -399,7 +433,7 @@ No automated test suite exists. Testing is manual:
 
 ## Known Limitations
 
-- Preview capped at 500 rows for performance
+- Preview capped at 500 rows for performance (defined in `constants.MAX_PREVIEW_ROWS`)
 - File browser only shows non-hidden subfolders and audio files
 - Destination collisions not handled — existing files will be overwritten silently
 - FFmpeg must be available (bundled with PyInstaller builds, or installed separately for dev)
@@ -409,8 +443,13 @@ No automated test suite exists. Testing is manual:
 ## Bug Tracker
 
 See `BUGS.md` for known issues:
-- **BUG-001**: Center panel collapses at small window sizes (Low)
-- **BUG-002**: macOS window oversized on Retina displays (Medium) — **FIXED in v0.3.3+**
+
+| ID | Status | Description |
+|----|--------|-------------|
+| BUG-001 | Open | Center panel collapses at small window sizes (Low) |
+| BUG-002 | Partially Fixed | macOS window oversized on Retina displays (Medium) — DPI scaling fixed in v0.3.3+, aspect ratio enforcement added in main.py |
+
+**Note:** The BUGS.md file is the source of truth for bug status. The AGENTS.md may lag behind.
 
 ---
 
@@ -420,7 +459,7 @@ See `BUGS.md` for known issues:
 |------|-------|
 | Add new hardware profile | `constants.py` → `PROFILES` dict |
 | Change colors | `theme.py` → color constants, `_apply_theme_colors()` |
-| Update version | `builders.py` → `build_status_bar()` |
+| Update version | `builders.py` → `build_status_bar()` and `SAMPSON_mac.spec` |
 | Fix DPI scaling | `dpi.py` → `_px()`, `_compute_dpi_scale()` |
 | Add audio formats | `constants.py` → `AUDIO_EXTS` |
 | Modify UI layout | `builders.py` → `build_app()` and `build_*()` functions |
@@ -439,12 +478,14 @@ See `BUGS.md` for known issues:
 - Single dependency for all audio needs
 - Well-tested with PyInstaller bundling
 - SDL2 backend is cross-platform
+- macOS uses NSSound instead to avoid SDL issues and reduce bundle size
 
 ### Why NSSound on macOS?
 
 - Native macOS audio playback with no extra dependencies
 - Avoids SDL/pygame audio issues on macOS
 - Lazy import prevents AppKit initialization race with tkinter
+- Reduces bundle size by ~27 MB (no pygame/SDL2)
 
 ### Why static-ffmpeg for conversion?
 
@@ -467,10 +508,56 @@ See `BUGS.md` for known issues:
 
 ---
 
+## macOS-Specific Notes
+
+### Tcl/Tk Deprecation Warning Fix
+
+Tcl/Tk 9.0 can cause console window crashes in signed PyInstaller bundles. Fixed via:
+1. `pyi_rth_tk_silence.py` runtime hook (sets `TK_SILENCE_DEPRECATION=1`)
+2. Environment variables set in `main.py` before tkinter import
+3. `LSEnvironment` in `SAMPSON_mac.spec` Info.plist
+
+### Build Size Optimization
+
+The macOS build (`build_macos.sh`) achieves ~50% size reduction through:
+1. Stripping debug symbols (`strip=True` in spec)
+2. Excluding unused stdlib modules (sqlite3, readline, grp, resource, syslog, pygame)
+3. Removing ffprobe (not needed when passing format explicitly to pydub)
+4. Using NSSound instead of pygame/SDL2
+5. Cleaning Tcl/Tk data files (msgs, unused encodings, optional packages)
+
+### Code Signing
+
+- Set `APPLE_CODESIGN_IDENTITY` environment variable for signed builds
+- Uses ad-hoc signing (`-`) if not set
+- Re-signs after Tcl/Tk cleanup modifications
+
+---
+
 ## Git Workflow
 
 **Always commit** after completing a change (per `CLAUDE.md` workflow rules).
 
 ### .gitignore Notes
 
-The `.gitignore` excludes `CLAUDE.md` itself (meta-documentation not for repo), along with standard Python artifacts, build outputs, and OS files.
+The `.gitignore` excludes:
+- Build outputs: `dist/`, `build/`, `__pycache__/`
+- Session notes: `CLAUDE_SESSION.md` (may contain personal info / local paths)
+- User-specific scripts: `notarize.sh`
+- Archive files: `*.zip`
+- Meta-documentation: `CLAUDE.md` itself
+
+---
+
+## Configuration Files Reference
+
+| File | Purpose | Format |
+|------|---------|--------|
+| `requirements.txt` | Python dependencies | pip requirements format |
+| `SAMPSON_mac.spec` | PyInstaller config for macOS | Python script |
+| `build_macos.sh` | macOS build automation | Bash script |
+| `pyi_rth_tk_silence.py` | PyInstaller runtime hook | Python script |
+| `.gitignore` | Git exclusions | Git ignore format |
+| `BUGS.md` | Bug tracker | Markdown |
+| `TASKS.md` | Development tasks | Markdown |
+| `PLAN_BPM.md` | Planning documentation | Markdown |

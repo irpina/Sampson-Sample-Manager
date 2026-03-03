@@ -6,17 +6,17 @@ Add opt-in BPM detection to SAMPSON that runs during file operations (not previe
 
 The Deck B preview tree gains a **BPM column** that shows the cached value when known, or `???` when not yet scanned. The renamed filename column also reflects cache state: `Kicks_kick_01_120bpm.wav` if cached, `Kicks_kick_01_???bpm.wav` placeholder if not.
 
-Chosen: **aubio + numpy** (~30MB bundle increase), **`_120bpm` suffix**, preview is **read-only cache lookup** (no detection).
+**Chosen: pydub-based detection** (zero new dependencies, cross-platform), **`_120bpm` suffix**, preview is **read-only cache lookup** (no detection).
 
 ---
 
 ## New File: `bpm.py`
 
-No app-level imports — keeps the dependency graph clean. All aubio/numpy imports are lazy (inside `detect_bpm()` only).
+No app-level imports — keeps the dependency graph clean. Uses pydub (already available via `conversion.py` infrastructure).
 
 **Public API:**
 - `get_cached_bpm(path) -> float | None` — read-only cache lookup (used by preview)
-- `detect_bpm(path) -> float | None` — checks cache first, then runs aubio (used by run worker)
+- `detect_bpm(path) -> float | None` — checks cache first, then runs analysis (used by run worker)
 - `flush_cache()` — writes cache to disk if dirty (called at end of run)
 
 **Cache location:** `Path.home() / ".sampson" / "bpm_cache.json"`
@@ -27,33 +27,78 @@ No app-level imports — keeps the dependency graph clean. All aubio/numpy impor
 ```
 Invalidation is mtime-based: if the file's mtime differs from the cached value, BPM is re-detected.
 
-**Detection algorithm (aubio):**
+**Detection algorithm (pydub-based):**
 ```python
+def _get_pydub():
+    """Lazy-load pydub and configure ffmpeg path."""
+    from pydub import AudioSegment
+    import static_ffmpeg
+    AudioSegment.converter = static_ffmpeg.ffmpeg_path
+    AudioSegment.ffprobe = static_ffmpeg.ffprobe_path
+    return AudioSegment
+
 def detect_bpm(file_path: Path) -> float | None:
     cached = get_cached_bpm(file_path)
     if cached is not None:
         return cached
     try:
-        from aubio import source, tempo
-        from numpy import diff, median
-        samplerate, hop_s = 44100, 512
-        src = source(str(file_path), samplerate, hop_s)
-        samplerate = src.samplerate
-        o = tempo("default", 2048, hop_s, samplerate)
-        beats = []
-        while True:
-            samples, read = src()
-            if o(samples):
-                beats.append(o.get_last_s())
-            if read < hop_s:
-                break
-        if len(beats) > 1:
-            bpm_val = float(median(60 / diff(beats)))
-            cache_bpm(file_path, bpm_val)
-            return bpm_val
+        AudioSegment = _get_pydub()
+        # Load audio and downmix to mono for analysis
+        fmt = Path(file_path).suffix.lower().lstrip('.')
+        if fmt == 'aif':
+            fmt = 'aiff'
+        audio = AudioSegment.from_file(str(file_path), format=fmt)
+        audio = audio.set_channels(1)
+        
+        # Limit analysis to first 60 seconds for speed
+        if len(audio) > 60000:
+            audio = audio[:60000]
+        
+        # High-pass filter at 200Hz to focus on transients (kicks/snares)
+        filtered = audio.high_pass_filter(200)
+        
+        # Split into chunks and analyze RMS energy
+        chunk_ms = 10  # 10ms chunks
+        chunks = [filtered[i:i+chunk_ms] for i in range(0, len(filtered), chunk_ms)]
+        rms_values = [chunk.rms for chunk in chunks if len(chunk) > 0]
+        
+        if not rms_values or max(rms_values) == 0:
+            return None
+        
+        # Dynamic threshold
+        import statistics
+        mean_rms = statistics.mean(rms_values)
+        std_rms = statistics.stdev(rms_values) if len(rms_values) > 1 else 0
+        threshold = mean_rms + (1.5 * std_rms)
+        
+        # Find peaks with local maximum check
+        peaks = []
+        for i, rms in enumerate(rms_values):
+            if rms > threshold:
+                if i == 0 or rms > rms_values[i-1]:
+                    if i == len(rms_values)-1 or rms >= rms_values[i+1]:
+                        peaks.append(i * chunk_ms / 1000.0)
+        
+        if len(peaks) < 2:
+            return None
+        
+        # Calculate intervals and filter valid range (30-300 BPM)
+        intervals = [peaks[i+1] - peaks[i] for i in range(len(peaks)-1)]
+        valid_intervals = [i for i in intervals if 0.2 <= i <= 2.0]
+        
+        if len(valid_intervals) < 2:
+            return None
+        
+        # Use median for robustness
+        median_interval = statistics.median(valid_intervals)
+        bpm_val = round(60.0 / median_interval, 1)
+        bpm_val = max(30.0, min(300.0, bpm_val))
+        
+        _cache_bpm(file_path, bpm_val)
+        return bpm_val
+        
     except Exception:
-        pass
-    return None
+        return None
 ```
 
 ---
@@ -186,26 +231,25 @@ if state.bpm_append_var:  state.bpm_append_var.set(saved_bpm_append)
 **`build_status_bar()`** — bump version string.
 
 ### 5. `requirements.txt`
+Remove librosa; keep pydub (already present).
 ```
-aubio>=0.4.9
-numpy>=1.20.0
+# Removed: librosa>=0.10.0
+# Removed: numpy>=1.20.0
+# pydub is already present (used by conversion.py)
 ```
 
 ### 6. `SAMPSON_mac.spec`
+Remove librosa/numpy hiddenimports and data files.
 ```python
-# hiddenimports — add:
-'aubio',
-'numpy',
-
-# all_datas — add numpy data files:
-numpy_datas = collect_data_files('numpy')
-all_datas   = [logo_file] + ffmpeg_datas + numpy_datas
+# Removed from hiddenimports: 'librosa', 'numpy', 'scipy', 'sklearn'
+# Removed: numpy_datas = collect_data_files('numpy')
+# ffmpeg_datas only (already present)
 ```
 
-### 7. `CLAUDE.md`
+### 7. `AGENTS.md`
 Update module dependency order:
 ```
-bpm.py         ← no app imports  (NEW)
+bpm.py         ← no app imports, uses pydub/static_ffmpeg  (NEW)
 operations.py  → state, theme, constants, log_panel, conversion, bpm
 preview.py     → state, theme, constants, dpi, operations, bpm
 ```
@@ -217,7 +261,7 @@ preview.py     → state, theme, constants, dpi, operations, bpm
 ```
 constants.py   ← no imports
 state.py       ← no app imports
-bpm.py         ← no app imports        ← NEW
+bpm.py         ← no app imports (uses pydub, static_ffmpeg)  ← NEW
 dpi.py         → state
 theme.py       → state, dpi
 log_panel.py   → state, theme
@@ -235,7 +279,7 @@ main.py        → state, theme, dpi, builders
 ## Key Invariants
 
 - **Path limit always wins** — BPM suffix is protected from truncation; the overall path still fits within the device limit.
-- **Lazy aubio import** — only loaded inside `detect_bpm()`, so startup is unaffected when BPM is disabled.
+- **No new dependencies** — Uses pydub which is already bundled; works cross-platform (Windows, macOS, Linux).
 - **Preview is read-only** — cache lookup is a fast dict read; no audio is analyzed during preview.
 - **Placeholder never written to disk** — `_???bpm` is display-only; actual filenames computed at run time from detected BPM.
 - **Cache survives restarts** — JSON sidecar is written after each run; next session reuses it immediately.
@@ -244,7 +288,7 @@ main.py        → state, theme, dpi, builders
 
 ## Verification
 
-1. `pip install aubio numpy` then `python main.py`
+1. Run `python main.py` (no new dependencies to install)
 2. Enable **Detect BPM** — confirm "Append BPM to filename" sub-option activates; BPM column appears in Deck B preview showing `???` for all files
 3. Select a folder, enable **Append BPM to filename**, observe preview shows `stem_???bpm.ext` filenames
 4. Run a **Dry-run** — log shows detected BPM per file; filenames show actual BPM values
@@ -253,3 +297,26 @@ main.py        → state, theme, dpi, builders
 7. Confirm `~/.sampson/bpm_cache.json` contains entries with `mtime` + `bpm` fields
 8. Select M8 profile + long filenames — verify logged destination paths are ≤ 127 chars with BPM suffix intact
 9. Toggle theme — BPM checkboxes preserve state after UI rebuild
+
+---
+
+## Implementation Notes
+
+### Why pydub instead of librosa?
+- **Cross-platform**: pydub works identically on Windows, macOS, and Linux
+- **No compilation**: librosa requires numpy/scipy C extensions; pydub is pure Python
+- **Zero bundle increase**: pydub is already a project dependency for audio conversion
+- **FFmpeg already bundled**: Uses the same static_ffmpeg infrastructure as conversion.py
+
+### Detection accuracy considerations
+- High-pass filter at 200Hz focuses on percussive transients
+- Dynamic threshold adapts to different audio levels
+- Median filtering provides robustness against outliers
+- Valid interval gating (0.2s-2.0s = 30-300 BPM) filters noise
+- Limited to first 60 seconds for speed on long files
+
+### Migration from librosa
+If users have an existing bpm_cache.json from librosa-based detection:
+- Cache format is identical (mtime + bpm fields)
+- Existing cached values will be reused
+- New detections use pydub-based algorithm

@@ -3,8 +3,9 @@ pygame-ce>=2.5.0
 customtkinter>=5.2.0
 pydub>=0.25.1
 static-ffmpeg>=2.5.0  # Bundled ffmpeg + ffprobe for audio conversion
-librosa>=0.10.0       # BPM detection (aubio has no Python 3.14 Windows wheel)
-numpy>=1.20.0         # Required by librosa
+# librosa/numpy removed — BPM detection now uses pydub (cross-platform, zero new deps)
+# librosa>=0.10.0
+# numpy>=1.20.0
 
 # Python 3.13+ compatibility (audioop was removed from stdlib)
 audioop-lts>=0.2.0; python_version >= "3.13"
