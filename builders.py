@@ -694,7 +694,7 @@ def build_deck_b(parent):
 # ── Status bar ───────────────────────────────────────────────────────────────
 
 def build_status_bar(parent):
-    frame = ctk.CTkFrame(parent, fg_color=theme.BG_SURF2, corner_radius=0, height=_px(36))
+    frame = ctk.CTkFrame(parent, fg_color=theme.BG_SURF2, corner_radius=8, height=_px(36))
     frame.pack_propagate(False)
 
     state.progress_var = tk.IntVar(value=0)
@@ -714,7 +714,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.7",
+    ctk.CTkLabel(frame, text="v0.5.8",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
@@ -856,9 +856,7 @@ def build_app():
     build_center(root_frame).grid(row=1, column=1, sticky="nsew", padx=4,       pady=8)
     build_deck_b(root_frame).grid(row=1, column=2, rowspan=3, sticky="nsew", padx=(4, 10), pady=8)
 
-    build_status_bar(root_frame).grid(row=2, column=0, columnspan=2, sticky="ew", padx=10)
-    tk.Frame(root_frame, bg=theme.OUTLINE_VAR, height=1).grid(
-        row=2, column=0, columnspan=2, sticky="sew", padx=10)
+    build_status_bar(root_frame).grid(row=2, column=0, columnspan=2, sticky="ew", padx=10, pady=(4, 4))
 
     build_log_panel(root_frame).grid(row=3, column=0, columnspan=2, sticky="nsew",
                                      padx=10, pady=(4, 10))
