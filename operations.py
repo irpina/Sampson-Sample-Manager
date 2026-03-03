@@ -140,7 +140,7 @@ def run_tool():
     threading.Thread(
         target=_run_worker,
         args=(source, dest, state.move_var.get(), state.dry_var.get(),
-              path_limit, state.no_rename_var.get(), struct_mode, convert_options,
+              path_limit, not state.modify_names_var.get(), struct_mode, convert_options,
               bpm_enabled, bpm_append),
         daemon=True,
     ).start()
@@ -232,5 +232,7 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     state.root.after(0, lambda: state.status_var.set(f"Complete \u2014 {total} file{s} processed."))
     state.root.after(0, lambda: state.run_btn.configure(text="Run"))
     state.root.after(0, lambda: state.run_btn.configure(state="normal"))
+    if bpm_enabled and state._refresh_preview_cb:
+        state.root.after(0, state._refresh_preview_cb)
     if state._status_dot:
         state.root.after(0, lambda: state._status_dot.configure(text_color=theme.C_COPY))

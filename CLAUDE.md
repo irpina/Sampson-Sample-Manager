@@ -41,13 +41,14 @@ Linux runtime deps for audio: `libsdl2-2.0-0 libsdl2-mixer-2.0-0` (apt) or `SDL2
 ```
 constants.py   ← no imports
 state.py       ← no app imports
+bpm.py         → conversion  ← uses conversion._find_ffmpeg_path()
 dpi.py         → state
 theme.py       → state, dpi
 log_panel.py   → state, theme
 conversion.py  → state
 operations.py  → state, theme, constants, log_panel, conversion
 browser.py     → state, theme, constants, preview
-preview.py     → state, theme, constants, dpi, operations  ← imports _compute_output from operations
+preview.py     → state, theme, constants, dpi, operations, bpm, conversion
 playback.py    → state
 builders.py    → state, theme, dpi, browser, preview, playback, log_panel, operations
 main.py        → state, theme, dpi, builders
@@ -160,6 +161,19 @@ Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
 - **mirror** — preserves full source directory tree relative to source root
 - **parent** — each file goes in a subfolder named after its immediate parent
 
+### BPM detection
+
+`bpm.py` detects tempo using energy-envelope autocorrelation — no `librosa` or `numpy` required, just `pydub`. It delegates ffmpeg discovery to `conversion._find_ffmpeg_path()` so both modules use the same lookup (static-ffmpeg → PATH → common install locations).
+
+- **Cache:** `~/.sampson/bpm_cache.json`, keyed by absolute file path + mtime. Invalidated automatically when the file is modified.
+- **Public API:** `detect_bpm(path)`, `get_cached_bpm(path)`, `set_cached_bpm(path, bpm)`, `flush_cache()`
+- **UI integration:** BPM is detected during `_run_worker()` when `state.bpm_enabled_var` is True; results are shown in the hidden `bpm` column of `state.preview_tree` (column appears when BPM detection is enabled). Double-clicking the BPM cell in Deck B opens an inline editor for manual override (`preview._on_bpm_double_click`).
+- **Filename suffix:** When `state.bpm_append_var` is True, `_120bpm` is appended to the output stem (e.g. `Kicks_kick_01_120bpm.wav`).
+
+### Collapsible center panel sections
+
+`_section_header()` in `builders.py` creates a clickable ▶/▼ header that shows/hides a group of widgets. Section open/closed state is stored in `state._section_open` (dict keyed by section name: `"struct"`, `"device"`, `"conversion"`, `"bpm"`) and persists across theme toggles. Current sections in `build_center()`: Folder structure, Hardware profile, Audio conversion, BPM analysis.
+
 ## Key conventions
 
 - **Version label**: Update the `"v0.x.x"` string in `build_status_bar()` in `builders.py` when finishing any change.
@@ -182,6 +196,7 @@ Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
 | Audio conversion logic | `conversion.py` → `convert_file()` |
 | Adjust preview row limit | `constants.py` → `MAX_PREVIEW_ROWS` |
 | Add output structure mode | `operations._compute_output()` + `builders.build_center()` |
+| BPM detection algorithm | `bpm._detect_bpm_algorithm()` |
 | macOS code signing / notarization | `notarize.sh` |
 
 ## Known limitations
@@ -190,3 +205,4 @@ Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
 - Destination collisions not handled — existing files are overwritten silently.
 - FFmpeg must be available (bundled with PyInstaller builds; installed separately for dev runs that use conversion).
 - **BUG-001** (open): Center panel collapses at very small window widths — root cause is `minsize` in `build_app()` column config in `builders.py`.
+- **BUG-002** (open): macOS window launches oversized and clips behind the menu bar/dock — `_compute_dpi_scale()` in `dpi.py` must return `1.0` on macOS; using `backingScaleFactor` doubles all dimensions.

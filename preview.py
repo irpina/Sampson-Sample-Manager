@@ -11,6 +11,25 @@ from operations import _compute_output
 from conversion import get_target_extension
 
 
+# ── Filter ───────────────────────────────────────────────────────────────────
+
+_preview_rows: list = []   # all populated row data; used by apply_filter()
+
+
+def apply_filter(text: str):
+    """Show only rows whose original filename contains `text` (case-insensitive)."""
+    if state.preview_tree is None:
+        return
+    query = text.strip().lower()
+    state.preview_tree.delete(*state.preview_tree.get_children())
+    for i, (orig, renamed, subfolder, bpm_display, srcpath) in enumerate(_preview_rows):
+        if not query or query in orig.lower():
+            tag = "odd" if i % 2 else "even"
+            state.preview_tree.insert("", "end",
+                                      values=(orig, renamed, subfolder, bpm_display, srcpath),
+                                      tags=(tag,))
+
+
 # ── Tooltip ─────────────────────────────────────────────────────────────────
 
 def _reposition_tooltip(cx: int, cy: int):
@@ -218,6 +237,8 @@ def _scan_thread(path_str):
 
 
 def _populate_preview(files, source_root):
+    global _preview_rows
+    _preview_rows = []
     state.preview_tree.delete(*state.preview_tree.get_children())
     total = len(files)
     if total == 0 and not state._selected_folders:
@@ -226,18 +247,22 @@ def _populate_preview(files, source_root):
         return
     shown = min(total, constants.MAX_PREVIEW_ROWS)
 
-    no_rename   = state.no_rename_var.get()   if state.no_rename_var  else False
-    struct_mode = state.struct_mode_var.get() if state.struct_mode_var else "flat"
-    path_limit  = constants.PROFILES[state.profile_var.get()]["path_limit"] \
-                  if state.profile_var else None
-    dest_path   = Path(state.dest_var.get().strip()) \
-                  if (state.dest_var and state.dest_var.get().strip()) else source_root
+    modify_names = bool(state.modify_names_var and state.modify_names_var.get())
+    no_rename    = not modify_names
+    struct_mode  = state.struct_mode_var.get() if state.struct_mode_var else "flat"
+    path_limit   = constants.PROFILES[state.profile_var.get()]["path_limit"] \
+                   if state.profile_var else None
+    dest_path    = Path(state.dest_var.get().strip()) \
+                   if (state.dest_var and state.dest_var.get().strip()) else source_root
 
-    # Show Subfolder column only when not in flat mode
-    sub_width = 0 if struct_mode == "flat" else _px(140)
+    # "Will become" and "Subfolder" columns only shown in Modify mode
+    state.preview_tree.column("renamed",
+                               width=_px(200) if modify_names else 0,
+                               minwidth=0, stretch=False)
+    sub_width = _px(140) if (modify_names and struct_mode != "flat") else 0
     state.preview_tree.column("subfolder", width=sub_width, minwidth=0, stretch=False)
 
-    # Show BPM column only when BPM detection is enabled
+    # BPM column shown whenever BPM detection is enabled
     bpm_enabled = bool(state.bpm_enabled_var and state.bpm_enabled_var.get())
     bpm_append  = bool(state.bpm_append_var  and state.bpm_append_var.get())
     state.preview_tree.column("bpm", width=_px(60) if bpm_enabled else 0,
@@ -275,13 +300,14 @@ def _populate_preview(files, source_root):
         else:
             display_name = new_name
 
-        tag = "odd" if i % 2 else "even"
-        state.preview_tree.insert("", "end",
-                                  values=(f.name, display_name, rel_sub,
-                                          bpm_display, str(f)),
-                                  tags=(tag,))
+        _preview_rows.append((f.name, display_name, rel_sub, bpm_display, str(f)))
+
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)
+
+    # Apply active filter (re-inserts matching rows from _preview_rows)
+    filter_text = state.preview_filter_var.get() if state.preview_filter_var else ""
+    apply_filter(filter_text)
 
     s = "s" if total != 1 else ""
     state.src_count_var.set(f"{total} audio file{s}")
@@ -289,7 +315,7 @@ def _populate_preview(files, source_root):
         state.preview_count_var.set("No audio files in this directory tree")
     elif total > constants.MAX_PREVIEW_ROWS:
         state.preview_count_var.set(f"Showing {shown} of {total} files")
-    elif state.no_rename_var and state.no_rename_var.get():
-        state.preview_count_var.set(f"{total} file{s}  —  names unchanged")
-    else:
+    elif modify_names:
         state.preview_count_var.set(f"{total} file{s} will be renamed")
+    else:
+        state.preview_count_var.set(f"{total} audio file{s}")

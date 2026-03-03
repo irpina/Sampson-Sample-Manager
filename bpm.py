@@ -8,11 +8,11 @@ Optimized for drum breaks and rhythmic material.
 import json
 import math
 import os
-import shutil
 import statistics
-import sys
 from pathlib import Path
 from typing import Optional, List, Tuple
+
+from conversion import _find_ffmpeg_path
 
 # ── Cache ─────────────────────────────────────────────────────────────────────
 _CACHE_DIR  = Path.home() / ".sampson"
@@ -21,7 +21,6 @@ _cache: dict = {}
 _cache_dirty = False
 _cache_loaded = False
 _log_messages: list = []
-_static_ffmpeg_initialized = False
 
 
 def _log(msg):
@@ -33,32 +32,6 @@ def get_log_messages():
     msgs = _log_messages.copy()
     _log_messages.clear()
     return msgs
-
-
-def _init_static_ffmpeg():
-    global _static_ffmpeg_initialized
-    if not _static_ffmpeg_initialized:
-        try:
-            import static_ffmpeg
-            static_ffmpeg.add_paths()
-            _static_ffmpeg_initialized = True
-        except Exception:
-            pass
-    return _static_ffmpeg_initialized
-
-
-def _find_ffmpeg_path():
-    try:
-        if _init_static_ffmpeg():
-            exe = "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg"
-            bundled = shutil.which(exe)
-            if bundled and os.path.isfile(bundled):
-                return bundled
-    except Exception:
-        pass
-    
-    exe = "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg"
-    return shutil.which(exe)
 
 
 def _load_cache():

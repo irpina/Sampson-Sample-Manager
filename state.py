@@ -28,7 +28,7 @@ _is_dark           = True   # current theme state
 _dpi_scale         = 1.0    # pixels-per-96-dpi-pixel; set once at startup
 profile_var        = None   # tk.StringVar — key into constants.PROFILES; default "Generic"
 struct_mode_var    = None   # tk.StringVar — "flat" | "mirror" | "parent"
-no_rename_var      = None
+modify_names_var   = None   # tk.BooleanVar — True = rename files with prefix (browse mode when False)
 
 # Audio conversion options
 convert_enabled_var = None      # tk.BooleanVar
@@ -57,3 +57,9 @@ bpm_append_var  = None   # tk.BooleanVar — append _120bpm to output filename
 
 # Collapsible section states (persists across theme toggles)
 _section_open = {}   # {"struct": True, "device": True, "conversion": True, "bpm": True}
+
+# Callback set by builders.py so operations.py can trigger a preview refresh
+# without creating a circular import (operations ← preview).
+_refresh_preview_cb = None
+
+preview_filter_var = None   # tk.StringVar — live filter text for Deck B search bar

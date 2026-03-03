@@ -304,7 +304,7 @@ def build_center(parent):
 
     state.move_var        = tk.BooleanVar(value=False)
     state.dry_var         = tk.BooleanVar(value=True)
-    state.no_rename_var   = tk.BooleanVar(value=False)
+    state.modify_names_var = tk.BooleanVar(value=False)
     state.profile_var     = tk.StringVar(value="Generic")
     state.struct_mode_var = tk.StringVar(value="flat")
 
@@ -328,11 +328,11 @@ def build_center(parent):
     cb_dry.grid(row=0, column=1, sticky="w", padx=(8, 16), pady=(16, 4))
     _add_tooltip(cb_dry, "Preview changes without writing any files")
 
-    # Row 1: Keep names (full width)
-    cb_rename = ctk.CTkCheckBox(frame, text="Keep original names",
-                                variable=state.no_rename_var, **_cb_kw)
+    # Row 1: Modify names (full width)
+    cb_rename = ctk.CTkCheckBox(frame, text="Modify file names",
+                                variable=state.modify_names_var, **_cb_kw)
     cb_rename.grid(row=1, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 4))
-    _add_tooltip(cb_rename, "Don't add parent folder prefix to filenames")
+    _add_tooltip(cb_rename, "Add parent folder prefix to filenames and show rename preview")
 
     # ── Folder structure (collapsible) ────────────────────────────────────────
     _rb_kw = dict(
@@ -360,7 +360,7 @@ def build_center(parent):
     _add_tooltip(rb_parent, "One folder per parent directory")
 
     # Section header (row 2) - placed after content so grid_info is available
-    _section_header(frame, 2, "Output structure", [struct_frame], default_open=True, key="struct")
+    _section_header(frame, 2, "Output structure", [struct_frame], default_open=False, key="struct")
 
     # ── Hardware profile (collapsible) ────────────────────────────────────────
     profile_menu = ctk.CTkOptionMenu(frame, variable=state.profile_var,
@@ -373,7 +373,7 @@ def build_center(parent):
                       corner_radius=8)
     profile_menu.grid(row=5, column=0, columnspan=2, sticky="ew", padx=16)
 
-    _section_header(frame, 4, "Target device", [profile_menu], default_open=True, key="device")
+    _section_header(frame, 4, "Target device", [profile_menu], default_open=False, key="device")
 
     # ── Audio Conversion (collapsible) ────────────────────────────────────────
     # Initialize conversion variables
@@ -508,7 +508,7 @@ def build_center(parent):
     state.convert_enabled_var.trace_add("write", _toggle_conv_opts)
     _toggle_conv_opts()  # Set initial state
 
-    _section_header(frame, 6, "Audio conversion", [conv_cb, conv_opts], default_open=True, key="conversion")
+    _section_header(frame, 6, "Audio conversion", [conv_cb, conv_opts], default_open=False, key="conversion")
 
     # ── BPM Analysis (collapsible) ────────────────────────────────────────────
     state.bpm_enabled_var = tk.BooleanVar(value=False)
@@ -547,7 +547,7 @@ def build_center(parent):
     state.bpm_enabled_var.trace_add("write", _toggle_bpm_opts)
     _toggle_bpm_opts()
 
-    _section_header(frame, 9, "BPM analysis", [bpm_cb, bpm_opts], default_open=True, key="bpm")
+    _section_header(frame, 9, "BPM analysis", [bpm_cb, bpm_opts], default_open=False, key="bpm")
 
     # Expanding spacer before transport
     frame.rowconfigure(12, weight=1)
@@ -611,7 +611,7 @@ def build_deck_b(parent):
                          corner_radius=12,
                          border_width=1, border_color=theme.CARD_BORDER)
     frame.columnconfigure(0, weight=1)
-    frame.rowconfigure(3, weight=1)
+    frame.rowconfigure(4, weight=1)
 
     # Strip: transparent so card's rounded corners show through
     strip = tk.Frame(frame, bg=theme.BG_SURF1, height=_px(14))
@@ -648,6 +648,15 @@ def build_deck_b(parent):
     state.preview_count_var.trace_add("write",
         lambda *_: _prev_lbl.configure(text=state.preview_count_var.get()))
 
+    # Search / filter bar
+    state.preview_filter_var = tk.StringVar()
+    ctk.CTkEntry(frame, textvariable=state.preview_filter_var,
+                 placeholder_text="Filter by filename\u2026",
+                 fg_color=theme.BG_SURF2, text_color=theme.FG_ON_SURF,
+                 border_color=theme.CARD_BORDER, border_width=1,
+                 corner_radius=6).grid(row=3, column=0, columnspan=2,
+                                       sticky="ew", padx=12, pady=(0, 6))
+
     # Treeview — stays ttk (no CTK equivalent)
     state.preview_tree = ttk.Treeview(frame, style="Preview.Treeview",
                                       columns=("original", "renamed", "subfolder", "bpm", "srcpath"),
@@ -662,13 +671,13 @@ def build_deck_b(parent):
     state.preview_tree.column("subfolder", width=0,        anchor="w",      minwidth=0, stretch=False)
     state.preview_tree.column("bpm",       width=0,        anchor="center", minwidth=0, stretch=False)
     state.preview_tree.column("srcpath",   width=0,        anchor="w",      minwidth=0, stretch=False)
-    state.preview_tree.grid(row=3, column=0, sticky="nsew", padx=(12, 0), pady=(0, 12))
+    state.preview_tree.grid(row=4, column=0, sticky="nsew", padx=(12, 0), pady=(0, 12))
 
     vsb = ctk.CTkScrollbar(frame, orientation="vertical",
                             command=state.preview_tree.yview,
                             button_color=theme.FG_MUTED,
                             button_hover_color=theme.AMBER)
-    vsb.grid(row=3, column=1, sticky="ns", padx=(0, 8), pady=(0, 12))
+    vsb.grid(row=4, column=1, sticky="ns", padx=(0, 8), pady=(0, 12))
     state.preview_tree.configure(yscrollcommand=vsb.set)
 
     state.preview_tree.bind("<Motion>",          preview._show_tooltip)
@@ -705,7 +714,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.1",
+    ctk.CTkLabel(frame, text="v0.5.7",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
@@ -763,8 +772,9 @@ def toggle_theme():
     saved_source      = state.source_var.get()      if state.source_var      else ""
     saved_dest        = state.dest_var.get()        if state.dest_var        else ""
     saved_active      = state.active_dir_var.get()  if state.active_dir_var  else ""
-    saved_profile     = state.profile_var.get()     if state.profile_var     else "Generic"
-    saved_struct_mode = state.struct_mode_var.get() if state.struct_mode_var else "flat"
+    saved_profile       = state.profile_var.get()      if state.profile_var      else "Generic"
+    saved_struct_mode   = state.struct_mode_var.get()  if state.struct_mode_var  else "flat"
+    saved_modify_names  = state.modify_names_var.get() if state.modify_names_var else False
     
     # Save conversion settings
     saved_conv_enabled = state.convert_enabled_var.get() if state.convert_enabled_var else False
@@ -776,6 +786,7 @@ def toggle_theme():
     # Save BPM settings
     saved_bpm_enabled = state.bpm_enabled_var.get() if state.bpm_enabled_var else False
     saved_bpm_append  = state.bpm_append_var.get()  if state.bpm_append_var  else False
+    saved_filter      = state.preview_filter_var.get() if state.preview_filter_var else ""
 
     state._is_dark = not state._is_dark
     theme._apply_theme_colors(state._is_dark)
@@ -792,6 +803,8 @@ def toggle_theme():
         state.profile_var.set(saved_profile)
     if saved_struct_mode:
         state.struct_mode_var.set(saved_struct_mode)
+    if state.modify_names_var:
+        state.modify_names_var.set(saved_modify_names)
     if saved_dest:
         state.dest_var.set(saved_dest)
     if saved_source:
@@ -814,6 +827,8 @@ def toggle_theme():
         state.bpm_enabled_var.set(saved_bpm_enabled)
     if state.bpm_append_var:
         state.bpm_append_var.set(saved_bpm_append)
+    if state.preview_filter_var and saved_filter:
+        state.preview_filter_var.set(saved_filter)
 
     if saved_active and saved_active != saved_source and Path(saved_active).is_dir():
         state.root.after(50, lambda: browser.navigate_to(saved_active))
@@ -839,23 +854,26 @@ def build_app():
 
     build_deck_a(root_frame).grid(row=1, column=0, sticky="nsew", padx=(10, 4), pady=8)
     build_center(root_frame).grid(row=1, column=1, sticky="nsew", padx=4,       pady=8)
-    build_deck_b(root_frame).grid(row=1, column=2, sticky="nsew", padx=(4, 10), pady=8)
+    build_deck_b(root_frame).grid(row=1, column=2, rowspan=3, sticky="nsew", padx=(4, 10), pady=8)
 
-    build_status_bar(root_frame).grid(row=2, column=0, columnspan=3, sticky="ew", padx=10)
+    build_status_bar(root_frame).grid(row=2, column=0, columnspan=2, sticky="ew", padx=10)
     tk.Frame(root_frame, bg=theme.OUTLINE_VAR, height=1).grid(
-        row=2, column=0, columnspan=3, sticky="sew", padx=10)
+        row=2, column=0, columnspan=2, sticky="sew", padx=10)
 
-    build_log_panel(root_frame).grid(row=3, column=0, columnspan=3, sticky="nsew",
+    build_log_panel(root_frame).grid(row=3, column=0, columnspan=2, sticky="nsew",
                                      padx=10, pady=(4, 10))
 
     log_panel.setup_log_tags()
     state.active_dir_var.trace_add("write", preview.on_active_dir_changed)
     state.active_dir_var.trace_add("write", lambda *_: playback.reset())
     state.source_var.trace_add("write", browser.on_source_var_changed)
-    state.no_rename_var.trace_add("write",   lambda *_: preview.refresh_preview())
+    state.modify_names_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.struct_mode_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.bpm_enabled_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.bpm_append_var.trace_add("write",  lambda *_: preview.refresh_preview())
+    state._refresh_preview_cb = preview.refresh_preview
+    state.preview_filter_var.trace_add("write",
+        lambda *_: preview.apply_filter(state.preview_filter_var.get()))
     state.root.bind("<Return>", lambda _e: operations.run_tool())
 
     # Profile change handler - auto-apply conversion preset + refresh preview
