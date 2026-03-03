@@ -17,17 +17,40 @@ _preview_rows: list = []   # all populated row data; used by apply_filter()
 
 
 def apply_filter(text: str):
-    """Show only rows whose original filename contains `text` (case-insensitive)."""
+    """Show only rows whose original filename contains `text` (case-insensitive).
+
+    When no filter is active, caps display at MAX_PREVIEW_ROWS.
+    When a filter is active, shows all matching rows regardless of cap.
+    Also owns the preview_count_var label update.
+    """
     if state.preview_tree is None:
         return
     query = text.strip().lower()
     state.preview_tree.delete(*state.preview_tree.get_children())
-    for i, (orig, renamed, subfolder, bpm_display, srcpath) in enumerate(_preview_rows):
-        if not query or query in orig.lower():
-            tag = "odd" if i % 2 else "even"
-            state.preview_tree.insert("", "end",
-                                      values=(orig, renamed, subfolder, bpm_display, srcpath),
-                                      tags=(tag,))
+
+    matched = [row for row in _preview_rows if not query or query in row[0].lower()]
+    display_rows = matched if query else matched[:constants.MAX_PREVIEW_ROWS]
+
+    for i, (orig, renamed, subfolder, bpm_display, srcpath) in enumerate(display_rows):
+        tag = "odd" if i % 2 else "even"
+        state.preview_tree.insert("", "end",
+                                  values=(orig, renamed, subfolder, bpm_display, srcpath),
+                                  tags=(tag,))
+
+    # Update Deck B count label
+    total_cached = len(_preview_rows)
+    if state.preview_count_var and total_cached > 0:
+        modify_names = bool(state.modify_names_var and state.modify_names_var.get())
+        n = len(matched)
+        s = "s" if n != 1 else ""
+        if query:
+            state.preview_count_var.set(f"{n} of {total_cached} match")
+        elif total_cached > constants.MAX_PREVIEW_ROWS:
+            state.preview_count_var.set(f"Showing {constants.MAX_PREVIEW_ROWS} of {total_cached}")
+        elif modify_names:
+            state.preview_count_var.set(f"{total_cached} file{s} will be renamed")
+        else:
+            state.preview_count_var.set(f"{total_cached} audio file{s}")
 
 
 # ── Tooltip ─────────────────────────────────────────────────────────────────
@@ -245,7 +268,6 @@ def _populate_preview(files, source_root):
         state.preview_count_var.set("No folders selected")
         state.src_count_var.set("0 audio files")
         return
-    shown = min(total, constants.MAX_PREVIEW_ROWS)
 
     modify_names = bool(state.modify_names_var and state.modify_names_var.get())
     no_rename    = not modify_names
@@ -273,7 +295,7 @@ def _populate_preview(files, source_root):
                        state.convert_enabled_var.get())
     target_format = state.convert_format_var.get() if state.convert_format_var else "wav"
 
-    for i, f in enumerate(files[:shown]):
+    for f in files:
         # BPM: cache lookup only (no detection in preview)
         bpm_val     = bpm_module.get_cached_bpm(f) if bpm_enabled else None
         bpm_display = str(int(round(bpm_val))) if bpm_val is not None \
@@ -305,17 +327,12 @@ def _populate_preview(files, source_root):
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)
 
-    # Apply active filter (re-inserts matching rows from _preview_rows)
-    filter_text = state.preview_filter_var.get() if state.preview_filter_var else ""
-    apply_filter(filter_text)
-
     s = "s" if total != 1 else ""
     state.src_count_var.set(f"{total} audio file{s}")
     if total == 0:
         state.preview_count_var.set("No audio files in this directory tree")
-    elif total > constants.MAX_PREVIEW_ROWS:
-        state.preview_count_var.set(f"Showing {shown} of {total} files")
-    elif modify_names:
-        state.preview_count_var.set(f"{total} file{s} will be renamed")
-    else:
-        state.preview_count_var.set(f"{total} audio file{s}")
+        return
+
+    # Apply active filter — also updates preview_count_var
+    filter_text = state.preview_filter_var.get() if state.preview_filter_var else ""
+    apply_filter(filter_text)

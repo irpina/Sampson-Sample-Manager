@@ -290,6 +290,13 @@ def build_center(parent):
 
     canvas.bind("<Configure>", _on_configure)
 
+    def _on_frame_configure(event):
+        """Update scroll region when inner frame height changes (section expand/collapse)."""
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        _update_scrollbar()
+
+    frame.bind("<Configure>", _on_frame_configure)
+
     # Mouse wheel scrolling
     def _on_mousewheel(event):
         # Check if scrollbar is visible (content overflows)
@@ -714,7 +721,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.8",
+    ctk.CTkLabel(frame, text="v0.5.9",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
