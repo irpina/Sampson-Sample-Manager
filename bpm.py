@@ -319,6 +319,34 @@ def detect_bpm(path):
         return None
 
 
+def set_cached_bpm(path: Path, bpm_val: float) -> bool:
+    """
+    Manually set BPM for a file in the cache.
+    Use this when the user knows the correct BPM and wants to override detection.
+    
+    Args:
+        path: Path to the audio file
+        bpm_val: BPM value to cache (will be clamped to 30-300 range)
+        
+    Returns:
+        True if successfully cached, False otherwise
+    """
+    _load_cache()
+    try:
+        # Validate BPM range
+        bpm_val = float(bpm_val)
+        bpm_val = max(30.0, min(300.0, bpm_val))
+        
+        # Store with current mtime
+        _cache[str(path)] = {"mtime": path.stat().st_mtime, "bpm": bpm_val}
+        _cache_dirty = True
+        _log(f"[BPM] MANUAL: {path.name} = {bpm_val:.1f} BPM")
+        return True
+    except Exception as e:
+        _log(f"[BPM] ERROR: Failed to set manual BPM - {e}")
+        return False
+
+
 def flush_cache():
     global _cache_dirty
     if not _cache_dirty:

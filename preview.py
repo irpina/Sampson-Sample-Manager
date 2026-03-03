@@ -82,6 +82,107 @@ def _hide_tooltip(*_):
     state._tooltip_item = None
 
 
+def _on_bpm_double_click(event):
+    """Handle double-click on BPM column to allow manual editing."""
+    item = state.preview_tree.identify_row(event.y)
+    col = state.preview_tree.identify_column(event.x)
+    
+    # Only handle double-click on BPM column (#4)
+    if not item or col != "#4":
+        return
+    
+    # Get the file path from the row
+    file_path_str = state.preview_tree.set(item, "srcpath")
+    if not file_path_str:
+        return
+    
+    file_path = Path(file_path_str)
+    current_bpm_display = state.preview_tree.set(item, "bpm")
+    
+    # Don't allow editing if BPM column is hidden or no file
+    if not current_bpm_display or current_bpm_display == "":
+        return
+    
+    # Create edit dialog
+    dialog = tk.Toplevel(state.root)
+    dialog.title("Edit BPM")
+    dialog.transient(state.root)
+    dialog.grab_set()
+    
+    # Position near the click
+    dialog.geometry(f"+{event.x_root + 20}+{event.y_root}")
+    
+    # Frame for padding
+    frame = tk.Frame(dialog, padx=16, pady=16, bg=theme.BG_SURF1)
+    frame.pack(fill="both", expand=True)
+    
+    # File name label
+    tk.Label(frame, text=file_path.name, font=(theme.FONT_UI, 10, "bold"),
+             bg=theme.BG_SURF1, fg=theme.FG_ON_SURF).pack(anchor="w", pady=(0, 8))
+    
+    # Current value
+    current_text = f"Current: {current_bpm_display} BPM" if current_bpm_display != "???" else "Current: Not detected"
+    tk.Label(frame, text=current_text, font=(theme.FONT_UI, 9),
+             bg=theme.BG_SURF1, fg=theme.FG_MUTED).pack(anchor="w")
+    
+    # Entry frame
+    entry_frame = tk.Frame(frame, bg=theme.BG_SURF1)
+    entry_frame.pack(fill="x", pady=(12, 8))
+    
+    tk.Label(entry_frame, text="BPM:", font=(theme.FONT_UI, 10),
+             bg=theme.BG_SURF1, fg=theme.FG_ON_SURF).pack(side="left", padx=(0, 8))
+    
+    bpm_var = tk.StringVar(value="" if current_bpm_display == "???" else current_bpm_display)
+    entry = tk.Entry(entry_frame, textvariable=bpm_var, font=(theme.FONT_UI, 11),
+                     bg=theme.BG_SURF2, fg=theme.FG_ON_SURF, width=10,
+                     highlightbackground=theme.OUTLINE_VAR, highlightthickness=1)
+    entry.pack(side="left")
+    entry.select_range(0, "end")
+    entry.focus()
+    
+    def save_bpm():
+        try:
+            bpm_val = float(bpm_var.get().strip())
+            if bpm_val < 30 or bpm_val > 300:
+                raise ValueError("BPM must be between 30 and 300")
+            
+            # Update cache
+            if bpm_module.set_cached_bpm(file_path, bpm_val):
+                # Refresh preview to show new BPM
+                refresh_preview()
+                
+                # Log the change
+                for msg in bpm_module.get_log_messages():
+                    from log_panel import log
+                    log(msg)
+            
+            dialog.destroy()
+        except ValueError as e:
+            tk.Label(frame, text=str(e), font=(theme.FONT_UI, 9),
+                    bg=theme.BG_SURF1, fg="#ff6b6b").pack(anchor="w", pady=(4, 0))
+    
+    def cancel():
+        dialog.destroy()
+    
+    # Buttons
+    btn_frame = tk.Frame(frame, bg=theme.BG_SURF1)
+    btn_frame.pack(fill="x", pady=(12, 0))
+    
+    tk.Button(btn_frame, text="Cancel", command=cancel,
+              bg=theme.BG_SURF2, fg=theme.FG_ON_SURF,
+              activebackground=theme.BG_ROOT, activeforeground=theme.FG_ON_SURF,
+              relief="flat", padx=12, pady=4).pack(side="right", padx=(8, 0))
+    
+    tk.Button(btn_frame, text="Save", command=save_bpm,
+              bg=theme.CYAN, fg=theme.BG_ROOT,
+              activebackground=theme.CYAN_CONT, activeforeground=theme.BG_ROOT,
+              relief="flat", padx=12, pady=4).pack(side="right")
+    
+    # Bind Enter key to save
+    entry.bind("<Return>", lambda _: save_bpm())
+    entry.bind("<Escape>", lambda _: cancel())
+
+
 # ── Preview ──────────────────────────────────────────────────────────────────
 
 def on_active_dir_changed(*_):

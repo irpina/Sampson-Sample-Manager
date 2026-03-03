@@ -676,6 +676,7 @@ def build_deck_b(parent):
     state.preview_tree.bind("<ButtonRelease-1>", playback.on_tree_select)
     state.preview_tree.bind("<KeyRelease-Up>",   playback.on_arrow_key)
     state.preview_tree.bind("<KeyRelease-Down>", playback.on_arrow_key)
+    state.preview_tree.bind("<Double-Button-1>", preview._on_bpm_double_click)
 
     frame.grid_propagate(False)
     return frame
