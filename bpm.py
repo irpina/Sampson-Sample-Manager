@@ -12,8 +12,12 @@ Public API:
 """
 
 import json
+import os
+import shutil
 import statistics
+import sys
 from pathlib import Path
+from typing import Optional
 
 # ── Cache location ─────────────────────────────────────────────────────────────
 _CACHE_DIR  = Path.home() / ".sampson"
@@ -27,6 +31,9 @@ _cache_loaded: bool = False
 # Debug log messages accumulated during detection
 _log_messages: list[str] = []
 
+# Track whether static_ffmpeg paths have been added to PATH
+_static_ffmpeg_initialized = False
+
 
 def _log(msg: str):
     """Accumulate a log message for later retrieval."""
@@ -39,6 +46,71 @@ def get_log_messages() -> list[str]:
     msgs = _log_messages.copy()
     _log_messages.clear()
     return msgs
+
+
+def _init_static_ffmpeg() -> bool:
+    """Add static_ffmpeg binaries (ffmpeg + ffprobe) to PATH. Returns True on success."""
+    global _static_ffmpeg_initialized
+    if not _static_ffmpeg_initialized:
+        try:
+            import static_ffmpeg
+            static_ffmpeg.add_paths()
+            _static_ffmpeg_initialized = True
+        except Exception:
+            pass
+    return _static_ffmpeg_initialized
+
+
+def _find_ffmpeg_path() -> Optional[str]:
+    """Find ffmpeg executable path.
+    
+    Priority:
+    1. static-ffmpeg bundled binaries
+    2. System PATH
+    3. Common install locations
+    """
+    # 1. Try static-ffmpeg bundled binaries first
+    try:
+        if _init_static_ffmpeg():
+            ffmpeg_exe = "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg"
+            bundled = shutil.which(ffmpeg_exe)
+            if bundled and os.path.isfile(bundled):
+                return bundled
+    except Exception:
+        pass
+    
+    # 2. Check system PATH
+    ffmpeg_exe = "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg"
+    path_result = shutil.which(ffmpeg_exe)
+    if path_result:
+        return path_result
+    
+    # 3. Try common install locations
+    if sys.platform == "win32":
+        program_files = os.environ.get("ProgramFiles", "C:\\Program Files")
+        program_files_x86 = os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")
+        local_appdata = os.environ.get("LOCALAPPDATA", "")
+        
+        winget_base = os.path.join(local_appdata, "Microsoft", "WinGet", "Packages",
+                                   "Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe")
+        if os.path.isdir(winget_base):
+            for item in os.listdir(winget_base):
+                if item.startswith("ffmpeg-") and "full_build" in item:
+                    candidate = os.path.join(winget_base, item, "bin", "ffmpeg.exe")
+                    if os.path.isfile(candidate):
+                        return candidate
+        
+        common_paths = [
+            os.path.join(program_files, "ffmpeg", "bin", "ffmpeg.exe"),
+            os.path.join(program_files_x86, "ffmpeg", "bin", "ffmpeg.exe"),
+            r"C:\ffmpeg\bin\ffmpeg.exe",
+        ]
+        
+        for path in common_paths:
+            if os.path.isfile(path):
+                return path
+    
+    return None
 
 
 def _load_cache():
@@ -83,9 +155,17 @@ def _store(path: Path, bpm_val: float):
 def _get_pydub():
     """Lazy-load pydub and configure ffmpeg path."""
     from pydub import AudioSegment
-    import static_ffmpeg
-    AudioSegment.converter = static_ffmpeg.ffmpeg_path
-    AudioSegment.ffprobe = static_ffmpeg.ffprobe_path
+    
+    # Find and configure ffmpeg
+    ffmpeg_path = _find_ffmpeg_path()
+    if ffmpeg_path:
+        AudioSegment.converter = ffmpeg_path
+        # Also add to PATH for subprocess calls
+        ffmpeg_dir = os.path.dirname(ffmpeg_path)
+        current_path = os.environ.get('PATH', '')
+        if ffmpeg_dir not in current_path:
+            os.environ['PATH'] = ffmpeg_dir + os.pathsep + current_path
+    
     return AudioSegment
 
 
@@ -117,6 +197,13 @@ def detect_bpm(path: Path):
         return cached
     
     _log(f"[BPM] Analyzing: {path.name}")
+    
+    # Check ffmpeg availability
+    ffmpeg_path = _find_ffmpeg_path()
+    if not ffmpeg_path:
+        _log(f"[BPM]   ERROR: ffmpeg not found - cannot analyze audio")
+        return None
+    _log(f"[BPM]   Using ffmpeg: {ffmpeg_path}")
     
     try:
         AudioSegment = _get_pydub()
