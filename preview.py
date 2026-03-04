@@ -17,20 +17,87 @@ from conversion import get_target_extension
 _preview_rows: list = []   # all populated row data; used by apply_filter()
 
 
-def apply_filter(text: str):
-    """Show only rows whose original filename contains `text` (case-insensitive).
+def _parse_query(text):
+    """Split query into (plain_text, bpm_spec, note_spec).
 
-    When no filter is active, caps display at MAX_PREVIEW_ROWS.
-    When a filter is active, shows all matching rows regardless of cap.
-    Also owns the preview_count_var label update.
+    bpm_spec: None | int (exact) | (int, int) (inclusive range)
+              Wildcard supported: BPM:15* → 150-159, BPM:1* → 100-199
+    note_spec: None | str (uppercase note name, e.g. "C", "F#")
+    """
+    plain_parts = []
+    bpm_spec = None
+    note_spec = None
+    for token in text.strip().split():
+        tl = token.lower()
+        if tl.startswith("bpm:"):
+            val = token[4:]
+            if "-" in val:
+                try:
+                    lo, hi = val.split("-", 1)
+                    bpm_spec = (int(lo), int(hi))
+                except ValueError:
+                    plain_parts.append(token)
+            elif val.endswith("*"):
+                # Wildcard: 15* → 150-159, 1* → 100-199, 12* → 120-129
+                try:
+                    prefix = val[:-1]
+                    prefix_num = int(prefix)
+                    # Assume 3-digit BPM range; multiplier fills remaining digits
+                    # 15* → 150-159 (fill 1 digit), 1* → 100-199 (fill 2 digits)
+                    digits_to_fill = 3 - len(prefix)
+                    multiplier = 10 ** digits_to_fill
+                    lo = prefix_num * multiplier
+                    hi = lo + multiplier - 1
+                    bpm_spec = (lo, hi)
+                except ValueError:
+                    plain_parts.append(token)
+            else:
+                try:
+                    bpm_spec = int(val)
+                except ValueError:
+                    plain_parts.append(token)
+        elif tl.startswith("note:"):
+            note_spec = token[5:].upper()
+        else:
+            plain_parts.append(token)
+    return " ".join(plain_parts).lower(), bpm_spec, note_spec
+
+
+def apply_filter(text: str):
+    """Show only rows matching the structured query (case-insensitive).
+
+    Supports plain filename substring, BPM:120, BPM:100-130, Note:C tokens.
+    All tokens AND together. When no filter is active, caps display at MAX_PREVIEW_ROWS.
     """
     if state.preview_tree is None:
         return
-    query = text.strip().lower()
-    state.preview_tree.delete(*state.preview_tree.get_children())
+    has_query = bool(text.strip())
+    plain_text, bpm_spec, note_spec = _parse_query(text)
 
-    matched = [row for row in _preview_rows if not query or query in row[0].lower()]
-    display_rows = matched if query else matched[:constants.MAX_PREVIEW_ROWS]
+    def _matches(row):
+        orig    = row[0]
+        bpm_val = row[3]
+        key_val = row[4]
+
+        if plain_text and plain_text not in orig.lower():
+            return False
+        if bpm_spec is not None:
+            try:
+                b = int(bpm_val)
+            except (ValueError, TypeError):
+                return False
+            if isinstance(bpm_spec, tuple):
+                if not (bpm_spec[0] <= b <= bpm_spec[1]):
+                    return False
+            elif b != bpm_spec:
+                return False
+        if note_spec is not None and key_val.upper() != note_spec:
+            return False
+        return True
+
+    state.preview_tree.delete(*state.preview_tree.get_children())
+    matched = [row for row in _preview_rows if not has_query or _matches(row)]
+    display_rows = matched if has_query else matched[:constants.MAX_PREVIEW_ROWS]
 
     for i, (orig, renamed, subfolder, bpm_display, key_display, srcpath) in enumerate(display_rows):
         tag = "odd" if i % 2 else "even"
@@ -44,7 +111,7 @@ def apply_filter(text: str):
         modify_names = bool(state.modify_names_var and state.modify_names_var.get())
         n = len(matched)
         s = "s" if n != 1 else ""
-        if query:
+        if has_query:
             state.preview_count_var.set(f"{n} of {total_cached} match")
         elif total_cached > constants.MAX_PREVIEW_ROWS:
             state.preview_count_var.set(f"Showing {constants.MAX_PREVIEW_ROWS} of {total_cached}")

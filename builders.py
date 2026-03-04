@@ -726,7 +726,7 @@ def build_deck_b(parent):
     # Search / filter bar
     state.preview_filter_var = tk.StringVar()
     ctk.CTkEntry(frame, textvariable=state.preview_filter_var,
-                 placeholder_text="Filter by filename\u2026",
+                 placeholder_text="Filter\u2026  BPM:120  Note:C",
                  fg_color=theme.BG_SURF2, text_color=theme.FG_ON_SURF,
                  border_color=theme.CARD_BORDER, border_width=1,
                  corner_radius=6).grid(row=3, column=0, columnspan=2,
@@ -740,7 +740,7 @@ def build_deck_b(parent):
     state.preview_tree.heading("renamed",   text="Will become")
     state.preview_tree.heading("subfolder", text="Subfolder")
     state.preview_tree.heading("bpm",       text="BPM")
-    state.preview_tree.heading("key",       text="Key")
+    state.preview_tree.heading("key",       text="Note")
     state.preview_tree.heading("srcpath",   text="")
     state.preview_tree.column("original",  width=_px(160), anchor="w",      minwidth=_px(80))
     state.preview_tree.column("renamed",   width=_px(200), anchor="w",      minwidth=_px(80))
@@ -791,7 +791,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.15",
+    ctk.CTkLabel(frame, text="v0.5.16",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 

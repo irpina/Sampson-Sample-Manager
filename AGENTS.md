@@ -21,6 +21,7 @@ SAMPSON is a Python desktop application built with tkinter and customtkinter. It
   - **Elektron Syntakt**: Auto-convert to 48kHz/16-bit WAV
 - Audio conversion: WAV/AIFF output, configurable sample rate (44.1k/48k/96k), bit depth (16/24/32-bit), mono/stereo
 - BPM detection with cache and manual override (double-click BPM column)
+- Musical key detection with cache (root pitch class detection)
 - Folder structure modes: Flat, Mirror, One folder per parent
 - Live rename preview with hover tooltips
 - Dark/Light theme toggle (preserves session)
@@ -55,6 +56,8 @@ SAMPSON is a Python desktop application built with tkinter and customtkinter. It
 
 ## Project Structure
 
+All source files are in the project root (flat structure):
+
 ```
 SAMPSON/
 ├── main.py                    # Entry point — DPI setup, creates root window, starts app
@@ -71,11 +74,11 @@ SAMPSON/
 ├── preview.py                 # Deck B rename preview, hover tooltip, background scan
 ├── playback.py                # Audio playback via pygame-ce/NSSound, transport controls
 ├── builders.py                # All build_* UI functions, toggle_theme(), build_app()
+├── pyi_rth_tk_silence.py      # Runtime hook for Tcl/Tk crash fix
 ├── requirements.txt           # Python dependencies
 ├── SAMPSON.spec               # PyInstaller configuration for Windows
 ├── SAMPSON_mac.spec           # PyInstaller configuration for macOS .app bundle
 ├── build_macos.sh             # macOS build script with code signing
-├── pyi_rth_tk_silence.py      # Runtime hook for Tcl/Tk crash fix
 ├── sampsontransparent2.png    # Application logo (dark background)
 ├── sampsontransparentwhite.png # Application logo (light background)
 ├── README.md                  # User-facing documentation
@@ -84,6 +87,15 @@ SAMPSON/
 ├── PLAN_SEARCH_FILTER.md      # Planned feature: BPM/Note structured search
 └── .gitignore                 # Excludes build outputs, etc.
 ```
+
+**Key Configuration Files:**
+| File | Purpose | Format |
+|------|---------|--------|
+| `requirements.txt` | Python dependencies | pip requirements |
+| `SAMPSON.spec` | PyInstaller config (Windows/Linux) | Python script |
+| `SAMPSON_mac.spec` | PyInstaller config (macOS) | Python script |
+| `build_macos.sh` | macOS build automation | Bash script |
+| `.gitignore` | Git exclusions | Git ignore format |
 
 ---
 
@@ -349,6 +361,32 @@ The `bpm.py` module provides BPM detection using energy envelope autocorrelation
 
 ---
 
+## Key Detection
+
+The `key.py` module provides musical key detection (root pitch class) using pitch-period autocorrelation.
+
+### Key Functions
+
+- `detect_key(path)` — Detect key for a file (with caching)
+- `get_cached_key(path)` — Get cached key value (no detection)
+- `set_cached_key(path, key_val)` — Manually set key
+- `flush_cache()` — Save cache to disk
+
+### Cache Location
+
+`~/.sampson/key_cache.json` — stores path+mtime → key mapping
+
+### Algorithm
+
+1. Load audio via pydub (mono, downsampled to 8kHz)
+2. Pitch-period autocorrelation analysis
+3. Peak detection in frequency range (60-1000 Hz)
+4. Pitch class histogram accumulation across octaves
+5. Peak clustering and chord type detection
+6. Return key label (e.g., "C", "F#", "A#")
+
+---
+
 ## Audio Playback
 
 `playback.py` uses different backends per platform:
@@ -396,9 +434,9 @@ When conversion is enabled:
 2. Converted file is written to destination
 3. If "Move files" is enabled, original source file is deleted after successful conversion
 
-### BPM Suffix
+### BPM/Key Suffix
 
-When BPM detection is enabled and "Append BPM to filename" is checked, the detected BPM is added as a suffix (e.g., `Kicks_kick_01_120bpm.wav`). The suffix is protected during path-limit truncation.
+When BPM/key detection is enabled and "Append to filename" is checked, the detected values are added as suffixes (e.g., `Kicks_kick_01_120bpm_C.wav`). The suffixes are protected during path-limit truncation.
 
 ---
 
@@ -422,8 +460,8 @@ ctk.CTkLabel(frame, text="v0.5.10", ...)  # ← Update this
 Also update the version in `SAMPSON_mac.spec` Info.plist:
 ```python
 info_plist={
-    'CFBundleShortVersionString': '0.5.9',
-    'CFBundleVersion': '0.5.9',
+    'CFBundleShortVersionString': '0.5.10',
+    'CFBundleVersion': '0.5.10',
     ...
 }
 ```
@@ -459,10 +497,11 @@ No automated test suite exists. Testing is manual:
 5. Test options (rename modes, folder structures, hardware profiles)
 6. Test audio conversion (enable conversion, select format/sample rate/bit depth)
 7. Test BPM detection (enable, run, verify cache, double-click to edit)
-8. Test dry run vs actual copy/move
-9. Test theme toggle (preserve paths and settings)
-10. Test HiDPI on Windows (verify no blurriness)
-11. Test macOS aspect ratio enforcement (resize to narrow width, verify height correction)
+8. Test key detection (enable, run, verify cache)
+9. Test dry run vs actual copy/move
+10. Test theme toggle (preserve paths and settings)
+11. Test HiDPI on Windows (verify no blurriness)
+12. Test macOS aspect ratio enforcement (resize to narrow width, verify height correction)
 
 ---
 
@@ -513,8 +552,8 @@ Extended Deck B filter syntax supporting:
 | Change file operations | `operations.py` → `run_tool()`, `_run_worker()` |
 | Adjust preview limit | `constants.py` → `MAX_PREVIEW_ROWS` |
 | Add conversion formats | `conversion.py` → `convert_file()`, `get_target_extension()` |
-| BPM detection algorithm | `bpm.py` → `_detect_bpm_algorithm()` |
-| Key detection algorithm | `key.py` → `_detect_key_algorithm()` |
+| BPM detection algorithm | `bpm.py` → BPM detection functions |
+| Key detection algorithm | `key.py` → Key detection functions |
 | Platform-specific code | Check `sys.platform` ( `"win32"`, `"darwin"`, `"linux"` ) |
 
 ---
@@ -595,19 +634,3 @@ The `.gitignore` excludes:
 - User-specific scripts: `notarize.sh`
 - Archive files: `*.zip`
 - Meta-documentation: `CLAUDE.md` itself
-
----
-
-## Configuration Files Reference
-
-| File | Purpose | Format |
-|------|---------|--------|
-| `requirements.txt` | Python dependencies | pip requirements format |
-| `SAMPSON.spec` | PyInstaller config for Windows | Python script |
-| `SAMPSON_mac.spec` | PyInstaller config for macOS | Python script |
-| `build_macos.sh` | macOS build automation | Bash script |
-| `pyi_rth_tk_silence.py` | PyInstaller runtime hook | Python script |
-| `.gitignore` | Git exclusions | Git ignore format |
-| `BUGS.md` | Bug tracker | Markdown |
-| `TASKS.md` | Development tasks | Markdown |
-| `PLAN_SEARCH_FILTER.md` | Planned feature: BPM/Note structured search | Markdown |
