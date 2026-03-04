@@ -51,6 +51,18 @@ def _get_duration(path: Path) -> float | None:
     return val
 
 
+def _fmt_duration(secs: float | None) -> str:
+    """Format seconds as m:ss (or h:mm:ss for files ≥ 1 hour)."""
+    if secs is None:
+        return ""
+    s = int(round(secs))
+    m, s = divmod(s, 60)
+    if m >= 60:
+        h, m = divmod(m, 60)
+        return f"{h}:{m:02d}:{s:02d}"
+    return f"{m}:{s:02d}"
+
+
 def _parse_query(text):
     """Split query into (plain_text, bpm_spec, note_spec, min_len, max_len).
 
@@ -155,10 +167,11 @@ def apply_filter(text: str):
     matched = [row for row in _preview_rows if not has_query or _matches(row)]
     display_rows = matched if has_query else matched[:constants.MAX_PREVIEW_ROWS]
 
-    for i, (orig, renamed, subfolder, bpm_display, key_display, srcpath, *_) in enumerate(display_rows):
+    for i, (orig, renamed, subfolder, bpm_display, key_display, srcpath, *rest) in enumerate(display_rows):
+        dur_display = _fmt_duration(rest[0] if rest else None)
         tag = "odd" if i % 2 else "even"
         state.preview_tree.insert("", "end",
-                                  values=(orig, renamed, subfolder, bpm_display, key_display, srcpath),
+                                  values=(orig, renamed, subfolder, bpm_display, key_display, dur_display, srcpath),
                                   tags=(tag,))
 
     # Update Deck B count label

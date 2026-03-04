@@ -734,20 +734,22 @@ def build_deck_b(parent):
 
     # Treeview — stays ttk (no CTK equivalent)
     state.preview_tree = ttk.Treeview(frame, style="Preview.Treeview",
-                                      columns=("original", "renamed", "subfolder", "bpm", "key", "srcpath"),
+                                      columns=("original", "renamed", "subfolder", "bpm", "key", "duration", "srcpath"),
                                       show="headings", selectmode="browse")
     state.preview_tree.heading("original",  text="Original name")
     state.preview_tree.heading("renamed",   text="Will become")
     state.preview_tree.heading("subfolder", text="Subfolder")
     state.preview_tree.heading("bpm",       text="BPM")
     state.preview_tree.heading("key",       text="Note")
+    state.preview_tree.heading("duration",  text="Length")
     state.preview_tree.heading("srcpath",   text="")
     state.preview_tree.column("original",  width=_px(160), anchor="w",      minwidth=_px(80))
     state.preview_tree.column("renamed",   width=_px(200), anchor="w",      minwidth=_px(80))
-    state.preview_tree.column("subfolder", width=0,        anchor="w",      minwidth=0, stretch=False)
-    state.preview_tree.column("bpm",       width=0,        anchor="center", minwidth=0, stretch=False)
-    state.preview_tree.column("key",       width=0,        anchor="center", minwidth=0, stretch=False)
-    state.preview_tree.column("srcpath",   width=0,        anchor="w",      minwidth=0, stretch=False)
+    state.preview_tree.column("subfolder", width=0,        anchor="w",      minwidth=0,      stretch=False)
+    state.preview_tree.column("bpm",       width=0,        anchor="center", minwidth=0,      stretch=False)
+    state.preview_tree.column("key",       width=0,        anchor="center", minwidth=0,      stretch=False)
+    state.preview_tree.column("duration",  width=_px(50),  anchor="center", minwidth=_px(50), stretch=False)
+    state.preview_tree.column("srcpath",   width=0,        anchor="w",      minwidth=0,      stretch=False)
     state.preview_tree.grid(row=4, column=0, sticky="nsew", padx=(12, 0), pady=(0, 12))
 
     vsb = ctk.CTkScrollbar(frame, orientation="vertical",
@@ -791,7 +793,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.17",
+    ctk.CTkLabel(frame, text="v0.5.18",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
