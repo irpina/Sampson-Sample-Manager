@@ -172,12 +172,13 @@ def get_cached_key(path):
     return None
 
 
-def detect_key(path):
+def detect_key(path, force=False):
     _load_cache()
-    cached = get_cached_key(path)
-    if cached is not None:
-        _log(f"[KEY] CACHE: {path.name} = {cached}")
-        return cached
+    if not force:
+        cached = get_cached_key(path)
+        if cached is not None:
+            _log(f"[KEY] CACHE: {path.name} = {cached}")
+            return cached
     
     _log(f"[KEY] Analyzing: {path.name}")
     

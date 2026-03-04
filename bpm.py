@@ -232,12 +232,13 @@ def get_cached_bpm(path):
     return None
 
 
-def detect_bpm(path):
+def detect_bpm(path, force=False):
     _load_cache()
-    cached = get_cached_bpm(path)
-    if cached is not None:
-        _log(f"[BPM] CACHE: {path.name} = {cached:.1f} BPM")
-        return cached
+    if not force:
+        cached = get_cached_bpm(path)
+        if cached is not None:
+            _log(f"[BPM] CACHE: {path.name} = {cached:.1f} BPM")
+            return cached
     
     _log(f"[BPM] Analyzing: {path.name}")
     

@@ -160,22 +160,24 @@ def run_tool():
     
     bpm_enabled = state.bpm_enabled_var.get() if state.bpm_enabled_var else False
     bpm_append  = state.bpm_append_var.get()  if state.bpm_append_var  else False
-    
+    bpm_fresh   = state.bpm_fresh_var.get()   if state.bpm_fresh_var   else False
+
     key_enabled = state.key_enabled_var.get() if state.key_enabled_var else False
     key_append  = state.key_append_var.get()  if state.key_append_var  else False
+    key_fresh   = state.key_fresh_var.get()   if state.key_fresh_var   else False
 
     threading.Thread(
         target=_run_worker,
         args=(source, dest, state.move_var.get(), state.dry_var.get(),
               path_limit, not state.modify_names_var.get(), struct_mode, convert_options,
-              bpm_enabled, bpm_append, key_enabled, key_append),
+              bpm_enabled, bpm_append, bpm_fresh, key_enabled, key_append, key_fresh),
         daemon=True,
     ).start()
 
 
 def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode,
-                convert_options=None, bpm_enabled=False, bpm_append=False,
-                key_enabled=False, key_append=False):
+                convert_options=None, bpm_enabled=False, bpm_append=False, bpm_fresh=False,
+                key_enabled=False, key_append=False, key_fresh=False):
     files = []
     for folder_path in state._selected_folders:
         p = Path(folder_path)
@@ -197,13 +199,13 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     conv_label = " [convert]" if convert_options else ""
 
     for i, f in enumerate(files, 1):
-        bpm_val = bpm_module.detect_bpm(f) if bpm_enabled else None
+        bpm_val = bpm_module.detect_bpm(f, force=bpm_fresh) if bpm_enabled else None
         
         # Output any BPM detection log messages
         for bpm_log_msg in bpm_module.get_log_messages():
             state.root.after(0, lambda m=bpm_log_msg: log(m))
         
-        key_val = key_module.detect_key(f) if key_enabled else None
+        key_val = key_module.detect_key(f, force=key_fresh) if key_enabled else None
         
         # Output any Key detection log messages
         for key_log_msg in key_module.get_log_messages():

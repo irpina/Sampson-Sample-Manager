@@ -520,6 +520,7 @@ def build_center(parent):
     # ── BPM Analysis (collapsible) ────────────────────────────────────────────
     state.bpm_enabled_var = tk.BooleanVar(value=False)
     state.bpm_append_var  = tk.BooleanVar(value=False)
+    state.bpm_fresh_var   = tk.BooleanVar(value=False)
 
     bpm_cb = ctk.CTkCheckBox(frame, text="Detect BPM",
                               variable=state.bpm_enabled_var,
@@ -545,12 +546,24 @@ def build_center(parent):
                                  text_color=theme.FG_ON_SURF,
                                  corner_radius=4,
                                  font=(theme.FONT_UI, 10))
-    append_cb.pack(padx=10, pady=(8, 8), anchor="w")
+    append_cb.pack(padx=10, pady=(8, 4), anchor="w")
     _add_tooltip(append_cb, "Adds _120bpm suffix to output filename (e.g. Kicks_kick_01_120bpm.wav)")
+
+    bpm_fresh_cb = ctk.CTkCheckBox(bpm_opts, text="Re-scan all (ignore cache)",
+                                    variable=state.bpm_fresh_var,
+                                    fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
+                                    checkmark_color=theme.BG_ROOT,
+                                    border_color=theme.OUTLINE_VAR,
+                                    text_color=theme.FG_ON_SURF,
+                                    corner_radius=4,
+                                    font=(theme.FONT_UI, 10))
+    bpm_fresh_cb.pack(padx=10, pady=(0, 8), anchor="w")
+    _add_tooltip(bpm_fresh_cb, "Force re-detection even for files that already have a cached BPM")
 
     def _toggle_bpm_opts(*_):
         s = "normal" if state.bpm_enabled_var.get() else "disabled"
         append_cb.configure(state=s)
+        bpm_fresh_cb.configure(state=s)
     state.bpm_enabled_var.trace_add("write", _toggle_bpm_opts)
     _toggle_bpm_opts()
 
@@ -559,6 +572,7 @@ def build_center(parent):
     # ── Key Detection (collapsible) ────────────────────────────────────────────
     state.key_enabled_var = tk.BooleanVar(value=False)
     state.key_append_var  = tk.BooleanVar(value=False)
+    state.key_fresh_var   = tk.BooleanVar(value=False)
 
     key_cb = ctk.CTkCheckBox(frame, text="Detect musical key",
                               variable=state.key_enabled_var,
@@ -584,12 +598,24 @@ def build_center(parent):
                                      text_color=theme.FG_ON_SURF,
                                      corner_radius=4,
                                      font=(theme.FONT_UI, 10))
-    key_append_cb.pack(padx=10, pady=(8, 8), anchor="w")
+    key_append_cb.pack(padx=10, pady=(8, 4), anchor="w")
     _add_tooltip(key_append_cb, "Adds _C or _F# suffix to output filename (e.g. Kicks_kick_01_C.wav)")
+
+    key_fresh_cb = ctk.CTkCheckBox(key_opts, text="Re-scan all (ignore cache)",
+                                    variable=state.key_fresh_var,
+                                    fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
+                                    checkmark_color=theme.BG_ROOT,
+                                    border_color=theme.OUTLINE_VAR,
+                                    text_color=theme.FG_ON_SURF,
+                                    corner_radius=4,
+                                    font=(theme.FONT_UI, 10))
+    key_fresh_cb.pack(padx=10, pady=(0, 8), anchor="w")
+    _add_tooltip(key_fresh_cb, "Force re-detection even for files that already have a cached key")
 
     def _toggle_key_opts(*_):
         s = "normal" if state.key_enabled_var.get() else "disabled"
         key_append_cb.configure(state=s)
+        key_fresh_cb.configure(state=s)
     state.key_enabled_var.trace_add("write", _toggle_key_opts)
     _toggle_key_opts()
 
@@ -762,7 +788,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.11",
+    ctk.CTkLabel(frame, text="v0.5.12",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
@@ -834,10 +860,12 @@ def toggle_theme():
     # Save BPM settings
     saved_bpm_enabled = state.bpm_enabled_var.get() if state.bpm_enabled_var else False
     saved_bpm_append  = state.bpm_append_var.get()  if state.bpm_append_var  else False
-    
+    saved_bpm_fresh   = state.bpm_fresh_var.get()   if state.bpm_fresh_var   else False
+
     # Save Key settings
     saved_key_enabled = state.key_enabled_var.get() if state.key_enabled_var else False
     saved_key_append  = state.key_append_var.get()  if state.key_append_var  else False
+    saved_key_fresh   = state.key_fresh_var.get()   if state.key_fresh_var   else False
     
     saved_filter      = state.preview_filter_var.get() if state.preview_filter_var else ""
 
@@ -880,12 +908,16 @@ def toggle_theme():
         state.bpm_enabled_var.set(saved_bpm_enabled)
     if state.bpm_append_var:
         state.bpm_append_var.set(saved_bpm_append)
-    
+    if state.bpm_fresh_var:
+        state.bpm_fresh_var.set(saved_bpm_fresh)
+
     # Restore Key settings
     if state.key_enabled_var:
         state.key_enabled_var.set(saved_key_enabled)
     if state.key_append_var:
         state.key_append_var.set(saved_key_append)
+    if state.key_fresh_var:
+        state.key_fresh_var.set(saved_key_fresh)
     
     if state.preview_filter_var and saved_filter:
         state.preview_filter_var.set(saved_filter)

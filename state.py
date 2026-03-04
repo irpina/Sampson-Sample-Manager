@@ -54,10 +54,12 @@ _last_conversion_error = None  # Stores last conversion error details
 # BPM detection options
 bpm_enabled_var = None   # tk.BooleanVar — master toggle for BPM detection
 bpm_append_var  = None   # tk.BooleanVar — append _120bpm to output filename
+bpm_fresh_var   = None   # tk.BooleanVar — re-scan all (ignore cache)
 
 # Key detection options
 key_enabled_var = None   # tk.BooleanVar — master toggle for key detection
 key_append_var  = None   # tk.BooleanVar — append key label to output filename
+key_fresh_var   = None   # tk.BooleanVar — re-scan all (ignore cache)
 
 # Collapsible section states (persists across theme toggles)
 _section_open = {}   # {"struct": True, "device": True, "conversion": True, "bpm": True, "key": True}
