@@ -18,6 +18,8 @@ from conversion import get_target_extension
 
 _preview_rows: list = []   # all populated row data; used by apply_filter()
 _duration_cache: dict = {}  # str(path) → float | None; cleared on each scan
+_sort_col: str | None = None  # "bpm" | "key" | "duration" | None
+_sort_asc: bool = True
 
 
 def _get_duration(path: Path) -> float | None:
@@ -61,6 +63,51 @@ def _fmt_duration(secs: float | None) -> str:
         h, m = divmod(m, 60)
         return f"{h}:{m:02d}:{s:02d}"
     return f"{m}:{s:02d}"
+
+
+def _sort_key_for(col: str, row):
+    """Return a comparable sort key for the given column and row."""
+    if col == "bpm":
+        try:
+            return (0, int(row[3]))
+        except (ValueError, TypeError):
+            return (1, 0)          # "???" / "" sorts to end
+    elif col == "key":
+        val = row[4]
+        return (1, "") if val in ("", "???") else (0, val)
+    elif col == "duration":
+        dur = row[6] if len(row) > 6 else None
+        return (1, 0) if dur is None else (0, dur)
+    return (0, "")
+
+
+def _apply_sort():
+    """Sort _preview_rows in-place by the current _sort_col. No-op if None."""
+    if _sort_col is None:
+        return
+    _preview_rows.sort(key=lambda row: _sort_key_for(_sort_col, row),
+                       reverse=not _sort_asc)
+
+
+def _update_sort_headings():
+    """Refresh column heading text to show ▲/▼ on the active sort column."""
+    if state.preview_tree is None:
+        return
+    labels = {"bpm": "BPM", "key": "Note", "duration": "Length"}
+    for col, base in labels.items():
+        indicator = (" ▲" if _sort_asc else " ▼") if col == _sort_col else ""
+        state.preview_tree.heading(col, text=base + indicator)
+
+
+def sort_by(col: str):
+    """Toggle sort direction if col is active; otherwise sort ASC by col."""
+    global _sort_col, _sort_asc
+    _sort_asc = not _sort_asc if _sort_col == col else True
+    _sort_col = col
+    _apply_sort()
+    _update_sort_headings()
+    filter_text = state.preview_filter_var.get() if state.preview_filter_var else ""
+    apply_filter(filter_text)
 
 
 def _parse_query(text):
@@ -612,6 +659,8 @@ def _populate_preview(files, source_root, durations=None):
         state.preview_count_var.set("No audio files in this directory tree")
         return
 
-    # Apply active filter — also updates preview_count_var
+    # Apply active sort, restore heading indicators, then filter
+    _apply_sort()
+    _update_sort_headings()
     filter_text = state.preview_filter_var.get() if state.preview_filter_var else ""
     apply_filter(filter_text)
