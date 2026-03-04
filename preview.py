@@ -1,4 +1,6 @@
 import threading
+import wave
+import contextlib
 from pathlib import Path
 import tkinter as tk
 
@@ -15,18 +17,54 @@ from conversion import get_target_extension
 # ── Filter ───────────────────────────────────────────────────────────────────
 
 _preview_rows: list = []   # all populated row data; used by apply_filter()
+_duration_cache: dict = {}  # str(path) → float | None; cleared on each scan
+
+
+def _get_duration(path: Path) -> float | None:
+    """Return duration in seconds from file metadata.
+
+    Fast path for WAV/AIFF (stdlib header read, no subprocess).
+    Falls back to ffprobe via pydub for MP3/FLAC/OGG.
+    Returns None on any error.
+    """
+    key = str(path)
+    if key in _duration_cache:
+        return _duration_cache[key]
+    val = None
+    try:
+        ext = path.suffix.lower()
+        if ext == '.wav':
+            with contextlib.closing(wave.open(str(path))) as wf:
+                val = wf.getnframes() / wf.getframerate()
+        elif ext in ('.aif', '.aiff'):
+            import aifc
+            with contextlib.closing(aifc.open(str(path))) as af:
+                val = af.getnframes() / af.getframerate()
+        else:
+            from pydub.utils import mediainfo
+            info = mediainfo(str(path))
+            dur = info.get('duration')
+            val = float(dur) if dur else None
+    except Exception:
+        val = None
+    _duration_cache[key] = val
+    return val
 
 
 def _parse_query(text):
-    """Split query into (plain_text, bpm_spec, note_spec).
+    """Split query into (plain_text, bpm_spec, note_spec, min_len, max_len).
 
-    bpm_spec: None | int (exact) | (int, int) (inclusive range)
-              Wildcard supported: BPM:15* → 150-159, BPM:1* → 100-199
+    bpm_spec:  None | int (exact) | (int, int) (inclusive range)
+               Wildcard supported: BPM:15* → 150-159, BPM:1* → 100-199
     note_spec: None | str (uppercase note name, e.g. "C", "F#")
+    min_len:   None | float  seconds — MinLength:N
+    max_len:   None | float  seconds — MaxLength:N
     """
     plain_parts = []
     bpm_spec = None
     note_spec = None
+    min_len = None
+    max_len = None
     for token in text.strip().split():
         tl = token.lower()
         if tl.startswith("bpm:"):
@@ -58,26 +96,38 @@ def _parse_query(text):
                     plain_parts.append(token)
         elif tl.startswith("note:"):
             note_spec = token[5:].upper()
+        elif tl.startswith("minlength:"):
+            try:
+                min_len = float(token[10:])
+            except ValueError:
+                plain_parts.append(token)
+        elif tl.startswith("maxlength:"):
+            try:
+                max_len = float(token[10:])
+            except ValueError:
+                plain_parts.append(token)
         else:
             plain_parts.append(token)
-    return " ".join(plain_parts).lower(), bpm_spec, note_spec
+    return " ".join(plain_parts).lower(), bpm_spec, note_spec, min_len, max_len
 
 
 def apply_filter(text: str):
     """Show only rows matching the structured query (case-insensitive).
 
-    Supports plain filename substring, BPM:120, BPM:100-130, Note:C tokens.
-    All tokens AND together. When no filter is active, caps display at MAX_PREVIEW_ROWS.
+    Supports plain filename substring, BPM:120, BPM:100-130, Note:C,
+    MinLength:N, MaxLength:N (seconds) tokens. All tokens AND together.
+    When no filter is active, caps display at MAX_PREVIEW_ROWS.
     """
     if state.preview_tree is None:
         return
     has_query = bool(text.strip())
-    plain_text, bpm_spec, note_spec = _parse_query(text)
+    plain_text, bpm_spec, note_spec, min_len, max_len = _parse_query(text)
 
     def _matches(row):
         orig    = row[0]
         bpm_val = row[3]
         key_val = row[4]
+        dur     = row[6] if len(row) > 6 else None
 
         if plain_text and plain_text not in orig.lower():
             return False
@@ -93,13 +143,19 @@ def apply_filter(text: str):
                 return False
         if note_spec is not None and key_val.upper() != note_spec:
             return False
+        if min_len is not None:
+            if dur is None or dur < min_len:
+                return False
+        if max_len is not None:
+            if dur is None or dur > max_len:
+                return False
         return True
 
     state.preview_tree.delete(*state.preview_tree.get_children())
     matched = [row for row in _preview_rows if not has_query or _matches(row)]
     display_rows = matched if has_query else matched[:constants.MAX_PREVIEW_ROWS]
 
-    for i, (orig, renamed, subfolder, bpm_display, key_display, srcpath) in enumerate(display_rows):
+    for i, (orig, renamed, subfolder, bpm_display, key_display, srcpath, *_) in enumerate(display_rows):
         tag = "odd" if i % 2 else "even"
         state.preview_tree.insert("", "end",
                                   values=(orig, renamed, subfolder, bpm_display, key_display, srcpath),
@@ -433,6 +489,8 @@ def refresh_preview():
 
 
 def _scan_thread(path_str):
+    global _duration_cache
+    _duration_cache = {}           # clear stale entries from previous scan
     source_root = Path(path_str)
     if state._selected_folders:
         files = []
@@ -443,10 +501,11 @@ def _scan_thread(path_str):
                           if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
     else:
         files = []   # empty selection → _populate_preview shows appropriate message
-    state.root.after(0, lambda: _populate_preview(files, source_root))
+    durations = {f: _get_duration(f) for f in files}
+    state.root.after(0, lambda: _populate_preview(files, source_root, durations))
 
 
-def _populate_preview(files, source_root):
+def _populate_preview(files, source_root, durations=None):
     global _preview_rows
     _preview_rows = []
     state.preview_tree.delete(*state.preview_tree.get_children())
@@ -528,7 +587,8 @@ def _populate_preview(files, source_root):
         else:
             display_name = new_name
 
-        _preview_rows.append((f.name, display_name, rel_sub, bpm_display, key_display, str(f)))
+        duration_sec = durations.get(f) if durations else None
+        _preview_rows.append((f.name, display_name, rel_sub, bpm_display, key_display, str(f), duration_sec))
 
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)

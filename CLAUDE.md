@@ -161,6 +161,18 @@ Destination:  Kicks_kick_01.wav   # rename mode
 
 `state.preview_filter_var` (tk.StringVar) drives a search bar above the preview tree. `preview.apply_filter(text)` re-renders the tree from the cached `_preview_rows` list (built by `_populate_preview()`). When a query is active, **all** matches are shown (no row cap). When unfiltered, display is capped at `MAX_PREVIEW_ROWS` (500).
 
+The filter supports structured tokens alongside plain filename substrings:
+- `BPM:120` — exact BPM match
+- `BPM:100-130` — BPM range
+- `BPM:12*` — wildcard (matches 120–129); single-digit wildcards assume 3-digit range (e.g. `BPM:1*` → 100–199)
+- `Note:C` or `Note:C#` — root note match (case-insensitive)
+- `MinLength:30` — files ≥ 30 seconds
+- `MaxLength:90` — files ≤ 90 seconds (e.g. for a 1.5-minute loop)
+
+Tokens can be combined with free text, e.g. `kick BPM:120 MaxLength:5`.
+
+Duration is read from file headers during the background scan (WAV/AIFF via stdlib `wave`/`aifc`; MP3/FLAC/OGG via ffprobe). Files whose duration cannot be read are excluded when a length filter is active.
+
 ### Folder structure modes
 
 Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
@@ -173,8 +185,9 @@ Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
 `bpm.py` detects tempo using energy-envelope autocorrelation — no `librosa` or `numpy` required, just `pydub`. It delegates ffmpeg discovery to `conversion._find_ffmpeg_path()` so both modules use the same lookup (static-ffmpeg → PATH → common install locations).
 
 - **Cache:** `~/.sampson/bpm_cache.json`, keyed by absolute file path + mtime. Invalidated automatically when the file is modified.
-- **Public API:** `detect_bpm(path)`, `get_cached_bpm(path)`, `set_cached_bpm(path, bpm)`, `flush_cache()`
-- **UI integration:** BPM is detected during `_run_worker()` when `state.bpm_enabled_var` is True; results are shown in the hidden `bpm` column of `state.preview_tree` (column appears when BPM detection is enabled). Double-clicking the BPM cell in Deck B opens an inline editor for manual override (`preview._on_bpm_double_click`).
+- **Public API:** `detect_bpm(path, force=False)`, `get_cached_bpm(path)`, `set_cached_bpm(path, bpm)`, `flush_cache()`
+- **UI integration:** BPM is detected during `_run_worker()` when `state.bpm_enabled_var` is True; results are shown in the `bpm` column of `state.preview_tree`. The column is visible whenever detection is enabled **or** any file already has a cached BPM value. Double-clicking the BPM cell opens an inline editor for manual override (`preview._on_bpm_double_click`).
+- **Fresh scan:** `state.bpm_fresh_var` (tk.BooleanVar) — when True, `detect_bpm()` is called with `force=True`, bypassing the cache and re-detecting from audio.
 - **Filename suffix:** When `state.bpm_append_var` is True, `_120bpm` is appended to the output stem (e.g. `Kicks_kick_01_120bpm.wav`).
 
 ### Key detection
@@ -182,8 +195,9 @@ Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
 `key.py` detects musical root note (pitch class: C, C#, D, etc.) using pitch-period autocorrelation — no `librosa` or `numpy` required, just `pydub`. Mirrors the BPM architecture exactly.
 
 - **Cache:** `~/.sampson/key_cache.json`, keyed by absolute file path + mtime.
-- **Public API:** `detect_key(path)`, `get_cached_key(path)`, `set_cached_key(path, key)`, `flush_cache()`
-- **UI integration:** Key is detected during `_run_worker()` when `state.key_enabled_var` is True; results are shown in the hidden `key` column of `state.preview_tree` (column appears when Key detection is enabled). Double-clicking the Key cell in Deck B opens an inline editor for manual override (`preview._on_key_double_click`).
+- **Public API:** `detect_key(path, force=False)`, `get_cached_key(path)`, `set_cached_key(path, key)`, `flush_cache()`
+- **UI integration:** Key is detected during `_run_worker()` when `state.key_enabled_var` is True; results are shown in the `key` column of `state.preview_tree`. The column is visible whenever detection is enabled **or** any file already has a cached key value. Double-clicking the Key cell opens an inline editor for manual override (`preview._on_key_double_click`).
+- **Fresh scan:** `state.key_fresh_var` (tk.BooleanVar) — when True, `detect_key()` is called with `force=True`, bypassing the cache and re-detecting from audio.
 - **Filename suffix:** When `state.key_append_var` is True, `_{key}` is appended to the output stem (e.g. `Kicks_kick_01_C.wav`).
 
 ### Collapsible center panel sections
