@@ -28,7 +28,15 @@
   - **Mirror** — preserve the full source directory tree
   - **One folder per parent** — group by immediate parent folder name
 - **Rename pattern** — files are prefixed with their parent folder name (`Kicks_kick_01.wav`), keeping context in a flat folder. Disable with **Keep original names**.
-- **Live preview** — Deck B shows every file alongside its renamed form before you commit; hover for a full-path tooltip
+- **Live preview** — Deck B shows every file alongside its renamed form, duration, BPM, and root note before you commit; hover for a full-path tooltip
+- **Smart search** — filter Deck B in real time with plain text or structured tokens:
+  - `BPM:120` · `BPM:100-130` · `BPM:12*` — exact, range, or wildcard BPM
+  - `Note:C` · `Note:F#` — root note (case-insensitive)
+  - `MinLength:10` · `MaxLength:90` — duration bounds in seconds
+  - Tokens combine freely: `kick BPM:120 MaxLength:5`
+- **Column sorting** — click the **BPM**, **Note**, or **Length** header in Deck B to sort ascending/descending (▲/▼); click again to flip
+- **BPM detection** — automatic tempo analysis using energy-envelope autocorrelation; cached per file, with a **Fresh scan** option to re-detect. Manual override by double-clicking the BPM cell. Optionally append `_120bpm` to output filenames.
+- **Key / Note detection** — automatic root-note detection (C, C#, D … B) using pitch-period autocorrelation; same caching and manual-override system as BPM. Optionally append `_C` to output filenames.
 - **Copy or Move** — copy (default, non-destructive) or move
 - **Dry run mode** — default-on; logs every action without touching the filesystem
 - **Operation log** — colour-coded (red = move, green = copy, yellow = dry run, cyan = done)
@@ -88,9 +96,11 @@ Requires Python 3.10+. Core dependencies:
    - Click **Browse** or type a path.
 
 3. **Preview and listen (Deck B)**
-   - The table shows every audio file found alongside its renamed form.
+   - The table shows every audio file found alongside its renamed form, length, BPM, and root note.
    - **Click any row** to hear the file. Use **◀ ▶ ▶▶** buttons or **↑ / ↓** arrow keys to navigate and auto-play.
    - Hover over a name in the **Will become** column for a full-path tooltip.
+   - Use the **search bar** to filter by filename, `BPM:120`, `Note:C`, `MinLength:10`, `MaxLength:90`, or any combination.
+   - Click the **BPM**, **Note**, or **Length** column header to sort ascending/descending.
 
 4. **Configure options (centre panel)**
 
@@ -181,11 +191,11 @@ SAMPSON/
 
 ## Limitations
 
-- Preview is capped at **500 rows** for performance; the file count still reflects the full total.
+- Preview is capped at **500 rows** for performance; the search bar bypasses this cap and shows all matches.
 - The file browser only shows non-hidden subfolders and audio files.
 - Destination collisions are not handled — if a renamed file already exists at the target it will be overwritten silently.
 - Audio conversion uses bundled ffmpeg (via `static-ffmpeg`).
-- Preview is capped at **500 rows** for performance.
+- Duration is read from file headers (WAV/AIFF instantly; MP3/FLAC/OGG via ffprobe). Files with unreadable headers show no length and are excluded from `MinLength`/`MaxLength` filters.
 
 ---
 
