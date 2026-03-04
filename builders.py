@@ -297,9 +297,12 @@ def build_center(parent):
 
     frame.bind("<Configure>", _on_frame_configure)
 
-    # Mouse wheel scrolling
+    # Mouse wheel scrolling — only scroll center panel when not over other scrollable widgets
     def _on_mousewheel(event):
-        # Check if scrollbar is visible (content overflows)
+        if event.widget in (getattr(state, "preview_tree", None),
+                            getattr(state, "dir_browser", None),
+                            getattr(state, "log_text", None)):
+            return
         bbox = canvas.bbox("all")
         if bbox:
             content_height = bbox[3] - bbox[1]
@@ -788,7 +791,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.13",
+    ctk.CTkLabel(frame, text="v0.5.14",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
