@@ -128,7 +128,7 @@ def _detect_key_algorithm(audio) -> Optional[str]:
     samples = audio.get_array_of_samples()
     sample_rate = audio.frame_rate
     
-    if len(samples) < sample_rate:
+    if len(samples) < sample_rate // 4:   # need at least 0.25s at 8000 Hz
         return None
     
     # Calculate chroma vector (12 pitch classes)
@@ -208,11 +208,15 @@ def detect_key(path):
         # Analyze first 30 seconds
         if len(audio) > 30000:
             audio = audio[:30000]
-        
+
+        if len(audio) < 250:   # < 250 ms after downsampling
+            _log(f"[KEY] {path.name}: too short ({len(audio)} ms), skipping")
+            return None
+
         key_val = _detect_key_algorithm(audio)
-        
+
         if key_val is None:
-            _log(f"[KEY] ERROR: Detection failed")
+            _log(f"[KEY] {path.name}: no clear pitch detected (likely percussion)")
             return None
         
         _log(f"[KEY] DETECTED: {key_val}")
