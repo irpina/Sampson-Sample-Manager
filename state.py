@@ -55,8 +55,12 @@ _last_conversion_error = None  # Stores last conversion error details
 bpm_enabled_var = None   # tk.BooleanVar — master toggle for BPM detection
 bpm_append_var  = None   # tk.BooleanVar — append _120bpm to output filename
 
+# Key detection options
+key_enabled_var = None   # tk.BooleanVar — master toggle for key detection
+key_append_var  = None   # tk.BooleanVar — append key label to output filename
+
 # Collapsible section states (persists across theme toggles)
-_section_open = {}   # {"struct": True, "device": True, "conversion": True, "bpm": True}
+_section_open = {}   # {"struct": True, "device": True, "conversion": True, "bpm": True, "key": True}
 
 # Callback set by builders.py so operations.py can trigger a preview refresh
 # without creating a circular import (operations ← preview).

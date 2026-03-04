@@ -20,6 +20,7 @@ SAMPSON is a Python desktop application built with tkinter and customtkinter. It
   - **Elektron Analog Rytm**: Auto-convert to 48kHz/16-bit WAV
   - **Elektron Syntakt**: Auto-convert to 48kHz/16-bit WAV
 - Audio conversion: WAV/AIFF output, configurable sample rate (44.1k/48k/96k), bit depth (16/24/32-bit), mono/stereo
+- BPM detection with cache and manual override (double-click BPM column)
 - Folder structure modes: Flat, Mirror, One folder per parent
 - Live rename preview with hover tooltips
 - Dark/Light theme toggle (preserves session)
@@ -60,6 +61,7 @@ SAMPSON/
 ├── state.py                   # All shared mutable globals (widgets, vars, flags)
 ├── constants.py               # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
 ├── conversion.py              # Audio conversion engine (pydub + ffmpeg)
+├── bpm.py                     # BPM detection and cache management
 ├── dpi.py                     # Windows DPI awareness and _px() scaling helper
 ├── theme.py                   # Colour constants, _apply_theme_colors(), setup_styles()
 ├── log_panel.py               # Operation log helpers (color-coded output)
@@ -69,18 +71,18 @@ SAMPSON/
 ├── playback.py                # Audio playback via pygame-ce/NSSound, transport controls
 ├── builders.py                # All build_* UI functions, toggle_theme(), build_app()
 ├── requirements.txt           # Python dependencies
+├── SAMPSON.spec               # PyInstaller configuration for Windows
 ├── SAMPSON_mac.spec           # PyInstaller configuration for macOS .app bundle
 ├── build_macos.sh             # macOS build script with code signing
-├── notarize.sh                # macOS notarization script (gitignored, user-specific)
 ├── pyi_rth_tk_silence.py      # Runtime hook for Tcl/Tk crash fix
 ├── sampsontransparent2.png    # Application logo (dark background)
 ├── sampsontransparentwhite.png # Application logo (light background)
 ├── README.md                  # User-facing documentation
 ├── BUGS.md                    # Known issues tracker
 ├── TASKS.md                   # Development task history
-├── PLAN_BPM.md                # Planning documentation
-├── CLAUDE.md                  # Workflow instructions (meta, gitignored)
-└── .gitignore                 # Excludes build outputs, CLAUDE.md, etc.
+├── PLAN_KEY_DETECTION.md      # Planned feature: root note detection
+├── PLAN_SEARCH_FILTER.md      # Planned feature: BPM/Note structured search
+└── .gitignore                 # Excludes build outputs, etc.
 ```
 
 ---
@@ -92,13 +94,14 @@ SAMPSON/
 ```
 constants.py   (no imports)
 state.py       (no app imports)
+bpm.py         → conversion
 dpi.py         → state
 theme.py       → state, dpi
 log_panel.py   → state, theme
 conversion.py  → state
-operations.py  → state, theme, constants, log_panel, conversion
+operations.py  → state, theme, constants, log_panel, conversion, bpm
 browser.py     → state, theme, constants, preview
-preview.py     → state, theme, constants, dpi, operations  ← imports _compute_output
+preview.py     → state, theme, constants, dpi, operations, bpm, conversion
 playback.py    → state
 builders.py    → state, theme, dpi, browser, preview, playback, log_panel, operations
 main.py        → state, theme, dpi, builders
@@ -135,8 +138,6 @@ python main.py
 ```
 
 ### Package for Windows
-
-**Note:** Windows spec file is currently not in the repository. Create `SAMPSON.spec` based on `SAMPSON_mac.spec`, adapting for Windows (include pygame, no AppKit, no BUNDLE).
 
 ```bash
 pyinstaller SAMPSON.spec --clean
@@ -240,7 +241,7 @@ All colors are module-level variables in `theme.py`:
 ### Theme Toggle
 
 `toggle_theme()` lives in `builders.py` (not `theme.py`) to avoid circular imports. It:
-1. Saves current paths/settings (source, dest, profile, conversion settings)
+1. Saves current paths/settings (source, dest, profile, conversion settings, BPM settings)
 2. Stops audio playback
 3. Destroys all children widgets
 4. Calls `ctk.set_appearance_mode()` and `theme._apply_theme_colors()`
@@ -320,6 +321,33 @@ The `conversion.py` module handles format conversion using pydub with ffmpeg bac
 
 ---
 
+## BPM Detection
+
+The `bpm.py` module provides BPM detection using energy envelope autocorrelation.
+
+### Key Functions
+
+- `detect_bpm(path)` — Detect BPM for a file (with caching)
+- `get_cached_bpm(path)` — Get cached BPM value (no detection)
+- `set_cached_bpm(path, bpm_val)` — Manually set BPM (used by double-click edit)
+- `flush_cache()` — Save cache to disk
+
+### Cache Location
+
+`~/.sampson/bpm_cache.json` — stores path+mtime → BPM mapping
+
+### Algorithm
+
+1. Load audio via pydub (mono, first 60 seconds)
+2. Calculate RMS energy envelope
+3. Autocorrelation analysis on envelope
+4. Peak detection in 60-200 BPM range
+5. Octave variant generation (half/double tempo)
+6. Grouping by similar tempo with scoring
+7. Return best BPM candidate
+
+---
+
 ## Audio Playback
 
 `playback.py` uses different backends per platform:
@@ -347,7 +375,7 @@ Source:       Drums/Kicks/kick_01.wav
 Destination:  Kicks_kick_01.wav
 ```
 
-Disabled with **Keep original names** checkbox.
+Enabled with the **Modify file names** checkbox (`state.modify_names_var`). When False (default — browse mode), no renaming is applied and Deck B shows only filename and BPM columns.
 
 ### Folder Structure Modes
 
@@ -366,6 +394,10 @@ When conversion is enabled:
 2. Converted file is written to destination
 3. If "Move files" is enabled, original source file is deleted after successful conversion
 
+### BPM Suffix
+
+When BPM detection is enabled and "Append BPM to filename" is checked, the detected BPM is added as a suffix (e.g., `Kicks_kick_01_120bpm.wav`). The suffix is protected during path-limit truncation.
+
 ---
 
 ## Development Conventions
@@ -382,14 +414,14 @@ When conversion is enabled:
 **Always increment the version** when finishing a change. The label lives in `build_status_bar()` in `builders.py`:
 
 ```python
-ctk.CTkLabel(frame, text="v0.4.0", ...)  # ← Update this
+ctk.CTkLabel(frame, text="v0.5.9", ...)  # ← Update this
 ```
 
 Also update the version in `SAMPSON_mac.spec` Info.plist:
 ```python
 info_plist={
-    'CFBundleShortVersionString': '0.4.0',
-    'CFBundleVersion': '0.4.0',
+    'CFBundleShortVersionString': '0.5.9',
+    'CFBundleVersion': '0.5.9',
     ...
 }
 ```
@@ -400,7 +432,7 @@ UI updates that depend on variable changes use `trace_add("write", callback)`:
 
 ```python
 state.active_dir_var.trace_add("write", preview.on_active_dir_changed)
-state.no_rename_var.trace_add("write", lambda *_: preview.refresh_preview())
+state.modify_names_var.trace_add("write", lambda *_: preview.refresh_preview())
 state.profile_var.trace_add("write", _on_profile_changed)
 ```
 
@@ -424,16 +456,17 @@ No automated test suite exists. Testing is manual:
 4. Test audio playback (click preview rows, transport buttons, arrow keys)
 5. Test options (rename modes, folder structures, hardware profiles)
 6. Test audio conversion (enable conversion, select format/sample rate/bit depth)
-7. Test dry run vs actual copy/move
-8. Test theme toggle (preserve paths and settings)
-9. Test HiDPI on Windows (verify no blurriness)
-10. Test macOS aspect ratio enforcement (resize to narrow width, verify height correction)
+7. Test BPM detection (enable, run, verify cache, double-click to edit)
+8. Test dry run vs actual copy/move
+9. Test theme toggle (preserve paths and settings)
+10. Test HiDPI on Windows (verify no blurriness)
+11. Test macOS aspect ratio enforcement (resize to narrow width, verify height correction)
 
 ---
 
 ## Known Limitations
 
-- Preview capped at 500 rows for performance (defined in `constants.MAX_PREVIEW_ROWS`)
+- Unfiltered preview capped at 500 rows (`constants.MAX_PREVIEW_ROWS`); the Deck B search bar bypasses this cap and shows all matches
 - File browser only shows non-hidden subfolders and audio files
 - Destination collisions not handled — existing files will be overwritten silently
 - FFmpeg must be available (bundled with PyInstaller builds, or installed separately for dev)
@@ -453,6 +486,22 @@ See `BUGS.md` for known issues:
 
 ---
 
+## Planned Features
+
+### Musical Key Detection (`PLAN_KEY_DETECTION.md`)
+
+Root note detection (pitch class only: "C", "F#", "Bb") using pure Python autocorrelation — no new dependencies. Mirrors BPM architecture with `key.py`, cache, preview column, and filename suffix option.
+
+### Structured Search (`PLAN_SEARCH_FILTER.md`)
+
+Extended Deck B filter syntax supporting:
+- Plain text: `kick` — filename substring match
+- BPM filter: `BPM:120` or `BPM:120-140` — exact or range
+- Note filter: `Note:C` or `Note:F#` — root note match (requires key detection)
+- Combined: `kick BPM:120-140` — AND logic
+
+---
+
 ## Quick Reference
 
 | Task | Where |
@@ -466,6 +515,8 @@ See `BUGS.md` for known issues:
 | Change file operations | `operations.py` → `run_tool()`, `_run_worker()` |
 | Adjust preview limit | `constants.py` → `MAX_PREVIEW_ROWS` |
 | Add conversion formats | `conversion.py` → `convert_file()`, `get_target_extension()` |
+| BPM detection algorithm | `bpm.py` → `_detect_bpm_algorithm()` |
+| Key detection algorithm | `key.py` → `_detect_key_algorithm()` |
 | Platform-specific code | Check `sys.platform` ( `"win32"`, `"darwin"`, `"linux"` ) |
 
 ---
@@ -536,7 +587,7 @@ The macOS build (`build_macos.sh`) achieves ~50% size reduction through:
 
 ## Git Workflow
 
-**Always commit** after completing a change (per `CLAUDE.md` workflow rules).
+**Always commit** after completing a change (per development workflow rules).
 
 ### .gitignore Notes
 
@@ -554,10 +605,12 @@ The `.gitignore` excludes:
 | File | Purpose | Format |
 |------|---------|--------|
 | `requirements.txt` | Python dependencies | pip requirements format |
+| `SAMPSON.spec` | PyInstaller config for Windows | Python script |
 | `SAMPSON_mac.spec` | PyInstaller config for macOS | Python script |
 | `build_macos.sh` | macOS build automation | Bash script |
 | `pyi_rth_tk_silence.py` | PyInstaller runtime hook | Python script |
 | `.gitignore` | Git exclusions | Git ignore format |
 | `BUGS.md` | Bug tracker | Markdown |
 | `TASKS.md` | Development tasks | Markdown |
-| `PLAN_BPM.md` | Planning documentation | Markdown |
+| `PLAN_KEY_DETECTION.md` | Planned feature: root note detection | Markdown |
+| `PLAN_SEARCH_FILTER.md` | Planned feature: BPM/Note structured search | Markdown |

@@ -6,6 +6,7 @@ import state
 import theme
 import constants
 import bpm as bpm_module
+import key as key_module
 from dpi import _px
 from operations import _compute_output
 from conversion import get_target_extension
@@ -31,10 +32,10 @@ def apply_filter(text: str):
     matched = [row for row in _preview_rows if not query or query in row[0].lower()]
     display_rows = matched if query else matched[:constants.MAX_PREVIEW_ROWS]
 
-    for i, (orig, renamed, subfolder, bpm_display, srcpath) in enumerate(display_rows):
+    for i, (orig, renamed, subfolder, bpm_display, key_display, srcpath) in enumerate(display_rows):
         tag = "odd" if i % 2 else "even"
         state.preview_tree.insert("", "end",
-                                  values=(orig, renamed, subfolder, bpm_display, srcpath),
+                                  values=(orig, renamed, subfolder, bpm_display, key_display, srcpath),
                                   tags=(tag,))
 
     # Update Deck B count label
@@ -225,6 +226,125 @@ def _on_bpm_double_click(event):
     entry.bind("<Escape>", lambda _: cancel())
 
 
+def _on_tree_double_click(event):
+    """Unified double-click handler for preview tree columns."""
+    item = state.preview_tree.identify_row(event.y)
+    col = state.preview_tree.identify_column(event.x)
+    
+    if not item:
+        return
+    
+    # Delegate to appropriate handler based on column
+    if col == "#4":  # BPM column
+        _on_bpm_double_click(event)
+    elif col == "#5":  # Key column
+        _on_key_double_click(event)
+
+
+def _on_key_double_click(event):
+    """Handle double-click on Key column to allow manual editing."""
+    item = state.preview_tree.identify_row(event.y)
+    col = state.preview_tree.identify_column(event.x)
+    
+    # Only handle double-click on Key column (#5)
+    if not item or col != "#5":
+        return
+    
+    # Get the file path from the row
+    file_path_str = state.preview_tree.set(item, "srcpath")
+    if not file_path_str:
+        return
+    
+    file_path = Path(file_path_str)
+    current_key_display = state.preview_tree.set(item, "key")
+    
+    # Don't allow editing if Key column is hidden or no file
+    if not current_key_display or current_key_display == "":
+        return
+    
+    # Create edit dialog
+    dialog = tk.Toplevel(state.root)
+    dialog.title("Edit Key")
+    dialog.transient(state.root)
+    dialog.grab_set()
+    
+    # Position near the click
+    dialog.geometry(f"+{event.x_root + 20}+{event.y_root}")
+    
+    # Frame for padding
+    frame = tk.Frame(dialog, padx=16, pady=16, bg=theme.BG_SURF1)
+    frame.pack(fill="both", expand=True)
+    
+    # File name label
+    tk.Label(frame, text=file_path.name, font=(theme.FONT_UI, 10, "bold"),
+             bg=theme.BG_SURF1, fg=theme.FG_ON_SURF).pack(anchor="w", pady=(0, 8))
+    
+    # Current value
+    current_text = f"Current: {current_key_display}" if current_key_display != "???" else "Current: Not detected"
+    tk.Label(frame, text=current_text, font=(theme.FONT_UI, 9),
+             bg=theme.BG_SURF1, fg=theme.FG_MUTED).pack(anchor="w")
+    
+    # Entry frame
+    entry_frame = tk.Frame(frame, bg=theme.BG_SURF1)
+    entry_frame.pack(fill="x", pady=(12, 8))
+    
+    tk.Label(entry_frame, text="Key:", font=(theme.FONT_UI, 10),
+             bg=theme.BG_SURF1, fg=theme.FG_ON_SURF).pack(side="left", padx=(0, 8))
+    
+    key_var = tk.StringVar(value="" if current_key_display == "???" else current_key_display)
+    entry = tk.Entry(entry_frame, textvariable=key_var, font=(theme.FONT_UI, 11),
+                     bg=theme.BG_SURF2, fg=theme.FG_ON_SURF, width=10,
+                     highlightbackground=theme.OUTLINE_VAR, highlightthickness=1)
+    entry.pack(side="left")
+    entry.select_range(0, "end")
+    entry.focus()
+    
+    # Valid keys hint
+    tk.Label(frame, text="Valid: C, C#, D, D#, E, F, F#, G, G#, A, A#, B", 
+             font=(theme.FONT_UI, 8),
+             bg=theme.BG_SURF1, fg=theme.FG_DIM).pack(anchor="w", pady=(4, 0))
+    
+    def save_key():
+        try:
+            key_val = key_var.get().strip()
+            
+            # Update cache
+            if key_module.set_cached_key(file_path, key_val):
+                # Refresh preview to show new key
+                refresh_preview()
+                
+                # Log the change
+                for msg in key_module.get_log_messages():
+                    from log_panel import log
+                    log(msg)
+            
+            dialog.destroy()
+        except ValueError as e:
+            tk.Label(frame, text=str(e), font=(theme.FONT_UI, 9),
+                    bg=theme.BG_SURF1, fg="#ff6b6b").pack(anchor="w", pady=(4, 0))
+    
+    def cancel():
+        dialog.destroy()
+    
+    # Buttons
+    btn_frame = tk.Frame(frame, bg=theme.BG_SURF1)
+    btn_frame.pack(fill="x", pady=(12, 0))
+    
+    tk.Button(btn_frame, text="Cancel", command=cancel,
+              bg=theme.BG_SURF2, fg=theme.FG_ON_SURF,
+              activebackground=theme.BG_ROOT, activeforeground=theme.FG_ON_SURF,
+              relief="flat", padx=12, pady=4).pack(side="right", padx=(8, 0))
+    
+    tk.Button(btn_frame, text="Save", command=save_key,
+              bg=theme.CYAN, fg=theme.BG_ROOT,
+              activebackground=theme.CYAN_CONT, activeforeground=theme.BG_ROOT,
+              relief="flat", padx=12, pady=4).pack(side="right")
+    
+    # Bind Enter key to save
+    entry.bind("<Return>", lambda _: save_key())
+    entry.bind("<Escape>", lambda _: cancel())
+
+
 # ── Preview ──────────────────────────────────────────────────────────────────
 
 def on_active_dir_changed(*_):
@@ -290,6 +410,12 @@ def _populate_preview(files, source_root):
     state.preview_tree.column("bpm", width=_px(60) if bpm_enabled else 0,
                                minwidth=0, stretch=False)
 
+    # Key column shown whenever Key detection is enabled
+    key_enabled = bool(state.key_enabled_var and state.key_enabled_var.get())
+    key_append  = bool(state.key_append_var  and state.key_append_var.get())
+    state.preview_tree.column("key", width=_px(50) if key_enabled else 0,
+                               minwidth=0, stretch=False)
+
     # Check if conversion is enabled
     convert_enabled = (state.convert_enabled_var and
                        state.convert_enabled_var.get())
@@ -301,18 +427,27 @@ def _populate_preview(files, source_root):
         bpm_display = str(int(round(bpm_val))) if bpm_val is not None \
                       else ("???" if bpm_enabled else "")
 
-        new_name, rel_sub = _compute_output(
-            f, source_root, dest_path, no_rename, struct_mode, path_limit)
+        # Key: cache lookup only (no detection in preview)
+        key_val     = key_module.get_cached_key(f) if key_enabled else None
+        key_display = key_val if key_val is not None \
+                      else ("???" if key_enabled else "")
 
-        if bpm_enabled and bpm_append:
-            if bpm_val is not None:
-                new_name, rel_sub = _compute_output(
-                    f, source_root, dest_path, no_rename, struct_mode, path_limit,
-                    bpm=bpm_val, append_bpm=True)
-            else:
-                # Visual placeholder — never written to disk
-                p        = Path(new_name)
-                new_name = p.stem + "_???bpm" + p.suffix
+        new_name, rel_sub = _compute_output(
+            f, source_root, dest_path, no_rename, struct_mode, path_limit,
+            bpm=bpm_val if (bpm_enabled and bpm_append) else None,
+            append_bpm=bpm_append,
+            key=key_val if (key_enabled and key_append) else None,
+            append_key=key_append)
+
+        if bpm_enabled and bpm_append and bpm_val is None:
+            # Visual placeholder for BPM — never written to disk
+            p        = Path(new_name)
+            new_name = p.stem + "_???bpm" + p.suffix
+
+        if key_enabled and key_append and key_val is None:
+            # Visual placeholder for Key — never written to disk
+            p        = Path(new_name)
+            new_name = p.stem + "_???" + p.suffix
 
         # Apply extension change and conversion indicator if converting
         if convert_enabled:
@@ -322,7 +457,7 @@ def _populate_preview(files, source_root):
         else:
             display_name = new_name
 
-        _preview_rows.append((f.name, display_name, rel_sub, bpm_display, str(f)))
+        _preview_rows.append((f.name, display_name, rel_sub, bpm_display, key_display, str(f)))
 
     state.preview_tree.tag_configure("odd",  background=theme.TREE_ROW_ODD, foreground=theme.FG_ON_SURF)
     state.preview_tree.tag_configure("even", background=theme.BG_SURF2,     foreground=theme.FG_VARIANT)

@@ -556,12 +556,51 @@ def build_center(parent):
 
     _section_header(frame, 9, "BPM analysis", [bpm_cb, bpm_opts], default_open=False, key="bpm")
 
+    # ── Key Detection (collapsible) ────────────────────────────────────────────
+    state.key_enabled_var = tk.BooleanVar(value=False)
+    state.key_append_var  = tk.BooleanVar(value=False)
+
+    key_cb = ctk.CTkCheckBox(frame, text="Detect musical key",
+                              variable=state.key_enabled_var,
+                              fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
+                              checkmark_color=theme.BG_ROOT,
+                              border_color=theme.OUTLINE_VAR,
+                              text_color=theme.FG_ON_SURF,
+                              corner_radius=4,
+                              font=(theme.FONT_UI, 10))
+    key_cb.grid(row=13, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    _add_tooltip(key_cb, "Detect musical key (root note) during Run; results cached for future runs")
+
+    key_opts = ctk.CTkFrame(frame, fg_color=theme.BG_SURF1,
+                             corner_radius=8, border_width=1,
+                             border_color=theme.OUTLINE_VAR)
+    key_opts.grid(row=14, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
+
+    key_append_cb = ctk.CTkCheckBox(key_opts, text="Append key to filename",
+                                     variable=state.key_append_var,
+                                     fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
+                                     checkmark_color=theme.BG_ROOT,
+                                     border_color=theme.OUTLINE_VAR,
+                                     text_color=theme.FG_ON_SURF,
+                                     corner_radius=4,
+                                     font=(theme.FONT_UI, 10))
+    key_append_cb.pack(padx=10, pady=(8, 8), anchor="w")
+    _add_tooltip(key_append_cb, "Adds _C or _F# suffix to output filename (e.g. Kicks_kick_01_C.wav)")
+
+    def _toggle_key_opts(*_):
+        s = "normal" if state.key_enabled_var.get() else "disabled"
+        key_append_cb.configure(state=s)
+    state.key_enabled_var.trace_add("write", _toggle_key_opts)
+    _toggle_key_opts()
+
+    _section_header(frame, 12, "Key detection", [key_cb, key_opts], default_open=False, key="key")
+
     # Expanding spacer before transport
-    frame.rowconfigure(12, weight=1)
+    frame.rowconfigure(15, weight=1)
 
     # ── Transport controls ────────────────────────────────────────────────────
     transport_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    transport_frame.grid(row=13, column=0, columnspan=2, pady=(10, 10))
+    transport_frame.grid(row=16, column=0, columnspan=2, pady=(10, 10))
 
     _tr_kw = dict(
         width=_px(36), corner_radius=8,
@@ -583,7 +622,7 @@ def build_center(parent):
     state.transport_next_btn.configure(state="disabled")
 
     ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=14, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
+        row=17, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ctk.CTkButton(frame, text="Run",
                                    font=(theme.FONT_UI, 12, "bold"),
@@ -596,7 +635,7 @@ def build_center(parent):
                   fg_color="transparent", text_color=theme.FG_MUTED,
                   hover_color=theme.BG_SURF2, border_width=1,
                   border_color=theme.OUTLINE_VAR, corner_radius=8,
-                  command=log_panel.clear_log).grid(row=16, column=0, columnspan=2, padx=16, pady=(10, 16))
+                  command=log_panel.clear_log).grid(row=18, column=0, columnspan=2, padx=16, pady=(10, 16))
 
     # Update scroll region and scrollbar visibility after all content is created
     def _after_content():
@@ -666,17 +705,19 @@ def build_deck_b(parent):
 
     # Treeview — stays ttk (no CTK equivalent)
     state.preview_tree = ttk.Treeview(frame, style="Preview.Treeview",
-                                      columns=("original", "renamed", "subfolder", "bpm", "srcpath"),
+                                      columns=("original", "renamed", "subfolder", "bpm", "key", "srcpath"),
                                       show="headings", selectmode="browse")
     state.preview_tree.heading("original",  text="Original name")
     state.preview_tree.heading("renamed",   text="Will become")
     state.preview_tree.heading("subfolder", text="Subfolder")
     state.preview_tree.heading("bpm",       text="BPM")
+    state.preview_tree.heading("key",       text="Key")
     state.preview_tree.heading("srcpath",   text="")
     state.preview_tree.column("original",  width=_px(160), anchor="w",      minwidth=_px(80))
     state.preview_tree.column("renamed",   width=_px(200), anchor="w",      minwidth=_px(80))
     state.preview_tree.column("subfolder", width=0,        anchor="w",      minwidth=0, stretch=False)
     state.preview_tree.column("bpm",       width=0,        anchor="center", minwidth=0, stretch=False)
+    state.preview_tree.column("key",       width=0,        anchor="center", minwidth=0, stretch=False)
     state.preview_tree.column("srcpath",   width=0,        anchor="w",      minwidth=0, stretch=False)
     state.preview_tree.grid(row=4, column=0, sticky="nsew", padx=(12, 0), pady=(0, 12))
 
@@ -692,7 +733,7 @@ def build_deck_b(parent):
     state.preview_tree.bind("<ButtonRelease-1>", playback.on_tree_select)
     state.preview_tree.bind("<KeyRelease-Up>",   playback.on_arrow_key)
     state.preview_tree.bind("<KeyRelease-Down>", playback.on_arrow_key)
-    state.preview_tree.bind("<Double-Button-1>", preview._on_bpm_double_click)
+    state.preview_tree.bind("<Double-Button-1>", preview._on_tree_double_click)
 
     frame.grid_propagate(False)
     return frame
@@ -721,7 +762,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.9",
+    ctk.CTkLabel(frame, text="v0.5.10",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
@@ -793,6 +834,11 @@ def toggle_theme():
     # Save BPM settings
     saved_bpm_enabled = state.bpm_enabled_var.get() if state.bpm_enabled_var else False
     saved_bpm_append  = state.bpm_append_var.get()  if state.bpm_append_var  else False
+    
+    # Save Key settings
+    saved_key_enabled = state.key_enabled_var.get() if state.key_enabled_var else False
+    saved_key_append  = state.key_append_var.get()  if state.key_append_var  else False
+    
     saved_filter      = state.preview_filter_var.get() if state.preview_filter_var else ""
 
     state._is_dark = not state._is_dark
@@ -834,6 +880,13 @@ def toggle_theme():
         state.bpm_enabled_var.set(saved_bpm_enabled)
     if state.bpm_append_var:
         state.bpm_append_var.set(saved_bpm_append)
+    
+    # Restore Key settings
+    if state.key_enabled_var:
+        state.key_enabled_var.set(saved_key_enabled)
+    if state.key_append_var:
+        state.key_append_var.set(saved_key_append)
+    
     if state.preview_filter_var and saved_filter:
         state.preview_filter_var.set(saved_filter)
 
@@ -876,6 +929,8 @@ def build_app():
     state.struct_mode_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.bpm_enabled_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.bpm_append_var.trace_add("write",  lambda *_: preview.refresh_preview())
+    state.key_enabled_var.trace_add("write", lambda *_: preview.refresh_preview())
+    state.key_append_var.trace_add("write",  lambda *_: preview.refresh_preview())
     state._refresh_preview_cb = preview.refresh_preview
     state.preview_filter_var.trace_add("write",
         lambda *_: preview.apply_filter(state.preview_filter_var.get()))

@@ -42,13 +42,14 @@ Linux runtime deps for audio: `libsdl2-2.0-0 libsdl2-mixer-2.0-0` (apt) or `SDL2
 constants.py   ← no imports
 state.py       ← no app imports
 bpm.py         → conversion  ← uses conversion._find_ffmpeg_path()
+key.py         → conversion  ← uses conversion._find_ffmpeg_path()
 dpi.py         → state
 theme.py       → state, dpi
 log_panel.py   → state, theme
 conversion.py  → state
-operations.py  → state, theme, constants, log_panel, conversion
+operations.py  → state, theme, constants, log_panel, conversion, bpm, key
 browser.py     → state, theme, constants, preview
-preview.py     → state, theme, constants, dpi, operations, bpm, conversion
+preview.py     → state, theme, constants, dpi, operations, bpm, key, conversion
 playback.py    → state
 builders.py    → state, theme, dpi, browser, preview, playback, log_panel, operations
 main.py        → state, theme, dpi, builders
@@ -147,12 +148,18 @@ The play/prev/next transport reads the hidden `srcpath` column from `state.previ
 
 ### Rename pattern
 
-By default, files are prefixed with their immediate parent folder name:
+Controlled by `state.modify_names_var` (tk.BooleanVar):
+- **False (default — browse mode):** No renaming; Deck B shows only the original filename and BPM columns. Good for auditing a library without touching filenames.
+- **True (rename mode):** Files are prefixed with their immediate parent folder name, and Deck B shows "Will become" + Subfolder columns.
+
 ```
 Source:       Drums/Kicks/kick_01.wav
-Destination:  Kicks_kick_01.wav
+Destination:  Kicks_kick_01.wav   # rename mode
 ```
-Disabled with the **Keep original names** checkbox (`state.no_rename_var`).
+
+### Deck B live filter
+
+`state.preview_filter_var` (tk.StringVar) drives a search bar above the preview tree. `preview.apply_filter(text)` re-renders the tree from the cached `_preview_rows` list (built by `_populate_preview()`). When a query is active, **all** matches are shown (no row cap). When unfiltered, display is capped at `MAX_PREVIEW_ROWS` (500).
 
 ### Folder structure modes
 
@@ -170,9 +177,18 @@ Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
 - **UI integration:** BPM is detected during `_run_worker()` when `state.bpm_enabled_var` is True; results are shown in the hidden `bpm` column of `state.preview_tree` (column appears when BPM detection is enabled). Double-clicking the BPM cell in Deck B opens an inline editor for manual override (`preview._on_bpm_double_click`).
 - **Filename suffix:** When `state.bpm_append_var` is True, `_120bpm` is appended to the output stem (e.g. `Kicks_kick_01_120bpm.wav`).
 
+### Key detection
+
+`key.py` detects musical root note (pitch class: C, C#, D, etc.) using pitch-period autocorrelation — no `librosa` or `numpy` required, just `pydub`. Mirrors the BPM architecture exactly.
+
+- **Cache:** `~/.sampson/key_cache.json`, keyed by absolute file path + mtime.
+- **Public API:** `detect_key(path)`, `get_cached_key(path)`, `set_cached_key(path, key)`, `flush_cache()`
+- **UI integration:** Key is detected during `_run_worker()` when `state.key_enabled_var` is True; results are shown in the hidden `key` column of `state.preview_tree` (column appears when Key detection is enabled). Double-clicking the Key cell in Deck B opens an inline editor for manual override (`preview._on_key_double_click`).
+- **Filename suffix:** When `state.key_append_var` is True, `_{key}` is appended to the output stem (e.g. `Kicks_kick_01_C.wav`).
+
 ### Collapsible center panel sections
 
-`_section_header()` in `builders.py` creates a clickable ▶/▼ header that shows/hides a group of widgets. Section open/closed state is stored in `state._section_open` (dict keyed by section name: `"struct"`, `"device"`, `"conversion"`, `"bpm"`) and persists across theme toggles. Current sections in `build_center()`: Folder structure, Hardware profile, Audio conversion, BPM analysis.
+`_section_header()` in `builders.py` creates a clickable ▶/▼ header that shows/hides a group of widgets. Section open/closed state is stored in `state._section_open` (dict keyed by section name: `"struct"`, `"device"`, `"conversion"`, `"bpm"`, `"key"`) and persists across theme toggles. Current sections in `build_center()`: Folder structure, Hardware profile, Audio conversion, BPM analysis, Key detection.
 
 ## Key conventions
 
@@ -197,11 +213,12 @@ Controlled by `state.struct_mode_var` (`"flat"` | `"mirror"` | `"parent"`):
 | Adjust preview row limit | `constants.py` → `MAX_PREVIEW_ROWS` |
 | Add output structure mode | `operations._compute_output()` + `builders.build_center()` |
 | BPM detection algorithm | `bpm._detect_bpm_algorithm()` |
+| Key detection algorithm | `key._detect_key_algorithm()` |
 | macOS code signing / notarization | `notarize.sh` |
 
 ## Known limitations
 
-- Preview capped at `MAX_PREVIEW_ROWS` (500) for performance.
+- Unfiltered preview capped at `MAX_PREVIEW_ROWS` (500) for performance; the Deck B search bar bypasses this cap and shows all matches.
 - Destination collisions not handled — existing files are overwritten silently.
 - FFmpeg must be available (bundled with PyInstaller builds; installed separately for dev runs that use conversion).
 - **BUG-001** (open): Center panel collapses at very small window widths — root cause is `minsize` in `build_app()` column config in `builders.py`.

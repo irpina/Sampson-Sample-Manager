@@ -7,6 +7,7 @@ import state
 import theme
 import constants
 import bpm as bpm_module
+import key as key_module
 from log_panel import log
 from conversion import (
     check_ffmpeg, convert_file, get_target_extension,
@@ -15,30 +16,41 @@ from conversion import (
 
 
 def _apply_path_limit(new_name: str, dest_path_str: str, limit: int,
-                      protect_suffix: str = "") -> str:
+                      protect_suffixes: list = None) -> str:
     """
     Truncate new_name so that the full destination path stays within `limit` chars.
 
     The extension is always preserved; only the stem is shortened.
-    protect_suffix (e.g. "_120bpm") is kept intact at the end of the stem.
+    protect_suffixes (e.g. ["_120bpm", "_C#"]) are kept intact at the end of the stem.
     """
+    if protect_suffixes is None:
+        protect_suffixes = []
+    
     full = str(Path(dest_path_str) / new_name)
     if len(full) <= limit:
         return new_name
     p     = Path(new_name)
     ext   = p.suffix
-    avail = limit - len(str(Path(dest_path_str))) - 1 - len(ext) - len(protect_suffix)
+    total_protect_len = sum(len(s) for s in protect_suffixes)
+    avail = limit - len(str(Path(dest_path_str))) - 1 - len(ext) - total_protect_len
     if avail < 1:
         avail = 1
     stem = p.stem
-    if protect_suffix and stem.endswith(protect_suffix):
-        stem = stem[:-len(protect_suffix)]
-    return stem[:avail] + protect_suffix + ext
+    
+    # Remove all protected suffixes from stem (in reverse order to handle overlaps)
+    for suffix in sorted(protect_suffixes, key=len, reverse=True):
+        if stem.endswith(suffix):
+            stem = stem[:-len(suffix)]
+    
+    # Reconstruct with all protected suffixes
+    all_suffixes = "".join(protect_suffixes)
+    return stem[:avail] + all_suffixes + ext
 
 
 def _compute_output(f: Path, source_root: Path, dest: Path,
                     no_rename: bool, struct_mode: str,
-                    path_limit, bpm=None, append_bpm=False) -> tuple:
+                    path_limit, bpm=None, append_bpm=False,
+                    key=None, append_key=False) -> tuple:
     """
     Return (new_filename, rel_subfolder) for a single source file.
 
@@ -51,6 +63,7 @@ def _compute_output(f: Path, source_root: Path, dest: Path,
     struct_mode is one of "flat", "mirror", "parent".
     path_limit is int | None (from the active hardware profile).
     bpm / append_bpm control the optional _120bpm suffix.
+    key / append_key control the optional _C suffix.
     """
     # Filename
     new_name = f.name if no_rename else f"{f.parent.name}_{f.name}"
@@ -74,11 +87,22 @@ def _compute_output(f: Path, source_root: Path, dest: Path,
         p        = Path(new_name)
         new_name = p.stem + bpm_suffix + p.suffix
 
+    # Key suffix (applied before path-limit truncation so it can be protected)
+    key_suffix = f"_{key}" if (key is not None and append_key) else ""
+    if key_suffix:
+        p        = Path(new_name)
+        new_name = p.stem + key_suffix + p.suffix
+
     # Path limit
     effective_dest = str(Path(dest) / rel_sub) if rel_sub else str(dest)
     if path_limit is not None:
+        protect_suffixes = []
+        if bpm_suffix:
+            protect_suffixes.append(bpm_suffix)
+        if key_suffix:
+            protect_suffixes.append(key_suffix)
         new_name = _apply_path_limit(new_name, effective_dest, path_limit,
-                                     protect_suffix=bpm_suffix)
+                                     protect_suffixes=protect_suffixes)
 
     return new_name, rel_sub
 
@@ -136,18 +160,22 @@ def run_tool():
     
     bpm_enabled = state.bpm_enabled_var.get() if state.bpm_enabled_var else False
     bpm_append  = state.bpm_append_var.get()  if state.bpm_append_var  else False
+    
+    key_enabled = state.key_enabled_var.get() if state.key_enabled_var else False
+    key_append  = state.key_append_var.get()  if state.key_append_var  else False
 
     threading.Thread(
         target=_run_worker,
         args=(source, dest, state.move_var.get(), state.dry_var.get(),
               path_limit, not state.modify_names_var.get(), struct_mode, convert_options,
-              bpm_enabled, bpm_append),
+              bpm_enabled, bpm_append, key_enabled, key_append),
         daemon=True,
     ).start()
 
 
 def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode,
-                convert_options=None, bpm_enabled=False, bpm_append=False):
+                convert_options=None, bpm_enabled=False, bpm_append=False,
+                key_enabled=False, key_append=False):
     files = []
     for folder_path in state._selected_folders:
         p = Path(folder_path)
@@ -175,9 +203,16 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
         for bpm_log_msg in bpm_module.get_log_messages():
             state.root.after(0, lambda m=bpm_log_msg: log(m))
         
+        key_val = key_module.detect_key(f) if key_enabled else None
+        
+        # Output any Key detection log messages
+        for key_log_msg in key_module.get_log_messages():
+            state.root.after(0, lambda m=key_log_msg: log(m))
+        
         new_name, rel_sub = _compute_output(f, source, dest,
                                             no_rename, struct_mode, path_limit,
-                                            bpm=bpm_val, append_bpm=bpm_append)
+                                            bpm=bpm_val, append_bpm=bpm_append,
+                                            key=key_val, append_key=key_append)
         
         # Apply extension change if converting
         if convert_options:
@@ -222,12 +257,23 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
         # Output any cache save log messages
         for bpm_log_msg in bpm_module.get_log_messages():
             state.root.after(0, lambda m=bpm_log_msg: log(m))
+    
+    if key_enabled:
+        key_module.flush_cache()
+        # Output any cache save log messages
+        for key_log_msg in key_module.get_log_messages():
+            state.root.after(0, lambda m=key_log_msg: log(m))
 
     s = "s" if total != 1 else ""
     if bpm_enabled:
         # Count how many files had BPM detected from this run
         detected_count = sum(1 for f in files if bpm_module.get_cached_bpm(f) is not None)
         state.root.after(0, lambda dc=detected_count: log(f"[BPM] Detected BPM for {dc}/{total} file{s}"))
+    
+    if key_enabled:
+        # Count how many files had Key detected from this run
+        detected_count = sum(1 for f in files if key_module.get_cached_key(f) is not None)
+        state.root.after(0, lambda dc=detected_count: log(f"[KEY] Detected key for {dc}/{total} file{s}"))
     state.root.after(0, lambda: log("Done."))
     state.root.after(0, lambda: state.status_var.set(f"Complete \u2014 {total} file{s} processed."))
     state.root.after(0, lambda: state.run_btn.configure(text="Run"))
