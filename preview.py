@@ -404,16 +404,20 @@ def _populate_preview(files, source_root):
     sub_width = _px(140) if (modify_names and struct_mode != "flat") else 0
     state.preview_tree.column("subfolder", width=sub_width, minwidth=0, stretch=False)
 
-    # BPM column shown whenever BPM detection is enabled
     bpm_enabled = bool(state.bpm_enabled_var and state.bpm_enabled_var.get())
     bpm_append  = bool(state.bpm_append_var  and state.bpm_append_var.get())
-    state.preview_tree.column("bpm", width=_px(60) if bpm_enabled else 0,
-                               minwidth=0, stretch=False)
-
-    # Key column shown whenever Key detection is enabled
     key_enabled = bool(state.key_enabled_var and state.key_enabled_var.get())
     key_append  = bool(state.key_append_var  and state.key_append_var.get())
-    state.preview_tree.column("key", width=_px(50) if key_enabled else 0,
+
+    # Show BPM/Key columns if detection is enabled OR if any file has a cached value
+    has_any_bpm = any(bpm_module.get_cached_bpm(f) is not None for f in files)
+    has_any_key = any(key_module.get_cached_key(f) is not None for f in files)
+    show_bpm = bpm_enabled or has_any_bpm
+    show_key = key_enabled or has_any_key
+
+    state.preview_tree.column("bpm", width=_px(60) if show_bpm else 0,
+                               minwidth=0, stretch=False)
+    state.preview_tree.column("key", width=_px(50) if show_key else 0,
                                minwidth=0, stretch=False)
 
     # Check if conversion is enabled
@@ -422,13 +426,13 @@ def _populate_preview(files, source_root):
     target_format = state.convert_format_var.get() if state.convert_format_var else "wav"
 
     for f in files:
-        # BPM: cache lookup only (no detection in preview)
-        bpm_val     = bpm_module.get_cached_bpm(f) if bpm_enabled else None
+        # BPM: always look up cache when column is visible
+        bpm_val     = bpm_module.get_cached_bpm(f) if show_bpm else None
         bpm_display = str(int(round(bpm_val))) if bpm_val is not None \
                       else ("???" if bpm_enabled else "")
 
-        # Key: cache lookup only (no detection in preview)
-        key_val     = key_module.get_cached_key(f) if key_enabled else None
+        # Key: always look up cache when column is visible
+        key_val     = key_module.get_cached_key(f) if show_key else None
         key_display = key_val if key_val is not None \
                       else ("???" if key_enabled else "")
 

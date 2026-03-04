@@ -788,7 +788,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.12",
+    ctk.CTkLabel(frame, text="v0.5.13",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
