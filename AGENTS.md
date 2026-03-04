@@ -62,6 +62,7 @@ SAMPSON/
 ├── constants.py               # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
 ├── conversion.py              # Audio conversion engine (pydub + ffmpeg)
 ├── bpm.py                     # BPM detection and cache management
+├── key.py                     # Musical key detection (root pitch class) and cache
 ├── dpi.py                     # Windows DPI awareness and _px() scaling helper
 ├── theme.py                   # Colour constants, _apply_theme_colors(), setup_styles()
 ├── log_panel.py               # Operation log helpers (color-coded output)
@@ -80,7 +81,6 @@ SAMPSON/
 ├── README.md                  # User-facing documentation
 ├── BUGS.md                    # Known issues tracker
 ├── TASKS.md                   # Development task history
-├── PLAN_KEY_DETECTION.md      # Planned feature: root note detection
 ├── PLAN_SEARCH_FILTER.md      # Planned feature: BPM/Note structured search
 └── .gitignore                 # Excludes build outputs, etc.
 ```
@@ -94,14 +94,15 @@ SAMPSON/
 ```
 constants.py   (no imports)
 state.py       (no app imports)
+conversion.py  → state
 bpm.py         → conversion
+key.py         → conversion
 dpi.py         → state
 theme.py       → state, dpi
 log_panel.py   → state, theme
-conversion.py  → state
-operations.py  → state, theme, constants, log_panel, conversion, bpm
+operations.py  → state, theme, constants, log_panel, conversion, bpm, key
 browser.py     → state, theme, constants, preview
-preview.py     → state, theme, constants, dpi, operations, bpm, conversion
+preview.py     → state, theme, constants, dpi, operations, bpm, key, conversion
 playback.py    → state
 builders.py    → state, theme, dpi, browser, preview, playback, log_panel, operations
 main.py        → state, theme, dpi, builders
@@ -369,13 +370,14 @@ The `bpm.py` module provides BPM detection using energy envelope autocorrelation
 
 ### Rename Pattern
 
-By default, files are prefixed with their immediate parent folder:
+Controlled by `state.modify_names_var` (tk.BooleanVar):
+- **False (default — browse mode):** No renaming applied. Deck B shows only the original filename and metadata columns (BPM, key). Good for auditing without touching filenames.
+- **True (rename mode):** Each file is prefixed with its immediate parent folder name:
+
 ```
 Source:       Drums/Kicks/kick_01.wav
 Destination:  Kicks_kick_01.wav
 ```
-
-Enabled with the **Modify file names** checkbox (`state.modify_names_var`). When False (default — browse mode), no renaming is applied and Deck B shows only filename and BPM columns.
 
 ### Folder Structure Modes
 
@@ -414,7 +416,7 @@ When BPM detection is enabled and "Append BPM to filename" is checked, the detec
 **Always increment the version** when finishing a change. The label lives in `build_status_bar()` in `builders.py`:
 
 ```python
-ctk.CTkLabel(frame, text="v0.5.9", ...)  # ← Update this
+ctk.CTkLabel(frame, text="v0.5.10", ...)  # ← Update this
 ```
 
 Also update the version in `SAMPSON_mac.spec` Info.plist:
@@ -487,10 +489,6 @@ See `BUGS.md` for known issues:
 ---
 
 ## Planned Features
-
-### Musical Key Detection (`PLAN_KEY_DETECTION.md`)
-
-Root note detection (pitch class only: "C", "F#", "Bb") using pure Python autocorrelation — no new dependencies. Mirrors BPM architecture with `key.py`, cache, preview column, and filename suffix option.
 
 ### Structured Search (`PLAN_SEARCH_FILTER.md`)
 
@@ -612,5 +610,4 @@ The `.gitignore` excludes:
 | `.gitignore` | Git exclusions | Git ignore format |
 | `BUGS.md` | Bug tracker | Markdown |
 | `TASKS.md` | Development tasks | Markdown |
-| `PLAN_KEY_DETECTION.md` | Planned feature: root note detection | Markdown |
 | `PLAN_SEARCH_FILTER.md` | Planned feature: BPM/Note structured search | Markdown |
