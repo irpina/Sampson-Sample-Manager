@@ -253,7 +253,7 @@ def build_center(parent):
 
     # Create canvas for scrolling with conditional scrollbar
     canvas = tk.Canvas(outer_frame, bg=theme.BG_SURFACE, highlightthickness=0)
-    canvas.grid(row=0, column=0, sticky="nsew", padx=(0, 0), pady=(0, 0))
+    canvas.grid(row=0, column=0, sticky="nsew", padx=(8, 0), pady=(8, 8))
 
     # Inner frame that holds all content
     frame = ctk.CTkFrame(canvas, fg_color=theme.BG_SURFACE, corner_radius=0)
@@ -277,7 +277,7 @@ def build_center(parent):
             content_height = bbox[3] - bbox[1]
             canvas_height = canvas.winfo_height()
             if content_height > canvas_height:
-                scrollbar.grid(row=0, column=1, sticky="ns", padx=(0, 2), pady=2)
+                scrollbar.grid(row=0, column=1, sticky="ns", padx=(0, 8), pady=(8, 8))
                 canvas.configure(yscrollcommand=scrollbar.set)
             else:
                 scrollbar.grid_forget()
@@ -791,7 +791,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.5.14",
+    ctk.CTkLabel(frame, text="v0.5.15",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
