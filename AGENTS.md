@@ -21,9 +21,11 @@ SAMPSON is a Python desktop application built with tkinter and customtkinter. It
   - **Elektron Syntakt**: Auto-convert to 48kHz/16-bit WAV
 - Audio conversion: WAV/AIFF output, configurable sample rate (44.1k/48k/96k), bit depth (16/24/32-bit), mono/stereo
 - BPM detection with cache and manual override (double-click BPM column)
-- Musical key detection with cache (root pitch class detection)
+- Musical key detection with cache and manual override (double-click Key column)
 - Folder structure modes: Flat, Mirror, One folder per parent
 - Live rename preview with hover tooltips
+- Smart search/filter with structured query syntax (BPM ranges, note filters, duration bounds)
+- Column sorting (BPM, Note, Length — click headers to sort ascending/descending)
 - Dark/Light theme toggle (preserves session)
 - HiDPI/4K support on Windows
 
@@ -71,7 +73,7 @@ SAMPSON/
 ├── log_panel.py               # Operation log helpers (color-coded output)
 ├── operations.py              # File copy/move/conversion worker
 ├── browser.py                 # Deck A file browser — navigation and browse dialogs
-├── preview.py                 # Deck B rename preview, hover tooltip, background scan
+├── preview.py                 # Deck B rename preview, hover tooltip, background scan, filter, sort
 ├── playback.py                # Audio playback via pygame-ce/NSSound, transport controls
 ├── builders.py                # All build_* UI functions, toggle_theme(), build_app()
 ├── pyi_rth_tk_silence.py      # Runtime hook for Tcl/Tk crash fix
@@ -84,7 +86,7 @@ SAMPSON/
 ├── README.md                  # User-facing documentation
 ├── BUGS.md                    # Known issues tracker
 ├── TASKS.md                   # Development task history
-├── PLAN_SEARCH_FILTER.md      # Planned feature: BPM/Note structured search
+├── PLAN_SEARCH_FILTER.md      # Planned feature: BPM/Note structured search (IMPLEMENTED)
 └── .gitignore                 # Excludes build outputs, etc.
 ```
 
@@ -404,6 +406,58 @@ The `key.py` module provides musical key detection (root pitch class) using pitc
 
 ---
 
+## Smart Search / Structured Filter
+
+The Deck B search bar supports structured query syntax for advanced filtering:
+
+### Query Syntax
+
+| Token | Example | Description |
+|-------|---------|-------------|
+| Plain text | `kick` | Filename substring match (case-insensitive) |
+| BPM exact | `BPM:120` | Exact BPM match |
+| BPM range | `BPM:100-130` | BPM within inclusive range |
+| BPM wildcard | `BPM:12*` | Wildcard match (e.g., 120-129) |
+| Note | `Note:C` or `Note:F#` | Root note match (case-insensitive) |
+| Min length | `MinLength:10` | Duration ≥ 10 seconds |
+| Max length | `MaxLength:90` | Duration ≤ 90 seconds |
+
+### Combined Queries
+
+Multiple tokens can be combined with AND logic:
+```
+kick BPM:120-140 Note:C MinLength:5
+```
+
+This matches files containing "kick" in the name, with BPM 120-140, root note C, and duration at least 5 seconds.
+
+### Implementation
+
+The filter logic is in `preview.py`:
+- `_parse_query(text)` — tokenizes the query string
+- `apply_filter(text)` — filters `_preview_rows` based on parsed query
+- Search bypasses the 500-row preview limit and shows all matching files
+
+---
+
+## Column Sorting
+
+Deck B supports sorting by BPM, Note (Key), or Length (Duration):
+
+- Click a column header to sort ascending (▲)
+- Click again to sort descending (▼)
+- Click a third time to remove sort
+- Sorting applies before filtering, so filtered results respect the sort order
+
+### Implementation
+
+- `preview.sort_by(col)` — toggles sort state and reapplies filter
+- `_sort_key_for(col, row)` — generates sortable keys for each column type
+- `_apply_sort()` — sorts `_preview_rows` in place
+- `_update_sort_headings()` — updates header text with ▲/▼ indicators
+
+---
+
 ## File Operations
 
 ### Rename Pattern
@@ -438,6 +492,13 @@ When conversion is enabled:
 
 When BPM/key detection is enabled and "Append to filename" is checked, the detected values are added as suffixes (e.g., `Kicks_kick_01_120bpm_C.wav`). The suffixes are protected during path-limit truncation.
 
+### Duration Reading
+
+Duration is read from file headers:
+- **WAV/AIFF:** Fast stdlib read (`wave`/`aifc` modules), no subprocess
+- **MP3/FLAC/OGG:** Falls back to ffprobe via pydub's `mediainfo()`
+- Files with unreadable headers show no length and are excluded from `MinLength`/`MaxLength` filters
+
 ---
 
 ## Development Conventions
@@ -451,20 +512,21 @@ When BPM/key detection is enabled and "Append to filename" is checked, the detec
 
 ### Version Management
 
-**Always increment the version** when finishing a change. The label lives in `build_status_bar()` in `builders.py`:
+**Always increment the version** when finishing a change. Update both locations:
 
-```python
-ctk.CTkLabel(frame, text="v0.5.10", ...)  # ← Update this
-```
+1. `builders.py` — `build_status_bar()`:
+   ```python
+   ctk.CTkLabel(frame, text="v0.5.16", ...)  # ← Update this
+   ```
 
-Also update the version in `SAMPSON_mac.spec` Info.plist:
-```python
-info_plist={
-    'CFBundleShortVersionString': '0.5.10',
-    'CFBundleVersion': '0.5.10',
-    ...
-}
-```
+2. `SAMPSON_mac.spec` — Info.plist:
+   ```python
+   info_plist={
+       'CFBundleShortVersionString': '0.5.16',
+       'CFBundleVersion': '0.5.16',
+       ...
+   }
+   ```
 
 ### Tracing Variables
 
@@ -497,11 +559,13 @@ No automated test suite exists. Testing is manual:
 5. Test options (rename modes, folder structures, hardware profiles)
 6. Test audio conversion (enable conversion, select format/sample rate/bit depth)
 7. Test BPM detection (enable, run, verify cache, double-click to edit)
-8. Test key detection (enable, run, verify cache)
-9. Test dry run vs actual copy/move
-10. Test theme toggle (preserve paths and settings)
-11. Test HiDPI on Windows (verify no blurriness)
-12. Test macOS aspect ratio enforcement (resize to narrow width, verify height correction)
+8. Test key detection (enable, run, verify cache, double-click to edit)
+9. Test smart search/filter (plain text, BPM:120, Note:C, MinLength:10, combined queries)
+10. Test column sorting (click BPM/Note/Length headers, verify ▲/▼ indicators)
+11. Test dry run vs actual copy/move
+12. Test theme toggle (preserve paths and settings)
+13. Test HiDPI on Windows (verify no blurriness)
+14. Test macOS aspect ratio enforcement (resize to narrow width, verify height correction)
 
 ---
 
@@ -511,6 +575,7 @@ No automated test suite exists. Testing is manual:
 - File browser only shows non-hidden subfolders and audio files
 - Destination collisions not handled — existing files will be overwritten silently
 - FFmpeg must be available (bundled with PyInstaller builds, or installed separately for dev)
+- Duration for MP3/FLAC/OGG requires ffprobe (slower than WAV/AIFF header read)
 
 ---
 
@@ -531,11 +596,14 @@ See `BUGS.md` for known issues:
 
 ### Structured Search (`PLAN_SEARCH_FILTER.md`)
 
+**Status: IMPLEMENTED** — The structured search feature is now fully functional.
+
 Extended Deck B filter syntax supporting:
 - Plain text: `kick` — filename substring match
-- BPM filter: `BPM:120` or `BPM:120-140` — exact or range
-- Note filter: `Note:C` or `Note:F#` — root note match (requires key detection)
-- Combined: `kick BPM:120-140` — AND logic
+- BPM filter: `BPM:120` or `BPM:100-140` or `BPM:12*` — exact, range, or wildcard
+- Note filter: `Note:C` or `Note:F#` — root note match
+- Duration filter: `MinLength:10` or `MaxLength:90` — duration bounds in seconds
+- Combined: `kick BPM:120-140 Note:C` — AND logic
 
 ---
 
@@ -554,6 +622,8 @@ Extended Deck B filter syntax supporting:
 | Add conversion formats | `conversion.py` → `convert_file()`, `get_target_extension()` |
 | BPM detection algorithm | `bpm.py` → BPM detection functions |
 | Key detection algorithm | `key.py` → Key detection functions |
+| Smart search/filter | `preview.py` → `_parse_query()`, `apply_filter()` |
+| Column sorting | `preview.py` → `sort_by()`, `_apply_sort()` |
 | Platform-specific code | Check `sys.platform` ( `"win32"`, `"darwin"`, `"linux"` ) |
 
 ---
