@@ -7,7 +7,7 @@
 
 ## Project Overview
 
-SAMPSON is a Python desktop application built with tkinter and customtkinter. It provides a dual-deck interface (Source → Destination) for browsing audio sample libraries, previewing files with audio playback, and copying/moving files with automatic renaming based on parent folder names.
+SAMPSON is a Python desktop application built with tkinter and customtkinter. It provides a dual-deck interface (Deck A → Deck B) for browsing audio sample libraries, previewing files with audio playback, and copying/moving files with automatic renaming based on parent folder names.
 
 **Key Features:**
 - Audio playback (click to play, transport controls ◀ ▶ ▶▶)
@@ -40,7 +40,7 @@ SAMPSON is a Python desktop application built with tkinter and customtkinter. It
 | Component | Technology | Version/Notes |
 |-----------|-----------|---------------|
 | Language | Python | 3.10+ |
-| UI Framework | customtkinter | 5.2.2 — modern rounded widgets |
+| UI Framework | customtkinter | 5.2.0+ — modern rounded widgets |
 | Standard UI | tkinter / ttk | Treeview, Progressbar, Text |
 | Audio Playback | pygame-ce (Windows/Linux), NSSound (macOS) | 2.5.0+ — SDL2-based audio playback |
 | Audio Conversion | pydub | 0.25.1+ — with bundled ffmpeg |
@@ -86,7 +86,7 @@ SAMPSON/
 ├── README.md                  # User-facing documentation
 ├── BUGS.md                    # Known issues tracker
 ├── TASKS.md                   # Development task history
-├── PLAN_SEARCH_FILTER.md      # Planned feature: BPM/Note structured search (IMPLEMENTED)
+├── RELEASE_NOTES_v0.6.0.md    # Current release notes
 └── .gitignore                 # Excludes build outputs, etc.
 ```
 
@@ -516,14 +516,14 @@ Duration is read from file headers:
 
 1. `builders.py` — `build_status_bar()`:
    ```python
-   ctk.CTkLabel(frame, text="v0.5.16", ...)  # ← Update this
+   ctk.CTkLabel(frame, text="v0.6.0", ...)  # ← Update this
    ```
 
 2. `SAMPSON_mac.spec` — Info.plist:
    ```python
    info_plist={
-       'CFBundleShortVersionString': '0.5.16',
-       'CFBundleVersion': '0.5.16',
+       'CFBundleShortVersionString': '0.6.0',
+       'CFBundleVersion': '0.6.0',
        ...
    }
    ```
@@ -586,24 +586,9 @@ See `BUGS.md` for known issues:
 | ID | Status | Description |
 |----|--------|-------------|
 | BUG-001 | Open | Center panel collapses at small window sizes (Low) |
-| BUG-002 | Partially Fixed | macOS window oversized on Retina displays (Medium) — DPI scaling fixed in v0.3.3+, aspect ratio enforcement added in main.py |
+| BUG-002 | Open | macOS window oversized on Retina displays (Medium) — DPI scaling returns 1.0 on macOS; window size enforced via `_usable_screen_size()` |
 
 **Note:** The BUGS.md file is the source of truth for bug status. The AGENTS.md may lag behind.
-
----
-
-## Planned Features
-
-### Structured Search (`PLAN_SEARCH_FILTER.md`)
-
-**Status: IMPLEMENTED** — The structured search feature is now fully functional.
-
-Extended Deck B filter syntax supporting:
-- Plain text: `kick` — filename substring match
-- BPM filter: `BPM:120` or `BPM:100-140` or `BPM:12*` — exact, range, or wildcard
-- Note filter: `Note:C` or `Note:F#` — root note match
-- Duration filter: `MinLength:10` or `MaxLength:90` — duration bounds in seconds
-- Combined: `kick BPM:120-140 Note:C` — AND logic
 
 ---
 
@@ -668,6 +653,125 @@ Extended Deck B filter syntax supporting:
 
 ## macOS-Specific Notes
 
+### Code Signing and Notarization
+
+The macOS build supports full code signing and Apple notarization for distribution outside the App Store.
+
+#### Prerequisites
+
+1. **Apple Developer Account** ($99/year)
+   - Enrolled in the Apple Developer Program
+
+2. **Developer ID Certificate**
+   ```bash
+   # Download from Apple Developer Portal:
+   # Certificates, Identifiers & Profiles → Certificates → +
+   # → Developer ID Application → G2 Sub-CA (Xcode 11.4.1+)
+   # Then import into Keychain
+   ```
+
+3. **App-Specific Password**
+   - Generate at: https://appleid.apple.com/account/manage
+   - Security → App-Specific Passwords → Generate
+   - Format: `xxxx-xxxx-xxxx-xxxx`
+
+4. **Team ID**
+   - Find at: https://developer.apple.com/account#MembershipDetails
+   - 10-character string (e.g., `A1B2C3D4E5`)
+
+#### Building with Signing
+
+**Ad-hoc sign (local testing, no notarization):**
+```bash
+bash build_macos.sh
+```
+
+**Developer ID sign + notarize (distribution):**
+```bash
+export APPLE_CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+export APPLE_ID="you@example.com"
+export APPLE_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx"
+export APPLE_TEAM_ID="XXXXXXXXXX"
+
+bash build_macos.sh
+```
+
+The script will:
+1. Build the app with PyInstaller
+2. Sign all binaries with hardened runtime
+3. Submit to Apple for notarization (if credentials provided)
+4. Staple the notarization ticket
+5. Create `SAMPSON_mac_vX.Y.Z.zip` for distribution
+
+**Output:**
+- `dist/SAMPSON.app` — The signed, notarized app bundle
+- `dist/SAMPSON_mac_vX.Y.Z.zip` — Distribution zip (upload this to GitHub releases)
+
+#### Notarizing an Existing Build
+
+If you need to notarize a build that was only ad-hoc signed:
+
+```bash
+export APPLE_ID="you@example.com"
+export APPLE_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx"
+export APPLE_TEAM_ID="XXXXXXXXXX"
+
+./notarize.sh dist/SAMPSON.app
+```
+
+To also re-sign with Developer ID before notarizing:
+```bash
+export APPLE_CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+./notarize.sh dist/SAMPSON.app
+```
+
+#### Verifying Signatures
+
+```bash
+# Check code signature
+codesign -vv --deep --strict dist/SAMPSON.app
+
+# Check notarization
+spctl --assess --type execute --verbose dist/SAMPSON.app
+# Expected: "SAMPSON.app: accepted"
+
+# View signature details
+codesign -dvv dist/SAMPSON.app
+```
+
+#### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| "replacing existing signature" warnings | Normal — script signs multiple components |
+| "bundle format is ambiguous" | Python.framework symlinks fixed by build script (step 4) |
+| "unnotarized developer id" warning | Run `xcrun stapler staple SAMPSON.app` |
+| "xattr" errors from OneDrive | Build script works in `/tmp` to avoid this |
+| Notarization rejected | Check `notarytool log` output for specific issues |
+| "No module named _struct" crash | Don't delete `python3.X/lib-dynload/` from bundle |
+| "dangling symlink" Gatekeeper error | Don't delete `tcl9/` from bundle |
+
+#### Security Entitlements
+
+The `entitlements.plist` file grants these hardened runtime exceptions:
+
+- `com.apple.security.cs.allow-unsigned-executable-memory` — Required for Python interpreter
+- `com.apple.security.cs.allow-dyld-environment-variables` — Required for dylib loading
+- `com.apple.security.cs.disable-library-validation` — Required for Python extension modules
+- `com.apple.security.files.user-selected.read-write` — File browser access
+- `com.apple.security.device.audio-input` — Audio playback access
+
+#### Distribution Checklist
+
+Before releasing a macOS build:
+
+- [ ] Build with `APPLE_CODESIGN_IDENTITY` set to Developer ID
+- [ ] Verify notarization completed successfully
+- [ ] Test on a clean macOS system (no dev tools installed)
+- [ ] Ensure no Gatekeeper warnings appear on first launch
+- [ ] Upload `SAMPSON_mac_vX.Y.Z.zip` (not the raw .app bundle)
+- [ ] Note: Users on macOS 10.15+ require notarized apps
+
 ### Tcl/Tk Deprecation Warning Fix
 
 Tcl/Tk 9.0 can cause console window crashes in signed PyInstaller bundles. Fixed via:
@@ -690,6 +794,15 @@ The macOS build (`build_macos.sh`) achieves ~50% size reduction through:
 - Uses ad-hoc signing (`-`) if not set
 - Re-signs after Tcl/Tk cleanup modifications
 
+### Critical macOS Build Rules
+
+1. **Never delete `python3.X/` from the bundle** — it contains `lib-dynload/*.so` (all stdlib C extensions). Deletion causes `[PYI-ERROR] Module object for struct is NULL!` on launch.
+2. **Always sign in `/tmp`, never inside OneDrive** — OneDrive injects xattrs mid-signing, invalidating the signature.
+3. **Sign all components individually, not with `--deep`** — Deep signing processes outer before inner; notarization rejects unsigned nested binaries.
+4. **Every `codesign` call needs `--options runtime --timestamp`** — notarization rejects submissions without these flags.
+5. **Use `ditto` (not `cp -r`) for all `.app` copies** — `cp -r` dereferences symlinks and breaks the Python.framework structure.
+6. **Do not delete `tcl9/` from the bundle** — PyInstaller cross-links `Resources/tcl9 ↔ Frameworks/tcl9`; deleting one side creates a dangling symlink that Gatekeeper rejects.
+
 ---
 
 ## Git Workflow
@@ -704,3 +817,4 @@ The `.gitignore` excludes:
 - User-specific scripts: `notarize.sh`
 - Archive files: `*.zip`
 - Meta-documentation: `CLAUDE.md` itself
+- Agent memory: `memory/`

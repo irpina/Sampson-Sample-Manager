@@ -25,14 +25,37 @@ There is no test suite.
 ## Build
 
 ```bash
-# macOS
-bash build_macos.sh           # produces dist/SAMPSON.app via pyinstaller SAMPSON_mac.spec
+# macOS — produces dist/SAMPSON.app (signed + notarized if env vars set)
+APPLE_CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+APPLE_ID="you@example.com" \
+APPLE_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx" \
+APPLE_TEAM_ID="XXXXXXXXXX" \
+bash build_macos.sh
+
+# macOS — ad-hoc sign only (no notarization, for local testing):
+bash build_macos.sh
 
 # Windows / Linux
 pyinstaller SAMPSON.spec      # produces dist/SAMPSON.exe or dist/SAMPSON ELF
 ```
 
 Linux runtime deps for audio: `libsdl2-2.0-0 libsdl2-mixer-2.0-0` (apt) or `SDL2 SDL2_mixer` (dnf).
+
+### macOS build — critical rules
+
+The venv must be created with a **python.org Python** (not Homebrew — it lacks `_tkinter`).
+
+`build_macos.sh` runs 7 steps: pre-fetch ffmpeg → PyInstaller → Tcl/Tk cleanup → fix Python.framework → sign → notarize → copy back. Full documentation with all gotchas in `memory/build_macos.md` (git-ignored, synced via cloud drive).
+
+**Hard rules — violations will silently break the build:**
+
+- **Never delete `python3.X/` from the bundle.** It contains `lib-dynload/*.so` (all stdlib C extensions — `_struct`, `_json`, etc.). Deletion causes `[PYI-ERROR] Module object for struct is NULL!` on launch. The `python3__dot__14` directory is PyInstaller's codesign alias; the original `python3.14` directory is what the bootloader actually loads.
+- **Always sign in `/tmp`, never inside the OneDrive folder.** OneDrive injects xattrs mid-signing, invalidating the signature. The script copies to `/tmp/SAMPSON_build_$$.app`, strips xattrs with `xattr -cr`, then signs there.
+- **Sign all components individually, not with `codesign --deep`.** Deep signing processes outer before inner — notarization rejects unsigned nested binaries. Sign order: `.so`/`.dylib` files → `ffmpeg`/`ffprobe` → `Python.framework` binary → app bundle last.
+- **Every `codesign` call needs `--options runtime --timestamp`**, or notarization rejects the submission.
+- **`fix_python_framework()` must run before signing.** PyInstaller creates flat Python.framework binaries; codesign requires `Versions/Current` to be a symlink and `Python` at the root to be a symlink. Fix both `Contents/Resources/Python.framework` and `Contents/Frameworks/Python.framework`. Do NOT add `Headers` or `Resources` symlinks — if those directories don't exist under `Versions/X.Y/`, the symlinks dangle and Gatekeeper rejects the bundle.
+- **Use `ditto` (not `cp -r`) for all `.app` copies.** `cp -r` dereferences symlinks and breaks the Python.framework structure.
+- **Do not delete `tcl9/` from the bundle.** PyInstaller cross-links `Resources/tcl9 ↔ Frameworks/tcl9`; deleting one side creates a dangling symlink that Gatekeeper rejects.
 
 ## Architecture
 
@@ -54,6 +77,8 @@ playback.py    → state
 builders.py    → state, theme, dpi, browser, preview, playback, log_panel, operations
 main.py        → state, theme, dpi, builders
 ```
+
+**`browser.py`** populates `state.dir_browser` (the Deck A `ttk.Treeview`) and manages `state._selected_folders` (a `set` of folder paths to include in the scan). It is stateless beyond what it writes into `state` — other modules never call browser functions directly.
 
 **Key shared function:** `_compute_output()` in `operations.py` is used by both `operations._run_worker()` (actual execution) and `preview._populate_preview()` (preview display). It computes the final filename and subfolder for each source file given the current rename/struct/path-limit settings.
 
@@ -172,6 +197,10 @@ The filter supports structured tokens alongside plain filename substrings:
 Tokens can be combined with free text, e.g. `kick BPM:120 MaxLength:5`.
 
 Duration is read from file headers during the background scan (WAV/AIFF via stdlib `wave`/`aifc`; MP3/FLAC/OGG via ffprobe). Files whose duration cannot be read are excluded when a length filter is active.
+
+### Deck B column sorting
+
+Clicking the **BPM**, **Note**, or **Length** column headers cycles through: ascending ▲ → descending ▼ → unsorted. Sort state lives in `preview._sort_col` (`"bpm" | "key" | "duration" | None`) and `preview._sort_asc` (bool). Sorting is applied to `_preview_rows` before filtering, so the filter always operates on a sorted list.
 
 ### Folder structure modes
 

@@ -10,3 +10,6 @@ __pycache__/
 CLAUDE_SESSION.md
 notarize.sh
 *.zip
+
+# Agent memory (local only, synced via cloud drive)
+memory/
