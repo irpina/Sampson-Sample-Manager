@@ -71,6 +71,7 @@ def _usable_screen_size(root, desired_w: int, desired_h: int) -> tuple[int, int]
     """
     if sys.platform == "darwin":
         try:
+            # Lazy import AppKit to avoid race conditions during app startup
             from AppKit import NSScreen
             frame = NSScreen.mainScreen().visibleFrame()
             max_w = int(frame.size.width) - 40   # small side margin
@@ -79,7 +80,10 @@ def _usable_screen_size(root, desired_w: int, desired_h: int) -> tuple[int, int]
         except Exception:
             pass
         # Fallback: tkinter screen size minus rough menu bar/dock estimate
-        root.update_idletasks()
+        try:
+            root.update_idletasks()
+        except tk.TclError:
+            pass  # Root may not be ready yet
         sw = root.winfo_screenwidth()
         sh = root.winfo_screenheight()
         return min(desired_w, sw - 40), min(desired_h, sh - 95)

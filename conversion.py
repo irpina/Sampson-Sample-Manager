@@ -17,17 +17,56 @@ import state
 _static_ffmpeg_initialized = False
 
 
+def _get_bundle_dir() -> Optional[Path]:
+    """Get the bundle directory when running in a PyInstaller app."""
+    if getattr(sys, 'frozen', False):
+        # Running in a bundle
+        bundle_dir = Path(sys._MEIPASS) if hasattr(sys, '_MEIPASS') else Path(sys.executable).parent
+        return bundle_dir
+    return None
+
+
 def _init_static_ffmpeg() -> bool:
     """Add static_ffmpeg binaries (ffmpeg + ffprobe) to PATH. Returns True on success."""
     global _static_ffmpeg_initialized
-    if not _static_ffmpeg_initialized:
-        try:
-            import static_ffmpeg
-            static_ffmpeg.add_paths()
-            _static_ffmpeg_initialized = True
-        except Exception:
-            pass
-    return _static_ffmpeg_initialized
+    if _static_ffmpeg_initialized:
+        return True
+    
+    # Try PyInstaller bundle paths first
+    bundle_dir = _get_bundle_dir()
+    if bundle_dir:
+        # Check common locations in the bundle
+        possible_paths = [
+            bundle_dir / "static_ffmpeg" / "bin" / "darwin_arm64",
+            bundle_dir / "static_ffmpeg" / "bin" / "darwin_x86_64",
+            bundle_dir / "static_ffmpeg" / "bin",
+            bundle_dir / ".." / "Resources" / "static_ffmpeg" / "bin" / "darwin_arm64",
+            bundle_dir / ".." / "Resources" / "static_ffmpeg" / "bin" / "darwin_x86_64",
+            bundle_dir / ".." / "Frameworks" / "static_ffmpeg" / "bin" / "darwin_arm64",
+            bundle_dir / ".." / "Frameworks" / "static_ffmpeg" / "bin" / "darwin_x86_64",
+        ]
+        
+        for bin_path in possible_paths:
+            ffmpeg_exe = bin_path / "ffmpeg"
+            if ffmpeg_exe.exists():
+                # Add to PATH
+                bin_str = str(bin_path.resolve())
+                current_path = os.environ.get('PATH', '')
+                if bin_str not in current_path:
+                    os.environ['PATH'] = bin_str + os.pathsep + current_path
+                _static_ffmpeg_initialized = True
+                return True
+    
+    # Fall back to standard static_ffmpeg for non-bundled runs
+    try:
+        import static_ffmpeg
+        static_ffmpeg.add_paths()
+        _static_ffmpeg_initialized = True
+        return True
+    except Exception:
+        pass
+    
+    return False
 
 
 def _find_ffmpeg_path() -> Optional[str]:
