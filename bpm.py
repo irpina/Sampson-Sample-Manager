@@ -68,6 +68,23 @@ def _store(path, bpm_val):
 
 def _get_pydub():
     from pydub import AudioSegment
+    
+    # Windows: Patch pydub's subprocess calls to prevent console flashing
+    # when running as a PyInstaller-built GUI app
+    if sys.platform == "win32":
+        import pydub.utils
+        if not hasattr(pydub.utils.Popen, '_sampson_patched'):
+            _original_popen = pydub.utils.Popen
+            
+            def _popen_with_hidden_console(*args, **kwargs):
+                creationflags = kwargs.pop('creationflags', 0)
+                creationflags |= 0x08000000  # CREATE_NO_WINDOW
+                kwargs['creationflags'] = creationflags
+                return _original_popen(*args, **kwargs)
+            
+            _popen_with_hidden_console._sampson_patched = True
+            pydub.utils.Popen = _popen_with_hidden_console
+    
     ffmpeg_path = _find_ffmpeg_path()
     if ffmpeg_path:
         AudioSegment.converter = ffmpeg_path

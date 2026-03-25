@@ -6,12 +6,16 @@ Known issues not yet scheduled for a fix. Add a note when each is resolved.
 
 ## Open
 
+*No open bugs at this time.*
+
 ---
+
+## Resolved
 
 ### BUG-001 · Center panel collapses at small window sizes
 
-**Status:** Open
-**Reported:** 2026-02-26
+**Status:** Resolved  
+**Reported:** 2026-02-26  
 **Severity:** Low — cosmetic, no data loss
 
 **Symptom:**
@@ -19,51 +23,47 @@ When the window is resized below approximately 700px wide, the center column
 (options panel) shrinks past its content width. Checkboxes, radio buttons,
 and the profile combobox truncate or overlap each other.
 
-**Root cause:**
-`root_frame.columnconfigure(1, weight=2, minsize=_px(180))` in `builders.py`.
-The 180px logical minimum is too narrow for the current center panel content
-(which now includes folder-structure radios and a hardware profile combobox).
-No minimum window size is set on the root window.
-
-**Files affected:**
-- [builders.py](builders.py) — `build_app()`, `root_frame.columnconfigure(1, ...)`
-- [main.py](main.py) — no `state.root.minsize(...)` call present
-
-**Potential fix (pick one):**
-Option A — enforce a minimum window size in `main.py`:
-```python
-state.root.minsize(_px(780), _px(520))
-```
-Option B — increase center column minsize in `builders.py`:
-```python
-root_frame.columnconfigure(1, weight=2, minsize=_px(230))
-```
-Option A preferred — it also prevents the decks from collapsing.
-
----
+**Resolution:** Fixed by enforcing minimum window size and adjusting column constraints.
 
 ---
 
 ### BUG-002 · macOS window oversized and clipped behind menu bar / dock
 
-**Status:** Open
-**Reported:** 2026-02-27
+**Status:** Resolved  
+**Reported:** 2026-02-27  
 **Severity:** Medium — UI partially hidden on launch; content inaccessible until manually resized
 
 **Symptom:**
 On macOS (Retina), the window launches too large and overflows behind the system menu bar at the top and the dock. The bottom panels (status bar, log) and right-side content can be hidden. Additionally, when maximized via the green traffic-light zoom button, the window does not respect the minimum aspect ratio (`MIN_ASPECT_RATIO = 1.38`), potentially collapsing into an unusable tall/narrow shape.
 
-**Root cause:**
-`_compute_dpi_scale()` in `dpi.py` returns `NSScreen.mainScreen().backingScaleFactor()` — which is `2.0` on Retina displays. This value is then used by `_px()` to double all window/widget pixel values. However, **tkinter on macOS already works in logical points** (1 pt = 2 physical pixels on Retina); CTK also handles Retina scaling internally. The `backingScaleFactor` multiplier is therefore applied twice, making the initial window `2200×1560` logical points — larger than most Mac screens (typically 1280–1800 pts wide).
-
-**Files affected:**
-- [dpi.py](dpi.py) — `_compute_dpi_scale()` macOS branch returns wrong value
-- [main.py](main.py) — startup geometry and minsize use `_px()` which is 2× on macOS; no screen-clamp; no aspect-ratio binding
-
-**Fix:** See [PLAN_MACOS_SCALING.md](PLAN_MACOS_SCALING.md) for the full implementation plan.
+**Resolution:** Fixed DPI scaling calculation for macOS Retina displays.
 
 ---
 
-## Resolved
+### BUG-003 · Windows console window flashes during file conversion (PyInstaller build)
 
-*(none yet)*
+**Status:** Resolved in v0.6.2  
+**Reported:** 2026-03-14  
+**Severity:** Medium — UX issue in packaged Windows builds
+
+**Symptom:**
+When running the PyInstaller-packaged Windows build (`.exe`), a console window
+flashes briefly for every file being converted. This does not occur when
+running from source (`python main.py`).
+
+**Root cause:**
+`pydub` uses `subprocess.Popen` to call `ffmpeg`/`ffprobe`. On Windows, when
+the app is packaged with `--windowed` (no console), each subprocess call
+spawns a visible console window that immediately closes.
+
+**Fix:**
+Monkey-patch `pydub.utils.Popen` in all modules that use pydub to add the
+`CREATE_NO_WINDOW` (0x08000000) flag on Windows.
+
+**Files modified:**
+- `conversion.py` — Added patch in `_get_pydub()` and `get_ffmpeg_version()`
+- `bpm.py` — Added patch in `_get_pydub()`
+- `key.py` — Added patch in `_get_pydub()`
+- `preview.py` — Added patch before `mediainfo` call
+
+---

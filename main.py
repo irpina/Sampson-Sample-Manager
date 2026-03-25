@@ -10,6 +10,25 @@ os.environ['TCL_NO_STACK_TRACE'] = '1'
 if sys.platform == "darwin":
     os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
 
+# macOS: Force-load Tk dylib BEFORE any Cocoa/AppKit imports to ensure
+# Tk's NSApplication category methods (macOSVersion, etc.) are registered.
+# This prevents "unrecognized selector" crashes when Tk later tries to use them.
+if sys.platform == "darwin":
+    try:
+        import ctypes
+        import glob
+        # sys._MEIPASS is set by PyInstaller to the app's bundle Resources path
+        meipass = getattr(sys, '_MEIPASS', None)
+        if meipass:
+            for lib_pattern in ['libtcl9tk*.dylib', 'libtk*.dylib']:
+                for lib_path in glob.glob(os.path.join(meipass, lib_pattern)):
+                    try:
+                        ctypes.CDLL(lib_path)
+                    except Exception:
+                        pass
+    except Exception:
+        pass
+
 # Single instance check (macOS)
 _single_instance_lock = None
 
@@ -64,16 +83,6 @@ if __name__ == "__main__":
     ctk.set_default_color_theme("blue")
 
     state.root = ctk.CTk()
-    
-    # macOS: Ensure proper app activation
-    if sys.platform == "darwin":
-        try:
-            from AppKit import NSApp, NSApplication
-            app = NSApplication.sharedApplication()
-            app.setActivationPolicy_(0)  # NSApplicationActivationPolicyRegular
-            app.activateIgnoringOtherApps_(True)
-        except Exception:
-            pass
 
     # Compute DPI scale for _px() calls (used for non-CTK widget dimensions).
     # CTk handles its own internal scaling — do not call tk.call('tk', 'scaling', …).
@@ -101,5 +110,16 @@ if __name__ == "__main__":
                 new_h = int(w / MIN_ASPECT_RATIO)
                 state.root.geometry(f"{w}x{new_h}")
         state.root.bind("<Configure>", _enforce_aspect)
+
+    # Defer activation until after the event loop is running to prevent
+    # conflicts with LaunchServices' own activation sequence on double-click
+    if sys.platform == "darwin":
+        def _activate_app():
+            try:
+                from AppKit import NSApp
+                NSApp.activateIgnoringOtherApps_(True)
+            except Exception:
+                pass
+        state.root.after(50, _activate_app)
 
     state.root.mainloop()

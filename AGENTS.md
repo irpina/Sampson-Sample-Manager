@@ -81,12 +81,14 @@ SAMPSON/
 ├── SAMPSON.spec               # PyInstaller configuration for Windows
 ├── SAMPSON_mac.spec           # PyInstaller configuration for macOS .app bundle
 ├── build_macos.sh             # macOS build script with code signing
+├── notarize.sh                # Standalone notarization script
+├── entitlements.plist         # macOS code signing entitlements
 ├── sampsontransparent2.png    # Application logo (dark background)
 ├── sampsontransparentwhite.png # Application logo (light background)
 ├── README.md                  # User-facing documentation
 ├── BUGS.md                    # Known issues tracker
 ├── TASKS.md                   # Development task history
-├── RELEASE_NOTES_v0.6.0.md    # Current release notes
+├── RELEASE_NOTES_v*.md        # Release notes
 └── .gitignore                 # Excludes build outputs, etc.
 ```
 
@@ -97,6 +99,8 @@ SAMPSON/
 | `SAMPSON.spec` | PyInstaller config (Windows/Linux) | Python script |
 | `SAMPSON_mac.spec` | PyInstaller config (macOS) | Python script |
 | `build_macos.sh` | macOS build automation | Bash script |
+| `notarize.sh` | Standalone notarization | Bash script |
+| `entitlements.plist` | macOS security entitlements | XML plist |
 | `.gitignore` | Git exclusions | Git ignore format |
 
 ---
@@ -516,14 +520,14 @@ Duration is read from file headers:
 
 1. `builders.py` — `build_status_bar()`:
    ```python
-   ctk.CTkLabel(frame, text="v0.6.0", ...)  # ← Update this
+   ctk.CTkLabel(frame, text="v0.6.1", ...)  # ← Update this
    ```
 
 2. `SAMPSON_mac.spec` — Info.plist:
    ```python
    info_plist={
-       'CFBundleShortVersionString': '0.6.0',
-       'CFBundleVersion': '0.6.0',
+       'CFBundleShortVersionString': '0.6.1',
+       'CFBundleVersion': '0.6.1',
        ...
    }
    ```
@@ -585,8 +589,9 @@ See `BUGS.md` for known issues:
 
 | ID | Status | Description |
 |----|--------|-------------|
-| BUG-001 | Open | Center panel collapses at small window sizes (Low) |
-| BUG-002 | Open | macOS window oversized on Retina displays (Medium) — DPI scaling returns 1.0 on macOS; window size enforced via `_usable_screen_size()` |
+| BUG-001 | Resolved | Center panel collapses at small window sizes |
+| BUG-002 | Resolved | macOS window oversized on Retina displays |
+| BUG-003 | Resolved in v0.6.2 | Windows console flash on conversion |
 
 **Note:** The BUGS.md file is the source of truth for bug status. The AGENTS.md may lag behind.
 

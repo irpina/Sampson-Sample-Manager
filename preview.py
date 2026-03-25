@@ -43,6 +43,21 @@ def _get_duration(path: Path) -> float | None:
             with contextlib.closing(aifc.open(str(path))) as af:
                 val = af.getnframes() / af.getframerate()
         else:
+            # Windows: Patch pydub's subprocess calls to prevent console flashing
+            if sys.platform == "win32":
+                import pydub.utils
+                if not hasattr(pydub.utils.Popen, '_sampson_patched'):
+                    _original_popen = pydub.utils.Popen
+                    
+                    def _popen_with_hidden_console(*args, **kwargs):
+                        creationflags = kwargs.pop('creationflags', 0)
+                        creationflags |= 0x08000000  # CREATE_NO_WINDOW
+                        kwargs['creationflags'] = creationflags
+                        return _original_popen(*args, **kwargs)
+                    
+                    _popen_with_hidden_console._sampson_patched = True
+                    pydub.utils.Popen = _popen_with_hidden_console
+            
             from pydub.utils import mediainfo
             info = mediainfo(str(path))
             dur = info.get('duration')

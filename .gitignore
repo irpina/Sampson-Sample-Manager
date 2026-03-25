@@ -6,6 +6,11 @@ __pycache__/
 .DS_Store
 *.spec
 
+# Virtual environments (platform-specific)
+.venv/
+.venv_win/
+.venv_mac/
+
 # Session notes (may contain personal info / local paths)
 CLAUDE_SESSION.md
 notarize.sh
