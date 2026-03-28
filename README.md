@@ -28,6 +28,7 @@
   - **Mirror** — preserve the full source directory tree
   - **One folder per parent** — group by immediate parent folder name
 - **Rename pattern** — files are prefixed with their parent folder name (`Kicks_kick_01.wav`), keeping context in a flat folder. Disable with **Keep original names**.
+- **Custom filename prefix** — optionally override the parent-folder prefix with your own (max 10 chars, e.g. `KIT_kick_01.wav`). Live preview updates instantly.
 - **Live preview** — Deck B shows every file alongside its renamed form, duration, BPM, and root note before you commit; hover for a full-path tooltip
 - **Smart search** — filter Deck B in real time with plain text or structured tokens:
   - `BPM:120` · `BPM:100-130` · `BPM:12*` — exact, range, or wildcard BPM
@@ -103,12 +104,14 @@ Requires Python 3.10+. Core dependencies:
    - Click the **BPM**, **Note**, or **Length** column header to sort ascending/descending.
 
 4. **Configure options (centre panel)**
+   - Options are grouped into collapsible sections. Click any header to expand or collapse it.
 
    | Option | Default | Description |
    |--------|---------|-------------|
    | Move files | Off | Move instead of copy. Off = copy (safe). |
    | Dry run | **On** | Log actions without writing files. Turn off to commit. |
    | Keep original names | Off | Skip the folder-prefix; keep original filenames. |
+   | Custom prefix | (empty) | Override the parent-folder prefix with your own text (max 10 chars). |
    | Folder structure | Flat | How files are arranged in the destination. |
    | Hardware profile | Generic | Enforces device-specific path length limits. |
 
@@ -127,7 +130,7 @@ Source:       Drums/Kicks/kick_01.wav
 Destination:  Kicks_kick_01.wav
 ```
 
-This keeps a flat destination usable on hardware samplers while preserving context. Enable **Keep original names** to skip the prefix entirely.
+This keeps a flat destination usable on hardware samplers while preserving context. Enable **Keep original names** to skip the prefix entirely, or enter a **Custom prefix** to replace the parent-folder name with your own.
 
 When a hardware profile with a path limit is selected, the filename stem is silently truncated so the full destination path fits within the device's limit — the extension is always preserved.
 
@@ -178,6 +181,8 @@ SAMPSON/
 ├── operations.py        # file copy/move/conversion worker
 ├── browser.py           # Deck A file browser — navigation and browse dialogs
 ├── preview.py           # Deck B rename preview, hover tooltip, background scan
+├── bpm.py               # BPM detection engine (energy-envelope autocorrelation)
+├── key.py               # Musical key / root-note detection
 ├── playback.py          # audio playback via pygame-ce (Win/Linux) or NSSound (macOS)
 ├── SAMPSON_mac.spec     # PyInstaller configuration for macOS builds
 ├── build_macos.sh       # macOS build script with size optimization
