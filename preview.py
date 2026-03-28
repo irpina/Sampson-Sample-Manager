@@ -637,12 +637,14 @@ def _populate_preview(files, source_root, durations=None):
         key_display = key_val if key_val is not None \
                       else ("???" if key_enabled else "")
 
+        custom_prefix = state.custom_prefix_var.get().strip() if state.custom_prefix_var else ""
         new_name, rel_sub = _compute_output(
             f, source_root, dest_path, no_rename, struct_mode, path_limit,
             bpm=bpm_val if (bpm_enabled and bpm_append) else None,
             append_bpm=bpm_append,
             key=key_val if (key_enabled and key_append) else None,
-            append_key=key_append)
+            append_key=key_append,
+            custom_prefix=custom_prefix)
 
         if bpm_enabled and bpm_append and bpm_val is None:
             # Visual placeholder for BPM — never written to disk

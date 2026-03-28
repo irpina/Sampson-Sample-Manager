@@ -315,6 +315,7 @@ def build_center(parent):
     state.move_var        = tk.BooleanVar(value=False)
     state.dry_var         = tk.BooleanVar(value=True)
     state.modify_names_var = tk.BooleanVar(value=False)
+    state.custom_prefix_var = tk.StringVar(value="")
     state.profile_var     = tk.StringVar(value="Generic")
     state.struct_mode_var = tk.StringVar(value="flat")
 
@@ -344,6 +345,43 @@ def build_center(parent):
     cb_rename.grid(row=1, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 4))
     _add_tooltip(cb_rename, "Add parent folder prefix to filenames and show rename preview")
 
+    # Row 2: Custom prefix entry (full width, indented)
+    def _validate_prefix(P):
+        """Validate custom prefix: max 10 chars, only A-Z, a-z, 0-9, _, -"""
+        if len(P) > 10:
+            return False
+        # Allow empty string
+        if not P:
+            return True
+        # Only allow safe chars for all filesystems
+        allowed = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-")
+        if all(c in allowed for c in P):
+            return True
+        return False
+
+    prefix_frame = ctk.CTkFrame(frame, fg_color="transparent")
+    prefix_frame.grid(row=2, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    
+    ctk.CTkLabel(prefix_frame, text="Custom prefix:",
+                 font=(theme.FONT_UI, 9),
+                 text_color=theme.FG_VARIANT).pack(side="left", padx=(16, 8))
+    
+    prefix_entry = ctk.CTkEntry(prefix_frame,
+                                textvariable=state.custom_prefix_var,
+                                placeholder_text="max 10 chars",
+                                width=_px(120),
+                                height=_px(24),
+                                font=(theme.FONT_UI, 9),
+                                fg_color=theme.BG_SURF2,
+                                text_color=theme.FG_ON_SURF,
+                                border_color=theme.OUTLINE_VAR,
+                                border_width=1,
+                                corner_radius=6,
+                                validate="key",
+                                validatecommand=(frame.register(_validate_prefix), "%P"))
+    prefix_entry.pack(side="left")
+    _add_tooltip(prefix_entry, "Optional prefix added before filename (e.g., 'KIT_')")
+
     # ── Folder structure (collapsible) ────────────────────────────────────────
     _rb_kw = dict(
         fg_color=theme.CYAN, hover_color=theme.CYAN_CONT,
@@ -352,7 +390,7 @@ def build_center(parent):
         font=(theme.FONT_UI, 10),
     )
     struct_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    struct_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=12)
+    struct_frame.grid(row=4, column=0, columnspan=2, sticky="ew", padx=12)
 
     rb_flat = ctk.CTkRadioButton(struct_frame, text="Flat", variable=state.struct_mode_var,
                                   value="flat", **_rb_kw)
@@ -369,8 +407,8 @@ def build_center(parent):
     rb_parent.pack(side="left", padx=4)
     _add_tooltip(rb_parent, "One folder per parent directory")
 
-    # Section header (row 2) - placed after content so grid_info is available
-    _section_header(frame, 2, "Output structure", [struct_frame], default_open=False, key="struct")
+    # Section header (row 3) - placed after content so grid_info is available
+    _section_header(frame, 3, "Output structure", [struct_frame], default_open=False, key="struct")
 
     # ── Hardware profile (collapsible) ────────────────────────────────────────
     profile_menu = ctk.CTkOptionMenu(frame, variable=state.profile_var,
@@ -381,9 +419,9 @@ def build_center(parent):
                       dropdown_text_color=theme.FG_ON_SURF,
                       dropdown_hover_color=theme.CYAN_CONT,
                       corner_radius=8)
-    profile_menu.grid(row=5, column=0, columnspan=2, sticky="ew", padx=16)
+    profile_menu.grid(row=6, column=0, columnspan=2, sticky="ew", padx=16)
 
-    _section_header(frame, 4, "Target device", [profile_menu], default_open=False, key="device")
+    _section_header(frame, 5, "Target device", [profile_menu], default_open=False, key="device")
 
     # ── Audio Conversion (collapsible) ────────────────────────────────────────
     # Initialize conversion variables
@@ -404,14 +442,14 @@ def build_center(parent):
                               text_color=theme.FG_ON_SURF,
                               corner_radius=4,
                               font=(theme.FONT_UI, 10))
-    conv_cb.grid(row=7, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    conv_cb.grid(row=8, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
     _add_tooltip(conv_cb, "Convert audio files to target format/sample rate")
 
     # Conversion options frame
     conv_opts = ctk.CTkFrame(frame, fg_color=theme.BG_SURF1,
                              corner_radius=8, border_width=1,
                              border_color=theme.OUTLINE_VAR)
-    conv_opts.grid(row=8, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
+    conv_opts.grid(row=9, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
 
     # Format row
     fmt_row = ctk.CTkFrame(conv_opts, fg_color="transparent")
@@ -518,7 +556,7 @@ def build_center(parent):
     state.convert_enabled_var.trace_add("write", _toggle_conv_opts)
     _toggle_conv_opts()  # Set initial state
 
-    _section_header(frame, 6, "Audio conversion", [conv_cb, conv_opts], default_open=False, key="conversion")
+    _section_header(frame, 7, "Audio conversion", [conv_cb, conv_opts], default_open=False, key="conversion")
 
     # ── BPM Analysis (collapsible) ────────────────────────────────────────────
     state.bpm_enabled_var = tk.BooleanVar(value=False)
@@ -533,13 +571,13 @@ def build_center(parent):
                               text_color=theme.FG_ON_SURF,
                               corner_radius=4,
                               font=(theme.FONT_UI, 10))
-    bpm_cb.grid(row=10, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    bpm_cb.grid(row=11, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
     _add_tooltip(bpm_cb, "Detect BPM during Run; results cached for future runs")
 
     bpm_opts = ctk.CTkFrame(frame, fg_color=theme.BG_SURF1,
                              corner_radius=8, border_width=1,
                              border_color=theme.OUTLINE_VAR)
-    bpm_opts.grid(row=11, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
+    bpm_opts.grid(row=12, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
 
     append_cb = ctk.CTkCheckBox(bpm_opts, text="Append BPM to filename",
                                  variable=state.bpm_append_var,
@@ -570,7 +608,7 @@ def build_center(parent):
     state.bpm_enabled_var.trace_add("write", _toggle_bpm_opts)
     _toggle_bpm_opts()
 
-    _section_header(frame, 9, "BPM analysis", [bpm_cb, bpm_opts], default_open=False, key="bpm")
+    _section_header(frame, 10, "BPM analysis", [bpm_cb, bpm_opts], default_open=False, key="bpm")
 
     # ── Key Detection (collapsible) ────────────────────────────────────────────
     state.key_enabled_var = tk.BooleanVar(value=False)
@@ -585,13 +623,13 @@ def build_center(parent):
                               text_color=theme.FG_ON_SURF,
                               corner_radius=4,
                               font=(theme.FONT_UI, 10))
-    key_cb.grid(row=13, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
+    key_cb.grid(row=14, column=0, columnspan=2, sticky="w", padx=16, pady=(0, 8))
     _add_tooltip(key_cb, "Detect musical key (root note) during Run; results cached for future runs")
 
     key_opts = ctk.CTkFrame(frame, fg_color=theme.BG_SURF1,
                              corner_radius=8, border_width=1,
                              border_color=theme.OUTLINE_VAR)
-    key_opts.grid(row=14, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
+    key_opts.grid(row=15, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 8))
 
     key_append_cb = ctk.CTkCheckBox(key_opts, text="Append key to filename",
                                      variable=state.key_append_var,
@@ -622,14 +660,14 @@ def build_center(parent):
     state.key_enabled_var.trace_add("write", _toggle_key_opts)
     _toggle_key_opts()
 
-    _section_header(frame, 12, "Key detection", [key_cb, key_opts], default_open=False, key="key")
+    _section_header(frame, 13, "Key detection", [key_cb, key_opts], default_open=False, key="key")
 
     # Expanding spacer before transport
-    frame.rowconfigure(15, weight=1)
+    frame.rowconfigure(16, weight=1)
 
     # ── Transport controls ────────────────────────────────────────────────────
     transport_frame = ctk.CTkFrame(frame, fg_color="transparent")
-    transport_frame.grid(row=16, column=0, columnspan=2, pady=(10, 10))
+    transport_frame.grid(row=17, column=0, columnspan=2, pady=(10, 10))
 
     _tr_kw = dict(
         width=_px(36), corner_radius=8,
@@ -651,20 +689,20 @@ def build_center(parent):
     state.transport_next_btn.configure(state="disabled")
 
     ctk.CTkFrame(frame, fg_color=theme.OUTLINE_VAR, height=1, corner_radius=0).grid(
-        row=17, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
+        row=18, column=0, columnspan=2, sticky="ew", padx=16, pady=(0, 14))
 
     state.run_btn = ctk.CTkButton(frame, text="Run",
                                    font=(theme.FONT_UI, 12, "bold"),
                                    fg_color=theme.CYAN, text_color=theme.BG_ROOT,
                                    hover_color=theme.CYAN_CONT, corner_radius=8,
                                    command=operations.run_tool)
-    state.run_btn.grid(row=15, column=0, columnspan=2, padx=16, sticky="ew")
+    state.run_btn.grid(row=16, column=0, columnspan=2, padx=16, sticky="ew")
 
     ctk.CTkButton(frame, text="Clear log",
                   fg_color="transparent", text_color=theme.FG_MUTED,
                   hover_color=theme.BG_SURF2, border_width=1,
                   border_color=theme.OUTLINE_VAR, corner_radius=8,
-                  command=log_panel.clear_log).grid(row=18, column=0, columnspan=2, padx=16, pady=(10, 16))
+                  command=log_panel.clear_log).grid(row=19, column=0, columnspan=2, padx=16, pady=(10, 16))
 
     # Update scroll region and scrollbar visibility after all content is created
     def _after_content():
@@ -793,7 +831,7 @@ def build_status_bar(parent):
     state.status_var.trace_add("write",
         lambda *_: _status_lbl.configure(text=state.status_var.get()))
 
-    ctk.CTkLabel(frame, text="v0.6.2",
+    ctk.CTkLabel(frame, text="v0.7.0",
                  font=(theme.FONT_UI, 8), text_color=theme.FG_DIM,
                  anchor="e").pack(side="right", padx=14)
 
@@ -854,6 +892,7 @@ def toggle_theme():
     saved_profile       = state.profile_var.get()      if state.profile_var      else "Generic"
     saved_struct_mode   = state.struct_mode_var.get()  if state.struct_mode_var  else "flat"
     saved_modify_names  = state.modify_names_var.get() if state.modify_names_var else False
+    saved_custom_prefix = state.custom_prefix_var.get() if state.custom_prefix_var else ""
     
     # Save conversion settings
     saved_conv_enabled = state.convert_enabled_var.get() if state.convert_enabled_var else False
@@ -891,6 +930,8 @@ def toggle_theme():
         state.struct_mode_var.set(saved_struct_mode)
     if state.modify_names_var:
         state.modify_names_var.set(saved_modify_names)
+    if state.custom_prefix_var:
+        state.custom_prefix_var.set(saved_custom_prefix)
     if saved_dest:
         state.dest_var.set(saved_dest)
     if saved_source:
@@ -963,6 +1004,7 @@ def build_app():
     state.active_dir_var.trace_add("write", lambda *_: playback.reset())
     state.source_var.trace_add("write", browser.on_source_var_changed)
     state.modify_names_var.trace_add("write", lambda *_: preview.refresh_preview())
+    state.custom_prefix_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.struct_mode_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.bpm_enabled_var.trace_add("write", lambda *_: preview.refresh_preview())
     state.bpm_append_var.trace_add("write",  lambda *_: preview.refresh_preview())

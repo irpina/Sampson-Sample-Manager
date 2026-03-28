@@ -235,35 +235,12 @@ _pydub = None
 
 
 def _get_pydub():
-    """Lazy load pydub module and configure ffmpeg path.
-    
-    On Windows, patches pydub's Popen calls to hide console windows
-    (prevents flashing console during conversion in PyInstaller builds).
-    """
+    """Lazy load pydub module and configure ffmpeg path."""
     global _pydub
     if _pydub is None:
         from pydub import AudioSegment
         _pydub = AudioSegment
-        
-        # Patch pydub's subprocess calls on Windows to prevent console flashing
-        # when running as a PyInstaller-built GUI app
-        if sys.platform == "win32":
-            import pydub.utils
-            if not hasattr(pydub.utils.Popen, '_sampson_patched'):
-                _original_popen = pydub.utils.Popen
-                
-                def _popen_with_hidden_console(*args, **kwargs):
-                    """Wrap Popen to hide console window on Windows."""
-                    # CREATE_NO_WINDOW = 0x08000000
-                    # This prevents the console window from appearing when
-                    # ffmpeg/ffprobe are called during audio conversion
-                    creationflags = kwargs.pop('creationflags', 0)
-                    creationflags |= 0x08000000  # CREATE_NO_WINDOW
-                    kwargs['creationflags'] = creationflags
-                    return _original_popen(*args, **kwargs)
-                
-                _popen_with_hidden_console._sampson_patched = True
-                pydub.utils.Popen = _popen_with_hidden_console
+        # Note: subprocess.Popen is patched globally in main.py for Windows
     return _pydub
 
 

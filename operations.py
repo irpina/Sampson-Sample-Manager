@@ -50,7 +50,7 @@ def _apply_path_limit(new_name: str, dest_path_str: str, limit: int,
 def _compute_output(f: Path, source_root: Path, dest: Path,
                     no_rename: bool, struct_mode: str,
                     path_limit, bpm=None, append_bpm=False,
-                    key=None, append_key=False) -> tuple:
+                    key=None, append_key=False, custom_prefix="") -> tuple:
     """
     Return (new_filename, rel_subfolder) for a single source file.
 
@@ -66,7 +66,12 @@ def _compute_output(f: Path, source_root: Path, dest: Path,
     key / append_key control the optional _C suffix.
     """
     # Filename
-    new_name = f.name if no_rename else f"{f.parent.name}_{f.name}"
+    if custom_prefix:
+        new_name = f"{custom_prefix}_{f.name}"
+    elif not no_rename:
+        new_name = f"{f.parent.name}_{f.name}"
+    else:
+        new_name = f.name
 
     # Subfolder
     if struct_mode == "mirror":
@@ -165,19 +170,21 @@ def run_tool():
     key_enabled = state.key_enabled_var.get() if state.key_enabled_var else False
     key_append  = state.key_append_var.get()  if state.key_append_var  else False
     key_fresh   = state.key_fresh_var.get()   if state.key_fresh_var   else False
+    custom_prefix = state.custom_prefix_var.get().strip() if state.custom_prefix_var else ""
 
     threading.Thread(
         target=_run_worker,
         args=(source, dest, state.move_var.get(), state.dry_var.get(),
               path_limit, not state.modify_names_var.get(), struct_mode, convert_options,
-              bpm_enabled, bpm_append, bpm_fresh, key_enabled, key_append, key_fresh),
+              bpm_enabled, bpm_append, bpm_fresh, key_enabled, key_append, key_fresh,
+              custom_prefix),
         daemon=True,
     ).start()
 
 
 def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode,
                 convert_options=None, bpm_enabled=False, bpm_append=False, bpm_fresh=False,
-                key_enabled=False, key_append=False, key_fresh=False):
+                key_enabled=False, key_append=False, key_fresh=False, custom_prefix=""):
     files = []
     for folder_path in state._selected_folders:
         p = Path(folder_path)
@@ -214,7 +221,8 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
         new_name, rel_sub = _compute_output(f, source, dest,
                                             no_rename, struct_mode, path_limit,
                                             bpm=bpm_val, append_bpm=bpm_append,
-                                            key=key_val, append_key=key_append)
+                                            key=key_val, append_key=key_append,
+                                            custom_prefix=custom_prefix)
         
         # Apply extension change if converting
         if convert_options:

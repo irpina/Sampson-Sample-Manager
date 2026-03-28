@@ -69,3 +69,4 @@ _section_open = {}   # {"struct": True, "device": True, "conversion": True, "bpm
 _refresh_preview_cb = None
 
 preview_filter_var = None   # tk.StringVar — live filter text for Deck B search bar
+custom_prefix_var = None    # tk.StringVar — prefix prepended to renamed files (max 10 chars)

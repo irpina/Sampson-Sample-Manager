@@ -1,4 +1,17 @@
 import sys
+
+# Windows: Patch subprocess.Popen globally BEFORE any imports to prevent
+# console window flashing in PyInstaller-built GUI apps.
+# This must run before pydub is imported anywhere.
+if sys.platform == "win32":
+    import subprocess
+    _OrigPopen = subprocess.Popen
+    class _NoConsoleWindowPopen(_OrigPopen):
+        def __init__(self, *args, **kwargs):
+            kwargs['creationflags'] = kwargs.get('creationflags', 0) | 0x08000000  # CREATE_NO_WINDOW
+            super().__init__(*args, **kwargs)
+    subprocess.Popen = _NoConsoleWindowPopen
+
 import os
 import atexit
 
