@@ -5,6 +5,9 @@ datas = []
 datas += collect_data_files('pygame')
 datas += [('sampsontransparent2.png', '.')]
 
+# Include UI files
+datas += [('ui', 'ui')]
+
 # Include static-ffmpeg binaries (bundled ffmpeg + ffprobe)
 datas += collect_data_files('static_ffmpeg', include_py_files=False)
 
@@ -12,17 +15,23 @@ datas += collect_data_files('static_ffmpeg', include_py_files=False)
 binaries = []
 binaries += collect_dynamic_libs('static_ffmpeg')
 
+# PyWebView may need additional data files on some platforms
+try:
+    import pywebview
+    datas += collect_data_files('pywebview')
+except ImportError:
+    pass
 
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=binaries,
     datas=datas,
-    hiddenimports=[],
+    hiddenimports=['pywebview', 'pywebview.util', 'webview'],
     hookspath=[],
-    hooksconfig=[],
+    hooksconfig={},
     runtime_hooks=[],
-    excludes=['librosa', 'numpy', 'aubio'],
+    excludes=['librosa', 'numpy', 'aubio', 'tkinter', 'customtkinter'],
     noarchive=False,
     optimize=0,
 )

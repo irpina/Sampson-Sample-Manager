@@ -1,127 +1,160 @@
+"""Deck A browser — pure path logic, returns data for JS rendering."""
+
 from pathlib import Path
-from tkinter import filedialog
 
 import state
-import theme
 import constants
 import preview
 
 
-def navigate_to(path_str):
+def navigate_to(path_str: str) -> dict[str, any]:
+    """Navigate to path and return directory listing for Deck A.
+    
+    Returns:
+        {
+            "current_path": str,
+            "parent_path": str | None,
+            "entries": [
+                {"name": str, "path": str, "type": "up|folder|file", 
+                 "checked": bool, "icon": str, "is_audio": bool}
+            ],
+            "audio_count": int,
+        }
+    """
     p = Path(path_str)
     if not p.is_dir():
-        return
+        return {"error": "Not a directory", "current_path": path_str, "entries": []}
 
-    state.dir_browser.delete(*state.dir_browser.get_children())
-    state._selected_folders.clear()
-    state.nav_path_var.set(str(p))
+    state.set("active_dir", str(p), push=False)
+    
+    # Clear previous selection tracking for this view
+    # (Keep existing selections — they persist across navigation)
+    
+    entries = []
+    audio_count = 0
 
+    # Parent entry (up button)
     parent = p.parent
     if parent != p:
-        state.dir_browser.insert("", "end",
-            values=("", "  \u2191  ..", str(parent), "up"),
-            tags=("up",))
+        entries.append({
+            "name": "..",
+            "path": str(parent),
+            "type": "up",
+            "checked": False,
+            "icon": "↑",
+            "is_audio": False,
+        })
 
+    # Subdirectories
     try:
         subdirs = sorted(d for d in p.iterdir()
                          if d.is_dir() and not d.name.startswith("."))
         for d in subdirs:
-            state._selected_folders.add(str(d))   # default: checked on first load
-            state.dir_browser.insert("", "end",
-                values=("\u2611", f"  \u25b6  {d.name}", str(d), "folder"),
-                tags=("folder",))
+            path_str_d = str(d)
+            # Auto-select all subdirs on every navigation (matching original behavior)
+            state._selected_folders.add(path_str_d)
+            is_checked = True
+            
+            entries.append({
+                "name": d.name,
+                "path": path_str_d,
+                "type": "folder",
+                "checked": is_checked,
+                "icon": "▶",
+                "is_audio": False,
+            })
+        
+        # Leaf directory — no subdirs, include the dir itself
         if not subdirs:
-            # Leaf directory — no subdirs to select, include the dir itself so its
-            # direct audio files are picked up by the preview and Run scans.
-            state._selected_folders.add(path_str)
+            state._selected_folders.add(str(p))
     except PermissionError:
         pass
 
+    # Audio files
     try:
         audio = sorted(f for f in p.iterdir()
                        if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS)
         for f in audio:
-            state.dir_browser.insert("", "end",
-                values=("", f"  \u266a  {f.name}", str(f), "file"),
-                tags=("file",))
+            entries.append({
+                "name": f.name,
+                "path": str(f),
+                "type": "file",
+                "checked": False,
+                "icon": "♪",
+                "is_audio": True,
+            })
+            audio_count += 1
     except PermissionError:
         pass
 
-    state.dir_browser.tag_configure("folder", foreground=theme.ON_CYAN_CONT)
-    state.dir_browser.tag_configure("file",   foreground=theme.FG_VARIANT)
-    state.dir_browser.tag_configure("up",     foreground=theme.FG_DIM)
+    # Update state
+    state._state["dir_entries"] = entries
+    state._state["src_count"] = audio_count
+    state._sync_selected_folders()
+    state.push_keys(["dir_entries", "src_count", "selected_folders", "active_dir"])
+    
+    # Trigger preview refresh
+    preview.refresh()
 
-    state.active_dir_var.set(path_str)
-    # active_dir_var trace fires preview.on_active_dir_changed() automatically
-
-
-def on_browser_click(event):
-    item = state.dir_browser.identify_row(event.y)
-    col  = state.dir_browser.identify_column(event.x)
-    if not item:
-        return
-    itype = state.dir_browser.set(item, "itype")
-    path  = state.dir_browser.set(item, "path")
-
-    if col == "#1":   # checkbox column
-        if itype == "folder":
-            _toggle_folder(item, path)
-    else:             # name column — navigate
-        if itype in ("folder", "up"):
-            navigate_to(path)
+    return {
+        "current_path": str(p),
+        "parent_path": str(parent) if parent != p else None,
+        "entries": entries,
+        "audio_count": audio_count,
+    }
 
 
-def _toggle_folder(item, path):
-    if path in state._selected_folders:
-        state._selected_folders.discard(path)
-        state.dir_browser.set(item, "chk", "\u2610")
-    else:
+def toggle_folder(path: str, checked: bool) -> None:
+    """Toggle folder selection state."""
+    if checked:
         state._selected_folders.add(path)
-        state.dir_browser.set(item, "chk", "\u2611")
-    preview.on_active_dir_changed()
+    else:
+        state._selected_folders.discard(path)
+    
+    # Update the dir_entries checked state
+    for entry in state._state.get("dir_entries", []):
+        if entry.get("path") == path:
+            entry["checked"] = checked
+            break
+    
+    state._sync_selected_folders()
+    state.push_keys(["selected_folders", "dir_entries"])
+    preview.refresh()
 
 
-def select_all_visible():
-    for item in state.dir_browser.get_children():
-        if state.dir_browser.set(item, "itype") == "folder":
-            path = state.dir_browser.set(item, "path")
-            state._selected_folders.add(path)
-            state.dir_browser.set(item, "chk", "\u2611")
-    preview.on_active_dir_changed()
+def select_all_visible() -> None:
+    """Select all visible folders."""
+    for entry in state._state.get("dir_entries", []):
+        if entry.get("type") == "folder":
+            entry["checked"] = True
+            state._selected_folders.add(entry["path"])
+    
+    state._sync_selected_folders()
+    state.push_keys(["selected_folders", "dir_entries"])
+    preview.refresh()
 
 
-def deselect_all_visible():
-    for item in state.dir_browser.get_children():
-        if state.dir_browser.set(item, "itype") == "folder":
-            path = state.dir_browser.set(item, "path")
-            state._selected_folders.discard(path)
-            state.dir_browser.set(item, "chk", "\u2610")
-    preview.on_active_dir_changed()
+def deselect_all_visible() -> None:
+    """Deselect all visible folders."""
+    for entry in state._state.get("dir_entries", []):
+        if entry.get("type") == "folder":
+            entry["checked"] = False
+            state._selected_folders.discard(entry["path"])
+    
+    state._sync_selected_folders()
+    state.push_keys(["selected_folders", "dir_entries"])
+    preview.refresh()
 
 
-def nav_up():
-    current = state.active_dir_var.get()
-    if not current:
-        return
-    p = Path(current)
-    parent = p.parent
-    if parent != p:
-        navigate_to(str(parent))
+def get_selected_folders() -> list[str]:
+    """Return list of selected folder paths."""
+    return list(state._selected_folders)
 
 
-def browse_source():
-    path = filedialog.askdirectory(parent=state.root)
-    if path:
-        state.source_var.set(path)   # trace → on_source_var_changed → navigate_to
-
-
-def browse_dest():
-    path = filedialog.askdirectory(parent=state.root)
-    if path:
-        state.dest_var.set(path)
-
-
-def on_source_var_changed(*_):
-    p = state.source_var.get().strip()
-    if Path(p).is_dir():
-        navigate_to(p)
+def clear_selection() -> None:
+    """Clear all folder selections."""
+    state._selected_folders.clear()
+    for entry in state._state.get("dir_entries", []):
+        entry["checked"] = False
+    state._sync_selected_folders()
+    state.push_keys(["selected_folders", "dir_entries"])

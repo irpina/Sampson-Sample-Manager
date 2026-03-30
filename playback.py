@@ -1,15 +1,17 @@
-"""macOS playback via AppKit.NSSound (replaces pygame.mixer)."""
+"""Audio playback — NSSound on macOS, pygame on Windows/Linux."""
+
+from __future__ import annotations
 
 import sys
+import threading
 from pathlib import Path
+from typing import Any
 
 import state
 
 # ── Backend selection ────────────────────────────────────────────────────────
-# NSSound on macOS (zero extra deps); pygame fallback for Windows/Linux.
-# NOTE: AppKit is imported lazily to avoid race conditions with tkinter init.
 _USE_NSSOUND = sys.platform == "darwin"
-_NSSound = None  # Lazy-loaded on first use
+_NSSound = None
 _current_index = -1
 _ns_sound = None
 
@@ -19,8 +21,10 @@ if not _USE_NSSOUND:
     _mixer.init(frequency=48000, size=-16, channels=2, buffer=512)
 
 
+# ── Internal helpers ─────────────────────────────────────────────────────────
+
 def _ensure_nssound():
-    """Lazy-load NSSound to avoid AppKit initialization race with tkinter."""
+    """Lazy-load NSSound."""
     global _NSSound
     if _NSSound is None and _USE_NSSOUND:
         from AppKit import NSSound
@@ -28,24 +32,27 @@ def _ensure_nssound():
     return _NSSound
 
 
-# ── Internal helpers ─────────────────────────────────────────────────────────
+def _preview_items():
+    """Return list of preview entry dicts from state."""
+    return state.get("preview_entries", [])
 
-def _tree_items():
-    return list(state.preview_tree.get_children())
 
-
-def _load_index(idx):
+def _load_index(idx: int) -> dict[str, Any]:
+    """Load file at index and return entry data."""
     global _current_index
-    items = _tree_items()
+    items = _preview_items()
     if not items or not (0 <= idx < len(items)):
-        return
+        return {"success": False, "error": "Invalid index"}
+    
     _current_index = idx
-    iid = items[idx]
-    state.preview_tree.selection_set(iid)
-    state.preview_tree.see(iid)
-    src = state.preview_tree.set(iid, "srcpath")
-    state._playback_file = Path(src) if src else None
-    _update_transport_state()
+    entry = items[idx]
+    playback_file = Path(entry["srcpath"]) if entry.get("srcpath") else None
+    
+    state._state["playback_file"] = str(playback_file) if playback_file else None
+    state._playback_file = playback_file
+    state.push_keys(["playback_file"])
+    
+    return {"success": True, "file": str(playback_file), "index": idx}
 
 
 def _is_busy() -> bool:
@@ -56,38 +63,91 @@ def _is_busy() -> bool:
         return _mixer.music.get_busy()
 
 
-# ── Public transport API ─────────────────────────────────────────────────────
-
-def play():
-    """Play the currently selected file; if already playing, stop (toggle)."""
-    global _ns_sound
+def _poll_playback():
+    """Poll for playback completion."""
     if _is_busy():
-        stop()
-        return
-    if not state._playback_file or not state._playback_file.is_file():
-        return
+        threading.Timer(0.2, _poll_playback).start()
+    else:
+        state._state["is_playing"] = False
+        state._is_playing = False
+        state.push_keys(["is_playing"])
+
+
+# ── Public API ───────────────────────────────────────────────────────────────
+
+def play_file(srcpath: str) -> dict[str, Any]:
+    """Play a specific file by path. Returns status dict."""
+    global _ns_sound, _current_index
+    
+    # Find index of this file in preview
+    items = _preview_items()
+    for i, entry in enumerate(items):
+        if entry.get("srcpath") == srcpath:
+            _current_index = i
+            break
+    
+    playback_file = Path(srcpath)
+    if not playback_file.is_file():
+        return {"success": False, "error": "File not found"}
+    
+    # Stop any current playback
+    stop()
+    
     try:
         if _USE_NSSOUND:
             NSSound = _ensure_nssound()
             _ns_sound = NSSound.alloc().initWithContentsOfFile_byReference_(
-                str(state._playback_file), True)
+                str(playback_file), True)
             if _ns_sound:
                 _ns_sound.play()
+                state._state["is_playing"] = True
                 state._is_playing = True
-                _update_transport_state()
-                state.root.after(200, _poll_playback)
+                state._state["playback_file"] = str(playback_file)
+                state._playback_file = playback_file
+                state.push_keys(["is_playing", "playback_file"])
+                threading.Timer(0.2, _poll_playback).start()
+                return {"success": True, "file": str(playback_file)}
+            else:
+                return {"success": False, "error": "Failed to load audio"}
         else:
-            _mixer.music.load(str(state._playback_file))
+            _mixer.music.load(str(playback_file))
             _mixer.music.play()
+            state._state["is_playing"] = True
             state._is_playing = True
-            _update_transport_state()
-            state.root.after(200, _poll_playback)
-    except Exception:
+            state._state["playback_file"] = str(playback_file)
+            state._playback_file = playback_file
+            state.push_keys(["is_playing", "playback_file"])
+            threading.Timer(0.2, _poll_playback).start()
+            return {"success": True, "file": str(playback_file)}
+    except Exception as e:
+        state._state["is_playing"] = False
         state._is_playing = False
+        state.push_keys(["is_playing"])
+        return {"success": False, "error": str(e)}
 
 
-def stop():
-    """Stop playback and update transport state."""
+def play() -> dict[str, Any]:
+    """Play the currently selected file; if already playing, stop (toggle)."""
+    if _is_busy():
+        stop()
+        return {"success": True, "action": "stopped"}
+    
+    if _current_index < 0:
+        # Try to play first item
+        items = _preview_items()
+        if items:
+            return play_file(items[0]["srcpath"])
+        return {"success": False, "error": "No files to play"}
+    
+    items = _preview_items()
+    if _current_index < len(items):
+        return play_file(items[_current_index]["srcpath"])
+    
+    return {"success": False, "error": "Invalid selection"}
+
+
+def stop() -> None:
+    """Stop playback."""
     global _ns_sound
     if _USE_NSSOUND:
         if _ns_sound and _ns_sound.isPlaying():
@@ -95,77 +155,57 @@ def stop():
         _ns_sound = None
     else:
         _mixer.music.stop()
+    
+    state._state["is_playing"] = False
     state._is_playing = False
-    _update_transport_state()
+    state.push_keys(["is_playing"])
 
 
-def reset():
-    """Stop playback and reset current index (call on source navigate)."""
+def reset() -> None:
+    """Stop playback and reset current index."""
     global _current_index
     stop()
     _current_index = -1
+    state._playback_file = None
+    state._state["playback_file"] = None
+    state.push_keys(["playback_file"])
 
 
-def next_file():
+def next_file() -> dict[str, Any]:
+    """Play next file in list."""
     stop()
-    items = _tree_items()
+    items = _preview_items()
     if not items:
-        return
-    idx = min(_current_index + 1, len(items) - 1)
-    _load_index(idx)
-    play()
+        return {"success": False, "error": "No files"}
+    
+    idx = min(_current_index + 1, len(items) - 1) if _current_index >= 0 else 0
+    result = _load_index(idx)
+    if result["success"]:
+        return play()
+    return result
 
 
-def prev_file():
+def prev_file() -> dict[str, Any]:
+    """Play previous file in list."""
     stop()
-    idx = max(_current_index - 1, 0)
+    items = _preview_items()
+    if not items:
+        return {"success": False, "error": "No files"}
+    
+    idx = max(_current_index - 1, 0) if _current_index >= 0 else 0
+    result = _load_index(idx)
+    if result["success"]:
+        return play()
+    return result
+
+
+def get_current_index() -> int:
+    """Return current playback index."""
+    return _current_index
+
+
+def set_current_index(idx: int) -> None:
+    """Set current playback index without playing."""
+    global _current_index
+    _current_index = idx
     _load_index(idx)
-    play()
-
-
-def on_tree_select(event):
-    state.preview_tree.focus_set()
-    iid = state.preview_tree.identify_row(event.y)
-    if not iid:
-        return
-    items = _tree_items()
-    if iid in items:
-        stop()
-        _load_index(items.index(iid))
-        play()
-
-
-def on_arrow_key(event):
-    state.preview_tree.focus_set()
-    iid = state.preview_tree.focus()
-    if not iid:
-        return
-    items = _tree_items()
-    if iid in items:
-        stop()
-        _load_index(items.index(iid))
-        play()
-
-
-def _poll_playback():
-    if _is_busy():
-        state.root.after(200, _poll_playback)
-    else:
-        state._is_playing = False
-        _update_transport_state()
-
-
-def _update_transport_state():
-    if state.transport_play_btn:
-        icon = "■" if state._is_playing else "▶"
-        state.transport_play_btn.configure(text=icon)
-    has_file = state._playback_file is not None
-    items = _tree_items()
-    can_prev = has_file and _current_index > 0
-    can_next = has_file and _current_index < len(items) - 1
-    for btn, enabled in [
-        (state.transport_prev_btn, can_prev),
-        (state.transport_next_btn, can_next),
-    ]:
-        if btn:
-            btn.configure(state="normal" if enabled else "disabled")

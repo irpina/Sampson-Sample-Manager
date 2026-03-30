@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAMPSON</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">♪ SAMPSON</div>
+      <div class="subtitle">Universal Audio Sample Manager</div>
+      <button id="theme-toggle" class="btn-icon">☾ Dark</button>
+    </header>
+
+    <!-- Main grid: 3 columns, Deck B spans all rows -->
+    <div class="main-grid">
+      <!-- DECK A -->
+      <div class="deck deck-a">
+        <div class="deck-header">
+          <span class="deck-label">A · SOURCE</span>
+        </div>
+        
+        <div class="deck-content">
+          <!-- Path entry -->
+          <div class="path-row">
+            <input type="text" id="deck-a-path" class="path-input" placeholder="Select source folder..." readonly />
+            <button id="btn-browse-a" class="btn-cyan">Browse</button>
+          </div>
+
+          <!-- Nav bar -->
+          <div class="nav-bar">
+            <button id="btn-up-a" class="btn-nav" title="Go up">↑</button>
+            <span id="breadcrumb-a" class="breadcrumb">/</span>
+          </div>
+
+          <!-- File browser -->
+          <div class="file-browser" id="file-browser-a">
+            <table class="file-table">
+              <thead>
+                <tr>
+                  <th class="col-check"><input type="checkbox" id="check-all" /></th>
+                  <th class="col-name">Name</th>
+                </tr>
+              </thead>
+              <tbody id="file-list-a"></tbody>
+            </table>
+          </div>
+
+          <!-- Footer stats -->
+          <div class="deck-footer">
+            <span id="file-count">0 audio files</span>
+            <div class="select-btns">
+              <button id="btn-check-all" class="btn-small">☑ All</button>
+              <button id="btn-uncheck-all" class="btn-small">☐ All</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER PANEL -->
+      <div class="center-panel">
+        <div class="center-content">
+          <!-- Top options -->
+          <div class="options-row">
+            <label class="check-label"><input type="checkbox" id="opt-move" data-key="move" /> Move files</label>
+            <label class="check-label"><input type="checkbox" id="opt-dry" data-key="dry" checked /> Dry run</label>
+          </div>
+
+          <!-- Custom prefix -->
+          <div class="option-block">
+            <label class="check-label"><input type="checkbox" id="opt-rename" data-key="modify_names" /> Modify file names</label>
+            <div class="indented">
+              <input type="text" id="custom-prefix" class="text-input" data-key="custom_prefix" placeholder="Prefix (max 10 chars)" maxlength="10" disabled />
+            </div>
+          </div>
+
+          <!-- Collapsible sections -->
+          <div class="collapsible" id="section-output">
+            <button class="collapsible-header">
+              <span class="chevron">▶</span> Output structure
+            </button>
+            <div class="collapsible-content">
+              <label class="radio-label"><input type="radio" name="output" value="flat" data-key="struct_mode" checked /> Flat</label>
+              <label class="radio-label"><input type="radio" name="output" value="mirror" data-key="struct_mode" /> Mirror</label>
+              <label class="radio-label"><input type="radio" name="output" value="parent" data-key="struct_mode" /> By parent</label>
+            </div>
+          </div>
+
+          <div class="collapsible" id="section-device">
+            <button class="collapsible-header">
+              <span class="chevron">▶</span> Target device
+            </button>
+            <div class="collapsible-content">
+              <select id="target-device" class="select-input" data-key="profile">
+                <option value="Generic">Generic</option>
+                <option value="M8">M8</option>
+                <option value="MPC One">MPC One</option>
+                <option value="SP-404mkII">SP-404mkII</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="collapsible" id="section-audio">
+            <button class="collapsible-header">
+              <span class="chevron">▶</span> Audio conversion
+            </button>
+            <div class="collapsible-content">
+              <label class="check-label"><input type="checkbox" id="opt-convert" data-key="convert_enabled" /> Convert files</label>
+              <div class="conversion-grid">
+                <div class="field">
+                  <label>Format</label>
+                  <select id="conv-format" data-key="convert_format" disabled>
+                    <option value="wav">WAV</option>
+                    <option value="aiff">AIFF</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Sample rate</label>
+                  <select id="conv-sr" data-key="convert_sample_rate" disabled>
+                    <option value="keep">Keep</option>
+                    <option value="44100">44.1 kHz</option>
+                    <option value="48000">48 kHz</option>
+                    <option value="96000">96 kHz</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Bit depth</label>
+                  <select id="conv-bd" data-key="convert_bit_depth" disabled>
+                    <option value="keep">Keep</option>
+                    <option value="16">16-bit</option>
+                    <option value="24">24-bit</option>
+                    <option value="32">32-bit</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Channels</label>
+                  <select id="conv-ch" data-key="convert_channels" disabled>
+                    <option value="keep">Keep</option>
+                    <option value="mono">Mono</option>
+                    <option value="stereo">Stereo</option>
+                  </select>
+                </div>
+              </div>
+              <label class="check-label"><input type="checkbox" id="opt-normalize" data-key="convert_normalize" disabled /> Normalize</label>
+              <label class="check-label"><input type="checkbox" id="opt-follow-device" data-key="convert_follow_profile" checked disabled /> Follow device profile</label>
+            </div>
+          </div>
+
+          <div class="collapsible" id="section-bpm">
+            <button class="collapsible-header">
+              <span class="chevron">▶</span> BPM detection
+            </button>
+            <div class="collapsible-content">
+              <label class="check-label"><input type="checkbox" id="opt-detect-bpm" data-key="bpm_enabled" /> Detect BPM</label>
+              <label class="check-label"><input type="checkbox" id="opt-append-bpm" data-key="bpm_append" disabled /> Append to filename</label>
+              <label class="check-label"><input type="checkbox" id="opt-fresh-bpm" data-key="bpm_fresh" disabled /> Re-scan all (ignore cache)</label>
+            </div>
+          </div>
+
+          <div class="collapsible" id="section-key">
+            <button class="collapsible-header">
+              <span class="chevron">▶</span> Key detection
+            </button>
+            <div class="collapsible-content">
+              <label class="check-label"><input type="checkbox" id="opt-detect-key" data-key="key_enabled" /> Detect key</label>
+              <label class="check-label"><input type="checkbox" id="opt-append-key" data-key="key_append" disabled /> Append to filename</label>
+              <label class="check-label"><input type="checkbox" id="opt-fresh-key" data-key="key_fresh" disabled /> Re-scan all (ignore cache)</label>
+            </div>
+          </div>
+
+          <!-- RUN button -->
+          <button id="btn-run" class="btn-run">▶ RUN</button>
+        </div>
+      </div>
+
+      <!-- STATUS BAR (spans under A and Center) -->
+      <div class="status-bar">
+        <div class="progress-container">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <span id="status-dot" class="status-dot idle">●</span>
+        <span id="status-text">Ready</span>
+        <span class="version">v0.8.0</span>
+      </div>
+
+      <!-- LOG PANEL (spans under A and Center) -->
+      <div class="log-panel">
+        <div id="log-output" class="log-output"></div>
+      </div>
+
+      <!-- DECK B -->
+      <div class="deck deck-b">
+        <div class="deck-header">
+          <span class="deck-label">B · DESTINATION</span>
+        </div>
+        
+        <div class="deck-content">
+          <!-- Path entry -->
+          <div class="path-row">
+            <input type="text" id="deck-b-path" class="path-input" placeholder="Select destination folder..." readonly />
+            <button id="btn-browse-b" class="btn-amber">Browse</button>
+          </div>
+
+          <!-- Preview count -->
+          <div class="preview-label" id="preview-label">Navigate source to see preview</div>
+
+          <!-- Filter bar -->
+          <div class="filter-row">
+            <input type="text" id="filter-preview" class="filter-input" placeholder="Filter… BPM:120 Note:C" />
+          </div>
+
+          <!-- Preview table -->
+          <div class="preview-browser">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th>Original name</th>
+                  <th>Will become</th>
+                  <th>BPM</th>
+                  <th>Note</th>
+                  <th>Length</th>
+                </tr>
+              </thead>
+              <tbody id="preview-list"></tbody>
+            </table>
+          </div>
+
+          <!-- Playback controls -->
+          <div class="playback-controls">
+            <button id="btn-prev" class="btn-transport" disabled>⏮</button>
+            <button id="btn-play" class="btn-play" disabled>▶</button>
+            <button id="btn-stop" class="btn-stop" disabled>⏹</button>
+            <button id="btn-next" class="btn-transport" disabled>⏭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
