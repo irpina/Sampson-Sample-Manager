@@ -80,9 +80,33 @@ python main.py
 Requires Python 3.10+. Core dependencies:
 - `pygame-ce` — audio playback (Windows/Linux)
 - `AppKit` (NSSound) — audio playback (macOS native)
-- `customtkinter` — modern UI widgets
+- `pywebview` — modern web-based UI
 - `pydub` — audio conversion
 - `static-ffmpeg` — bundled ffmpeg binary (no separate install needed)
+
+### Linux prerequisites
+
+On Linux, pywebview requires GTK and WebKit2:
+
+```bash
+# Debian/Ubuntu
+sudo apt install python3-gi gir1.2-webkit2-4.0
+
+# Fedora
+sudo dnf install pygobject3 webkit2gtk3
+
+# Arch
+sudo pacman -S python-gobject webkit2gtk
+```
+
+### Building a binary
+
+```bash
+pip install pyinstaller
+pyinstaller SAMPSON.spec
+```
+
+The binary will be in `dist/SAMPSON` (macOS/Linux) or `dist/SAMPSON.exe` (Windows).
 
 ---
 
