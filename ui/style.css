@@ -541,3 +541,69 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--border);
 }
+/* Preview table column widths */
+.preview-table th { cursor: default; }
+.preview-table th:hover { background: var(--bg-surface-2); }
+
+/* Selected row highlighting */
+#preview-list tr.selected {
+  background: rgba(244, 162, 97, 0.2) !important;
+}
+
+#preview-list tr.selected td {
+  color: var(--amber);
+  font-weight: 500;
+}
+
+/* Editable cells (BPM/Key) */
+.preview-table td.editable {
+  cursor: pointer;
+  position: relative;
+}
+
+.preview-table td.editable:hover {
+  background: rgba(0, 180, 216, 0.1);
+}
+
+.preview-table td.editable:hover::after {
+  content: "✎";
+  position: absolute;
+  right: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* Inline edit input */
+.inline-edit {
+  background: var(--bg-surface);
+  border: 1px solid var(--cyan);
+  color: var(--text);
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius);
+  font-size: inherit;
+  font-family: inherit;
+  width: 100%;
+  min-width: 60px;
+  box-sizing: border-box;
+}
+
+.inline-edit:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.3);
+}
+
+/* RUN button disabled state */
+.btn-run:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Transport buttons disabled state */
+.btn-transport:disabled,
+.btn-play:disabled,
+.btn-stop:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

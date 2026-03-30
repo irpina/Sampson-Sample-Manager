@@ -6,26 +6,20 @@ const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 // Global app state (mirrors Python state)
 const APP_STATE = {};
 let selectedPreviewIndex = -1;
-let isPlaying = false;
+let isEditing = false;  // Prevent keyboard nav while editing
 
 // ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
 async function init() {
-  // Setup collapsibles
   setupCollapsibles();
-  
-  // Setup event listeners
   setupEventListeners();
+  setupPreviewTable();
   
-  // Get initial state from Python
   const initialState = await pywebview.api.get_state();
   Object.assign(APP_STATE, initialState);
   
-  // Render initial UI
   renderAll();
-  
-  // Log startup
   log("SAMPSON v0.8.0 ready", "info");
 }
 
@@ -38,7 +32,7 @@ window._onStateUpdate = function(patch) {
 };
 
 // ---------------------------------------------------------------------------
-// Rendering
+// Rendering (selective updates)
 // ---------------------------------------------------------------------------
 function renderAll() {
   renderDeckA();
@@ -61,7 +55,7 @@ function renderPatch(patch) {
                        'key_enabled', 'key_append', 'key_fresh', 'section_open'].includes(k))) {
     renderCenterPanel();
   }
-  if (keys.includes('status') || keys.includes('progress')) {
+  if (keys.includes('status') || keys.includes('progress') || keys.includes('is_running')) {
     renderStatus();
   }
   if (keys.includes('log_lines')) {
@@ -76,13 +70,14 @@ function renderPatch(patch) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Deck A (Source browser)
+// ---------------------------------------------------------------------------
 function renderDeckA() {
-  // Path display
   $('#deck-a-path').value = APP_STATE.source || '';
   $('#breadcrumb-a').textContent = APP_STATE.active_dir || '/';
   $('#file-count').textContent = `${APP_STATE.src_count || 0} audio files`;
   
-  // File list
   const tbody = $('#file-list-a');
   tbody.innerHTML = '';
   
@@ -102,7 +97,6 @@ function renderDeckA() {
       <td class="col-name">${entry.icon} ${escapeHtml(entry.name)}</td>
     `;
     
-    // Checkbox change
     const checkbox = tr.querySelector('input[type="checkbox"]');
     if (checkbox) {
       checkbox.addEventListener('change', (e) => {
@@ -110,7 +104,6 @@ function renderDeckA() {
       });
     }
     
-    // Row click to navigate
     tr.addEventListener('click', (e) => {
       if (e.target.tagName !== 'INPUT') {
         if (entry.type === 'folder' || entry.type === 'up') {
@@ -123,19 +116,19 @@ function renderDeckA() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Center Panel (Options)
+// ---------------------------------------------------------------------------
 function renderCenterPanel() {
-  // Options
   $('#opt-move').checked = APP_STATE.move || false;
   $('#opt-dry').checked = APP_STATE.dry !== false;
   $('#opt-rename').checked = APP_STATE.modify_names || false;
   $('#custom-prefix').value = APP_STATE.custom_prefix || '';
   $('#custom-prefix').disabled = !APP_STATE.modify_names;
   
-  // Output structure radio
   const structMode = APP_STATE.struct_mode || 'flat';
   $$(`input[name="output"][value="${structMode}"]`).forEach(el => el.checked = true);
   
-  // Target device
   $('#target-device').value = APP_STATE.profile || 'Generic';
   
   // Audio conversion
@@ -147,7 +140,6 @@ function renderCenterPanel() {
   $('#opt-normalize').checked = APP_STATE.convert_normalize || false;
   $('#opt-follow-device').checked = APP_STATE.convert_follow_profile !== false;
   
-  // Disable conversion controls if not enabled
   const convEnabled = APP_STATE.convert_enabled || false;
   ['conv-format', 'conv-sr', 'conv-bd', 'conv-ch', 'opt-normalize', 'opt-follow-device'].forEach(id => {
     $(`#${id}`).disabled = !convEnabled;
@@ -184,44 +176,64 @@ function renderCenterPanel() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Status Bar
+// ---------------------------------------------------------------------------
 function renderStatus() {
   $('#status-text').textContent = APP_STATE.status || 'Ready';
   $('#progress-bar').style.width = `${APP_STATE.progress || 0}%`;
   
   const dot = $('#status-dot');
   dot.className = 'status-dot';
-  if (APP_STATE.progress > 0 && APP_STATE.progress < 100) {
+  if (APP_STATE.is_running) {
+    dot.classList.add('active');
+  } else if (APP_STATE.progress > 0 && APP_STATE.progress < 100) {
     dot.classList.add('active');
   } else if (APP_STATE.status?.toLowerCase().includes('error')) {
     dot.classList.add('error');
   } else {
     dot.classList.add('idle');
   }
+  
+  // RUN button state
+  const runBtn = $('#btn-run');
+  if (runBtn) {
+    runBtn.disabled = APP_STATE.is_running;
+    runBtn.textContent = APP_STATE.is_running ? 'Running…' : '▶ RUN';
+  }
 }
 
+// ---------------------------------------------------------------------------
+// Log Panel
+// ---------------------------------------------------------------------------
 function renderLog() {
   const output = $('#log-output');
   const lines = APP_STATE.log_lines || [];
   
-  output.innerHTML = lines.map(line => {
+  // Only update if changed (simple check)
+  const currentHtml = output.innerHTML;
+  const newHtml = lines.map(line => {
     const time = new Date(line.time).toLocaleTimeString();
     return `<div class="log-line ${line.type}">[${time}] ${escapeHtml(line.message)}</div>`;
   }).join('');
   
-  output.scrollTop = output.scrollHeight;
+  if (currentHtml !== newHtml) {
+    output.innerHTML = newHtml;
+    output.scrollTop = output.scrollHeight;
+  }
 }
 
+// ---------------------------------------------------------------------------
+// Deck B (Preview)
+// ---------------------------------------------------------------------------
 function renderDeckB() {
-  // Path
   $('#deck-b-path').value = APP_STATE.dest || '';
   
-  // Preview count
   const count = APP_STATE.preview_count || 0;
   $('#preview-label').textContent = count > 0 
     ? `${count} files in preview` 
     : 'Navigate source to see preview';
   
-  // Preview table
   const tbody = $('#preview-list');
   tbody.innerHTML = '';
   
@@ -233,19 +245,107 @@ function renderDeckB() {
     tr.dataset.srcpath = entry.srcpath;
     
     tr.innerHTML = `
-      <td>${escapeHtml(entry.src_name)}</td>
-      <td class="will-become">${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
-      <td>${entry.bpm || '—'}</td>
-      <td>${entry.key || '—'}</td>
-      <td>${entry.length || '—'}</td>
+      <td class="col-src">${escapeHtml(entry.src_name)}</td>
+      <td class="col-dest">${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
+      <td class="col-bpm editable" data-field="bpm">${entry.bpm || '—'}</td>
+      <td class="col-key editable" data-field="key">${entry.key || '—'}</td>
+      <td class="col-length">${entry.length || '—'}</td>
     `;
     
-    tr.addEventListener('click', () => selectPreview(index));
+    // Row click to select & play
+    tr.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('editable') && !isEditing) {
+        selectPreview(index);
+      }
+    });
+    
+    // Double-click BPM/Key to edit
+    const bpmCell = tr.querySelector('.col-bpm');
+    const keyCell = tr.querySelector('.col-key');
+    
+    if (bpmCell && bpmCell.textContent !== '—') {
+      bpmCell.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        startInlineEdit(tr, entry, 'bpm');
+      });
+    }
+    
+    if (keyCell && keyCell.textContent !== '—') {
+      keyCell.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        startInlineEdit(tr, entry, 'key');
+      });
+    }
     
     tbody.appendChild(tr);
   });
   
+  highlightPreviewRow();
   updateTransportButtons();
+}
+
+function setupPreviewTable() {
+  // Column header click handlers for sorting
+  const headers = $$('.preview-table th');
+  const sortMap = ['src_name', 'dest_name', 'bpm', 'key', 'length'];
+  
+  headers.forEach((th, index) => {
+    const sortKey = sortMap[index];
+    if (sortKey && (sortKey === 'bpm' || sortKey === 'key' || sortKey === 'length')) {
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        pywebview.api.sort_preview(sortKey);
+      });
+    }
+  });
+}
+
+async function startInlineEdit(row, entry, field) {
+  if (isEditing) return;
+  isEditing = true;
+  
+  const cell = row.querySelector(`.col-${field}`);
+  const currentValue = entry[field] || '';
+  const isBpm = field === 'bpm';
+  
+  // Replace cell content with input
+  cell.innerHTML = `<input type="text" class="inline-edit" value="${currentValue.replace('???', '')}" />`;
+  const input = cell.querySelector('input');
+  input.focus();
+  input.select();
+  
+  function save() {
+    const newValue = input.value.trim();
+    if (newValue && newValue !== currentValue) {
+      if (isBpm) {
+        const bpm = parseFloat(newValue);
+        if (!isNaN(bpm) && bpm >= 30 && bpm <= 300) {
+          pywebview.api.set_file_bpm(entry.srcpath, bpm);
+        }
+      } else {
+        pywebview.api.set_file_key(entry.srcpath, newValue);
+      }
+    }
+    isEditing = false;
+    // Re-render will restore the cell
+  }
+  
+  function cancel() {
+    isEditing = false;
+    // Re-render to restore
+    renderDeckB();
+  }
+  
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      input.blur();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancel();
+    }
+  });
 }
 
 function updateTransportButtons() {
@@ -253,10 +353,10 @@ function updateTransportButtons() {
   const hasEntries = entries.length > 0;
   
   $('#btn-play').textContent = APP_STATE.is_playing ? '■' : '▶';
-  $('#btn-play').disabled = !hasEntries;
+  $('#btn-play').disabled = !hasEntries || APP_STATE.is_running;
   $('#btn-stop').disabled = !APP_STATE.is_playing;
-  $('#btn-prev').disabled = !hasEntries || selectedPreviewIndex <= 0;
-  $('#btn-next').disabled = !hasEntries || selectedPreviewIndex >= entries.length - 1;
+  $('#btn-prev').disabled = !hasEntries || selectedPreviewIndex <= 0 || APP_STATE.is_running;
+  $('#btn-next').disabled = !hasEntries || selectedPreviewIndex >= entries.length - 1 || APP_STATE.is_running;
 }
 
 // ---------------------------------------------------------------------------
@@ -281,7 +381,7 @@ function setupEventListeners() {
     }
   });
   
-  // Options — bind all data-key elements
+  // Options
   $$('[data-key]').forEach(el => {
     const key = el.dataset.key;
     
@@ -340,7 +440,6 @@ function setupCollapsibles() {
       const collapsible = header.parentElement;
       collapsible.classList.toggle('expanded');
       
-      // Update state
       const sectionMap = {
         'section-output': 'struct',
         'section-device': 'device',
@@ -365,7 +464,6 @@ async function selectPreview(index) {
   selectedPreviewIndex = index;
   highlightPreviewRow();
   
-  // Play the file
   const entry = entries[index];
   await pywebview.api.preview_play(entry.srcpath);
 }
@@ -393,6 +491,8 @@ async function togglePlay() {
 
 // Keyboard navigation
 document.addEventListener('keydown', (e) => {
+  if (isEditing) return;  // Disable while editing
+  
   const entries = APP_STATE.preview_entries || [];
   if (entries.length === 0) return;
   
@@ -422,7 +522,6 @@ function escapeHtml(text) {
 }
 
 function log(message, type = 'info') {
-  // Local logging (also goes to Python)
   console.log(`[${type}] ${message}`);
 }
 

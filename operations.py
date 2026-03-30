@@ -96,6 +96,8 @@ def _compute_output(f: Path, source_root: Path, dest: Path,
 
 def run_tool():
     """Main entry point — validates inputs and starts worker thread."""
+    state.set("is_running", True)
+    
     source_str = state.get("active_dir", "").strip()
     dest_str = state.get("dest", "").strip()
     
@@ -116,6 +118,7 @@ def run_tool():
     if not selected_folders:
         state.add_log("Warning: Please check at least one folder in Deck A", "warn")
         state.set_status("Warning: No folders selected", 0)
+        state.set("is_running", False)
         return
 
     # Gather options
@@ -141,6 +144,7 @@ def run_tool():
                 "error"
             )
             state.set_status("Error: FFmpeg not found", 0)
+            state.set("is_running", False)
             return
         
         convert_options = {
@@ -273,6 +277,7 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     
     state.add_log("Done.", "success")
     state.set_status(f"Complete — {total} file{s} processed.", 100)
+    state.set("is_running", False)
     
     # Refresh preview if BPM was detected
     if bpm_enabled and state._refresh_preview_cb:
