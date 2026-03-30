@@ -1,46 +1,25 @@
+"""SAMPSON v0.8.0 — PyWebView entry point."""
+
+from __future__ import annotations
+
+import os
 import sys
+import atexit
 
 # Windows: Patch subprocess.Popen globally BEFORE any imports to prevent
 # console window flashing in PyInstaller-built GUI apps.
-# This must run before pydub is imported anywhere.
 if sys.platform == "win32":
     import subprocess
     _OrigPopen = subprocess.Popen
     class _NoConsoleWindowPopen(_OrigPopen):
         def __init__(self, *args, **kwargs):
-            kwargs['creationflags'] = kwargs.get('creationflags', 0) | 0x08000000  # CREATE_NO_WINDOW
+            kwargs['creationflags'] = kwargs.get('creationflags', 0) | 0x08000000
             super().__init__(*args, **kwargs)
     subprocess.Popen = _NoConsoleWindowPopen
 
-import os
-import atexit
-
-# Fix for Tcl/Tk 9.0 console crash in bundled app
-os.environ['TK_SILENCE_DEPRECATION'] = '1'
-os.environ['TCL_NO_STACK_TRACE'] = '1'
-
-# macOS: Prevent "application is not open anymore" errors
+# macOS: Prevent bytecode caching issues
 if sys.platform == "darwin":
     os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
-
-# macOS: Force-load Tk dylib BEFORE any Cocoa/AppKit imports to ensure
-# Tk's NSApplication category methods (macOSVersion, etc.) are registered.
-# This prevents "unrecognized selector" crashes when Tk later tries to use them.
-if sys.platform == "darwin":
-    try:
-        import ctypes
-        import glob
-        # sys._MEIPASS is set by PyInstaller to the app's bundle Resources path
-        meipass = getattr(sys, '_MEIPASS', None)
-        if meipass:
-            for lib_pattern in ['libtcl9tk*.dylib', 'libtk*.dylib']:
-                for lib_path in glob.glob(os.path.join(meipass, lib_pattern)):
-                    try:
-                        ctypes.CDLL(lib_path)
-                    except Exception:
-                        pass
-    except Exception:
-        pass
 
 # Single instance check (macOS)
 _single_instance_lock = None
@@ -81,58 +60,67 @@ if sys.platform == "darwin" and not _ensure_single_instance():
 
 atexit.register(_release_lock)
 
-import tkinter as tk
-import customtkinter as ctk
+# ---------------------------------------------------------------------------
+# PyWebView imports
+# ---------------------------------------------------------------------------
+import webview
 
 import state
-import theme
-from dpi import _enable_dpi_awareness, _compute_dpi_scale, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT
-from builders import build_app
+from api import SampsonAPI
 
-if __name__ == "__main__":
-    _enable_dpi_awareness()
 
-    ctk.set_appearance_mode("dark")
-    ctk.set_default_color_theme("blue")
+# ---------------------------------------------------------------------------
+# Main entry
+# ---------------------------------------------------------------------------
 
-    state.root = ctk.CTk()
-
-    # Compute DPI scale for _px() calls (used for non-CTK widget dimensions).
-    # CTk handles its own internal scaling — do not call tk.call('tk', 'scaling', …).
-    state._dpi_scale = _compute_dpi_scale()
-
-    state.root.title("SAMPSON")
-
-    from dpi import _px, _usable_screen_size, MIN_ASPECT_RATIO
-    win_w, win_h = _usable_screen_size(state.root, _px(1100), _px(780))
-    state.root.geometry(f"{win_w}x{win_h}")
-    state.root.minsize(_px(MIN_WINDOW_WIDTH), _px(MIN_WINDOW_HEIGHT))
-    state.root.configure(fg_color=theme.BG_ROOT)
-    theme.setup_styles()
-    build_app()
-
-    # Enforce aspect ratio on macOS to prevent extreme narrow/tall windows
+def main():
+    """Create and run the PyWebView application."""
+    
+    # Initialize state
+    api = SampsonAPI()
+    
+    # Determine UI path (works both in dev and PyInstaller bundle)
+    if getattr(sys, 'frozen', False):
+        # Running in PyInstaller bundle
+        bundle_dir = sys._MEIPASS
+        ui_path = os.path.join(bundle_dir, 'ui', 'index.html')
+    else:
+        # Running in dev
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        ui_path = os.path.join(script_dir, 'ui', 'index.html')
+    
+    # Create window
+    window = webview.create_window(
+        title="SAMPSON",
+        url=ui_path,
+        js_api=api,
+        width=1400,
+        height=900,
+        min_size=(1100, 700),
+        text_select=False,
+    )
+    
+    # Store window reference for state sync
+    state.set_window(window)
+    
+    # macOS: Activate app after window creation
     if sys.platform == "darwin":
-        def _enforce_aspect(event):
-            if event.widget is not state.root:
-                return
-            w, h = event.width, event.height
-            if w <= 1 or h <= 1:
-                return
-            if (w / h) < MIN_ASPECT_RATIO:
-                new_h = int(w / MIN_ASPECT_RATIO)
-                state.root.geometry(f"{w}x{new_h}")
-        state.root.bind("<Configure>", _enforce_aspect)
-
-    # Defer activation until after the event loop is running to prevent
-    # conflicts with LaunchServices' own activation sequence on double-click
-    if sys.platform == "darwin":
-        def _activate_app():
+        def activate():
             try:
-                from AppKit import NSApp
-                NSApp.activateIgnoringOtherApps_(True)
+                import Cocoa
+                Cocoa.NSApp.activateIgnoringOtherApps_(True)
             except Exception:
                 pass
-        state.root.after(50, _activate_app)
+        import threading
+        threading.Timer(0.5, activate).start()
+    
+    # Start webview
+    webview.start(
+        debug=False,  # Set to True for dev
+        http_server=False,
+        gui='qt' if sys.platform != 'darwin' else 'cocoa',
+    )
 
-    state.root.mainloop()
+
+if __name__ == "__main__":
+    main()

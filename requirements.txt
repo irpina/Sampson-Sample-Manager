@@ -1,11 +1,8 @@
-# Core dependencies for SAMPSON
+# Core dependencies for SAMPSON v0.8.0
 pygame-ce>=2.5.0
-customtkinter>=5.2.0
 pydub>=0.25.1
-static-ffmpeg>=2.5.0  # Bundled ffmpeg + ffprobe for audio conversion
-# librosa/numpy removed — BPM detection now uses pydub (cross-platform, zero new deps)
-# librosa>=0.10.0
-# numpy>=1.20.0
+static-ffmpeg>=2.5.0
+pywebview[qt]==5.4
 
 # Python 3.13+ compatibility (audioop was removed from stdlib)
 audioop-lts>=0.2.0; python_version >= "3.13"
