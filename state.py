@@ -240,7 +240,8 @@ transport_play_btn = None
 transport_next_btn = None
 
 # Internal state (not synced to JS)
-_selected_folders: set = set()
+import builtins
+_selected_folders: set = builtins.set()
 _preview_after = None
 _is_dark = True
 _dpi_scale = 1.0
