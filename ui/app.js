@@ -78,6 +78,18 @@ function renderDeckA() {
   $('#breadcrumb-a').textContent = APP_STATE.active_dir || '/';
   $('#file-count').textContent = `${APP_STATE.src_count || 0} audio files`;
   
+  // Update header checkbox state
+  const folders = (APP_STATE.dir_entries || []).filter(e => e.type === 'folder');
+  const checkedCount = folders.filter(e => e.checked).length;
+  const headerCb = $('#check-all');
+  if (headerCb && folders.length > 0) {
+    headerCb.checked = checkedCount === folders.length;
+    headerCb.indeterminate = checkedCount > 0 && checkedCount < folders.length;
+  } else if (headerCb) {
+    headerCb.checked = false;
+    headerCb.indeterminate = false;
+  }
+  
   const tbody = $('#file-list-a');
   tbody.innerHTML = '';
   
@@ -238,6 +250,15 @@ function renderDeckB() {
   tbody.innerHTML = '';
   
   const entries = APP_STATE.preview_entries || [];
+  
+  // Reselect by srcpath after sort/filter
+  const playingPath = APP_STATE.playback_file;
+  if (playingPath && selectedPreviewIndex >= 0) {
+    const newIndex = entries.findIndex(e => e.srcpath === playingPath);
+    if (newIndex >= 0) {
+      selectedPreviewIndex = newIndex;
+    }
+  }
   
   entries.forEach((entry, index) => {
     const tr = document.createElement('tr');
@@ -470,7 +491,11 @@ async function selectPreview(index) {
 
 function highlightPreviewRow() {
   $$('#preview-list tr').forEach((tr, i) => {
-    tr.classList.toggle('selected', i === selectedPreviewIndex);
+    const isSelected = i === selectedPreviewIndex;
+    tr.classList.toggle('selected', isSelected);
+    if (isSelected) {
+      tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
   });
 }
 
