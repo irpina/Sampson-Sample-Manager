@@ -1,825 +1,160 @@
 # AGENTS.md — SAMPSON Project Guide
 
-> This file provides guidance to AI coding agents working on the SAMPSON codebase.  
+> Guidance for AI agents working on the SAMPSON codebase.
 > SAMPSON is a Universal Audio Sample Manager — a cross-platform desktop app for organizing audio sample libraries for hardware samplers.
 
 ---
 
-## Project Overview
-
-SAMPSON is a Python desktop application built with tkinter and customtkinter. It provides a dual-deck interface (Deck A → Deck B) for browsing audio sample libraries, previewing files with audio playback, and copying/moving files with automatic renaming based on parent folder names.
-
-**Key Features:**
-- Audio playback (click to play, transport controls ◀ ▶ ▶▶)
-- Hardware profiles with path-length enforcement and auto-conversion presets:
-  - **Generic**: No limits or conversion
-  - **M8**: 127-character SD path limit, auto-convert to 44.1kHz/16-bit WAV
-  - **MPC One**: 255-character limit
-  - **SP-404mkII**: 255-character limit
-  - **Elektron Digitakt**: Auto-convert to 48kHz/16-bit mono WAV
-  - **Elektron Analog Rytm**: Auto-convert to 48kHz/16-bit WAV
-  - **Elektron Syntakt**: Auto-convert to 48kHz/16-bit WAV
-- Audio conversion: WAV/AIFF output, configurable sample rate (44.1k/48k/96k), bit depth (16/24/32-bit), mono/stereo
-- BPM detection with cache and manual override (double-click BPM column)
-- Musical key detection with cache and manual override (double-click Key column)
-- Folder structure modes: Flat, Mirror, One folder per parent
-- Live rename preview with hover tooltips
-- Smart search/filter with structured query syntax (BPM ranges, note filters, duration bounds)
-- Column sorting (BPM, Note, Length — click headers to sort ascending/descending)
-- Dark/Light theme toggle (preserves session)
-- HiDPI/4K support on Windows
-
-**Supported Audio Formats:**
-- **Input:** `.wav`, `.aiff`, `.aif`, `.flac`, `.mp3`, `.ogg`
-- **Output:** `.wav`, `.aif`
-
----
-
-## Technology Stack
-
-| Component | Technology | Version/Notes |
-|-----------|-----------|---------------|
-| Language | Python | 3.10+ |
-| UI Framework | customtkinter | 5.2.0+ — modern rounded widgets |
-| Standard UI | tkinter / ttk | Treeview, Progressbar, Text |
-| Audio Playback | pygame-ce (Windows/Linux), NSSound (macOS) | 2.5.0+ — SDL2-based audio playback |
-| Audio Conversion | pydub | 0.25.1+ — with bundled ffmpeg |
-| FFmpeg Bundling | static-ffmpeg | 2.5.0+ — bundled ffmpeg + ffprobe binaries |
-| Packaging | PyInstaller | Single-file executable (Windows), .app bundle (macOS) |
-| Platforms | Windows, Linux, macOS | Cross-platform support |
-
-**Python 3.13+ Compatibility:**
-- `audioop-lts>=0.2.0` — provides `audioop` module (removed from Python 3.13 stdlib)
-
-**macOS-Specific:**
-- `pyobjc-framework-Cocoa>=10.0` — Required only on Darwin platform for NSSound and NSScreen
-
----
-
-## Project Structure
-
-All source files are in the project root (flat structure):
-
-```
-SAMPSON/
-├── main.py                    # Entry point — DPI setup, creates root window, starts app
-├── state.py                   # All shared mutable globals (widgets, vars, flags)
-├── constants.py               # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
-├── conversion.py              # Audio conversion engine (pydub + ffmpeg)
-├── bpm.py                     # BPM detection and cache management
-├── key.py                     # Musical key detection (root pitch class) and cache
-├── dpi.py                     # Windows DPI awareness and _px() scaling helper
-├── theme.py                   # Colour constants, _apply_theme_colors(), setup_styles()
-├── log_panel.py               # Operation log helpers (color-coded output)
-├── operations.py              # File copy/move/conversion worker
-├── browser.py                 # Deck A file browser — navigation and browse dialogs
-├── preview.py                 # Deck B rename preview, hover tooltip, background scan, filter, sort
-├── playback.py                # Audio playback via pygame-ce/NSSound, transport controls
-├── builders.py                # All build_* UI functions, toggle_theme(), build_app()
-├── pyi_rth_tk_silence.py      # Runtime hook for Tcl/Tk crash fix
-├── requirements.txt           # Python dependencies
-├── SAMPSON.spec               # PyInstaller configuration for Windows
-├── SAMPSON_mac.spec           # PyInstaller configuration for macOS .app bundle
-├── build_macos.sh             # macOS build script with code signing
-├── notarize.sh                # Standalone notarization script
-├── entitlements.plist         # macOS code signing entitlements
-├── sampsontransparent2.png    # Application logo (dark background)
-├── sampsontransparentwhite.png # Application logo (light background)
-├── README.md                  # User-facing documentation
-├── BUGS.md                    # Known issues tracker
-├── TASKS.md                   # Development task history
-├── RELEASE_NOTES_v*.md        # Release notes
-└── .gitignore                 # Excludes build outputs, etc.
-```
-
-**Key Configuration Files:**
-| File | Purpose | Format |
-|------|---------|--------|
-| `requirements.txt` | Python dependencies | pip requirements |
-| `SAMPSON.spec` | PyInstaller config (Windows/Linux) | Python script |
-| `SAMPSON_mac.spec` | PyInstaller config (macOS) | Python script |
-| `build_macos.sh` | macOS build automation | Bash script |
-| `notarize.sh` | Standalone notarization | Bash script |
-| `entitlements.plist` | macOS security entitlements | XML plist |
-| `.gitignore` | Git exclusions | Git ignore format |
-
----
-
-## Module Dependency Order
-
-**Critical:** No circular imports. Import order matters.
-
-```
-constants.py   (no imports)
-state.py       (no app imports)
-conversion.py  → state
-bpm.py         → conversion
-key.py         → conversion
-dpi.py         → state
-theme.py       → state, dpi
-log_panel.py   → state, theme
-operations.py  → state, theme, constants, log_panel, conversion, bpm, key
-browser.py     → state, theme, constants, preview
-preview.py     → state, theme, constants, dpi, operations, bpm, key, conversion
-playback.py    → state
-builders.py    → state, theme, dpi, browser, preview, playback, log_panel, operations
-main.py        → state, theme, dpi, builders
-```
-
----
-
-## State Management Pattern
-
-All shared mutable state lives in `state.py`. **Always** import as:
-
-```python
-import state      # ✅ CORRECT — attribute mutation visible everywhere
-# state.root, state.source_var, etc.
-```
-
-**Never** do this:
-
-```python
-from state import root   # ❌ WRONG — mutations won't propagate
-```
-
-This is the standard Python pattern for shared mutable globals across a multi-file application.
-
----
-
-## Build Commands
-
-### Run from Source
+## Quick Start
 
 ```bash
 pip install -r requirements.txt
 python main.py
 ```
 
-### Package for Windows
+No test suite. Testing is manual — run the app and exercise the feature.
 
-```bash
-pyinstaller SAMPSON.spec --clean
-# Output: dist/SAMPSON.exe
+---
+
+## Project Overview
+
+SAMPSON uses **PyWebView**: Python backend + HTML/CSS/JS frontend in a single desktop window.
+
+- **Deck A** — file browser (navigate folders, select which to include)
+- **Center panel** — options (rename mode, hardware profile, conversion, BPM/key detection)
+- **Deck B** — rename preview, filter/sort, audio playback
+
+**Supported audio:** Input: `.wav .aiff .aif .flac .mp3 .ogg` — Output: `.wav .aif`
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Python 3.10+ |
+| UI framework | PyWebView 4.0+ (`http_server=False`) |
+| Frontend | HTML5 + CSS3 + Vanilla JS (SPA in `ui/`) |
+| Audio playback | pygame-ce (Win/Linux), NSSound (macOS) |
+| Audio conversion | pydub + static-ffmpeg |
+| BPM/Key detection | Custom autocorrelation (no numpy/librosa) |
+| Packaging | PyInstaller |
+
+---
+
+## Per-Module Documentation
+
+Each module has a focused reference in `docs/`. Load only what you need:
+
+| Working on… | Read |
+|-------------|------|
+| State / data flow | `docs/state.md` |
+| JS↔Python API bridge | `docs/api.md` |
+| Hardware profiles, audio formats | `docs/constants.md` |
+| Deck A file browser | `docs/browser.md` |
+| Deck B preview, filter, sort | `docs/preview.md` |
+| File copy/move/convert worker | `docs/operations.md` |
+| BPM detection + cache | `docs/bpm.md` |
+| Key detection + cache | `docs/key.md` |
+| Audio format conversion | `docs/conversion.md` |
+| Audio playback transport | `docs/playback.md` |
+| HTML/CSS/JS frontend | `docs/ui.md` |
+
+---
+
+## Module Dependency Order (no circular imports)
+
+```
+constants.py   ← no imports
+state.py       ← stdlib only
+conversion.py  → state
+bpm.py         → conversion
+key.py         → conversion
+browser.py     → state, constants, preview
+preview.py     → state, constants, bpm, key, operations, conversion
+playback.py    → state
+operations.py  → state, constants, bpm, key, conversion
+api.py         → state, constants, browser, preview, playback, operations, conversion
+main.py        → state, api
 ```
 
-### Package for Linux
+---
 
-```bash
-pyinstaller SAMPSON.spec --clean
-# Output: dist/SAMPSON ELF binary
-# Runtime deps: libsdl2-2.0-0 libsdl2-mixer-2.0-0
+## Project Structure
+
+```
+sampson/
+├── main.py              # PyWebView entry point
+├── api.py               # SampsonAPI — JS↔Python bridge
+├── state.py             # Central mutable state + JS sync
+├── constants.py         # AUDIO_EXTS, PROFILES, MAX_PREVIEW_ROWS
+├── browser.py           # Deck A navigation logic
+├── preview.py           # Deck B scan, rename preview, filter, sort
+├── operations.py        # File copy/move/convert worker thread
+├── bpm.py               # BPM detection + cache
+├── key.py               # Key detection + cache
+├── conversion.py        # Audio conversion pipeline (pydub + ffmpeg)
+├── playback.py          # Audio playback (NSSound / pygame-ce)
+├── ui/
+│   ├── index.html       # Single-page app shell
+│   ├── app.js           # JS controller (554 lines)
+│   ├── style.css        # CSS variables, dark/light themes
+│   ├── sampsontransparentwhite.png  # Logo (dark mode)
+│   └── sampsontransparent2.png      # Logo (light mode)
+├── requirements.txt
+├── SAMPSON.spec         # PyInstaller config (Windows/Linux)
+├── build_macos.sh       # macOS build + sign + notarize
+├── entitlements.plist   # macOS signing entitlements
+├── CLAUDE.md            # Architecture reference (kept for Claude Code)
+├── AGENTS.md            # This file
+├── docs/                # Per-module AI context files
+├── README.md
+├── BUGS.md
+└── TASKS.md
 ```
 
-### Package for macOS
+---
+
+## Build
 
 ```bash
+# Windows / Linux
+pyinstaller SAMPSON.spec
+
+# macOS (ad-hoc sign, local testing)
 bash build_macos.sh
-# Output: dist/SAMPSON.app
+
+# macOS (Developer ID sign + notarize)
+APPLE_CODESIGN_IDENTITY="Developer ID Application: Name (TEAMID)" \
+APPLE_ID="you@example.com" \
+APPLE_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx" \
+APPLE_TEAM_ID="XXXXXXXXXX" \
+bash build_macos.sh
 ```
 
-**macOS Build Details:**
-The build script:
-1. Pre-downloads static-ffmpeg binaries
-2. Runs PyInstaller with `SAMPSON_mac.spec`
-3. Cleans unused Tcl/Tk data files (msgs, encodings, optional packages)
-4. Re-signs the app bundle after modifications
-
-**Linux Runtime Dependencies:**
-
-```bash
-# Debian/Ubuntu
-sudo apt install libsdl2-2.0-0 libsdl2-mixer-2.0-0
-
-# Fedora/RHEL
-sudo dnf install SDL2 SDL2_mixer
-```
-
-**PyInstaller Notes:**
-- `--collect-data pygame` bundles SDL DLLs for audio in the binary (Windows/Linux only)
-- `collect_data_files('static_ffmpeg')` bundles ffmpeg + ffprobe binaries
-- `sampsontransparent2.png` is bundled as a data file
-- macOS spec uses `BUNDLE()` for .app creation with Info.plist settings
-- macOS spec excludes pygame (uses NSSound instead), sqlite3, readline, and other unused modules
+**macOS build hard rules** (violations silently break the build):
+- Always sign in `/tmp`, never inside OneDrive (xattrs invalidate signatures)
+- Sign components individually — never `codesign --deep`
+- Every `codesign` call needs `--options runtime --timestamp`
+- Never delete `python3.X/lib-dynload/` from bundle
+- Use `ditto` not `cp -r` for `.app` copies
 
 ---
 
-## UI Architecture
-
-### Widget Stack — Mixed CTK + tk/ttk
-
-The UI uses customtkinter for modern widgets alongside plain tk/ttk where CTK has no equivalent.
-
-| Widget Type | Library | Notes |
-|-------------|---------|-------|
-| Root window | `ctk.CTk` | Rounded window chrome |
-| Outer root frame | `tk.Frame` | Avoids CTK canvas z-order issues |
-| Card panels | `ctk.CTkFrame(corner_radius=12)` | Rounded corners with border |
-| Deck strip headers | `tk.Frame` | Transparent, shows card corners |
-| Buttons, entries, checkboxes, radio | CTK widgets | Modern styling |
-| File browser | `ttk.Treeview` | Uses `style="Browser.Treeview"` |
-| Preview table | `ttk.Treeview` | Uses `style="Preview.Treeview"` |
-| Log | `tk.Text` | Needed for color tag support |
-| Progress bar | `ttk.Progressbar` | Uses `style="MD3.Horizontal.TProgressbar"` |
-| Scrollbars | `ctk.CTkScrollbar` | CTK styling |
-
-### CTK API Rules (Different from ttk)
-
-- Colors: `fg_color=`, `text_color=`, `border_color=` — **not** `bg=`, `fg=`
-- Disable/enable: `widget.configure(state="disabled"/"normal")` — **not** `.state(["disabled"])`
-- `ctk.CTkLabel` does **not** support `textvariable` — use a trace callback:
-  ```python
-  lbl = ctk.CTkLabel(frame, text=var.get())
-  var.trace_add("write", lambda *_: lbl.configure(text=var.get()))
-  ```
-- `ctk.CTkScrollbar` uses `orientation=` (not `orient=`) and `button_color=`, `button_hover_color=`
-
-### DPI Scaling
-
-- `state._dpi_scale` is set once at startup in `main.py`
-- Use `dpi._px(n)` for every pixel value passed to **non-CTK** widgets
-- **Do not** call `tk.call('tk', 'scaling', ...)` — CTK handles its own internal scaling
-- Windows: Uses `ctypes.windll.shcore.GetDpiForSystem() / 96.0`
-- Linux/macOS: Returns 1.0 (no scaling needed)
-- macOS: tkinter uses logical points; CTK handles Retina internally
-
----
-
-## Theme System
-
-Two themes available: **Dark** (MD3 near-black) and **Light** (60s/70s pastels).
-
-### Color Constants
-
-All colors are module-level variables in `theme.py`:
-- `theme.BG_ROOT`, `theme.BG_SURFACE`, `theme.BG_SURF1`, `theme.BG_SURF2`
-- `theme.CYAN` (Deck A accent), `theme.AMBER` (Deck B accent)
-- `theme.FG_ON_SURF`, `theme.FG_VARIANT`, `theme.FG_MUTED`, `theme.FG_DIM`
-- `theme.C_MOVE`, `theme.C_COPY`, `theme.C_DONE`, `theme.C_DRY` — log colors
-
-### Theme Toggle
-
-`toggle_theme()` lives in `builders.py` (not `theme.py`) to avoid circular imports. It:
-1. Saves current paths/settings (source, dest, profile, conversion settings, BPM settings)
-2. Stops audio playback
-3. Destroys all children widgets
-4. Calls `ctk.set_appearance_mode()` and `theme._apply_theme_colors()`
-5. Rebuilds UI via `build_app()`
-6. Restores saved paths/settings
-
----
-
-## Hardware Profiles
-
-Defined in `constants.py`:
-
-```python
-PROFILES = {
-    "Generic": {
-        "path_limit": None,
-        "conversion": None,
-    },
-    "M8": {
-        "path_limit": 127,
-        "conversion": {
-            "format": "wav",
-            "sample_rate": 44100,
-            "bit_depth": 16,
-            "channels": None,  # Keep original
-            "normalize": False,
-        }
-    },
-    "MPC One": {"path_limit": 255, "conversion": None},
-    "SP-404mkII": {"path_limit": 255, "conversion": None},
-    "Elektron Digitakt": {
-        "path_limit": None,
-        "conversion": {
-            "format": "wav",
-            "sample_rate": 48000,
-            "bit_depth": 16,
-            "channels": 1,  # Force mono
-            "normalize": False,
-        }
-    },
-    "Elektron Analog Rytm": {...},
-    "Elektron Syntakt": {...},
-}
-```
-
-Path limits truncate filenames so the full destination path fits within device constraints. Extension is always preserved.
-
-### Auto-Apply Conversion Presets
-
-When a profile with a `conversion` preset is selected, the conversion options are automatically populated if `convert_follow_profile_var` is True (controlled by the `_on_profile_changed` callback in `builders.py`).
-
----
-
-## Audio Conversion
-
-The `conversion.py` module handles format conversion using pydub with ffmpeg backend.
-
-### Key Functions
-
-- `convert_file(src, dst, **options)` — Convert audio with specified parameters
-- `check_ffmpeg()` — Verify ffmpeg is available
-- `get_target_extension(format)` — Get file extension for output format
-- `parse_sample_rate(value)`, `parse_bit_depth(value)`, `parse_channels(value)` — Parse UI values
-
-### FFmpeg Discovery Priority
-
-1. static-ffmpeg bundled binaries (included with app)
-2. System PATH (allows user override)
-3. Common install locations (Windows winget, Program Files)
-
-### Conversion Implementation Details
-
-- pydub is lazy-loaded via `_get_pydub()` to avoid startup overhead
-- ffmpeg path is explicitly set via `pydub.AudioSegment.converter`
-- Audio format is passed explicitly to `AudioSegment.from_file()` to avoid ffprobe dependency
-- Bit depth is set via ffmpeg codec parameters (pcm_s16le/pcm_s24le/pcm_s32le for WAV, pcm_s16be/pcm_s24be/pcm_s32be for AIFF)
-
----
-
-## BPM Detection
-
-The `bpm.py` module provides BPM detection using energy envelope autocorrelation.
-
-### Key Functions
-
-- `detect_bpm(path)` — Detect BPM for a file (with caching)
-- `get_cached_bpm(path)` — Get cached BPM value (no detection)
-- `set_cached_bpm(path, bpm_val)` — Manually set BPM (used by double-click edit)
-- `flush_cache()` — Save cache to disk
-
-### Cache Location
-
-`~/.sampson/bpm_cache.json` — stores path+mtime → BPM mapping
-
-### Algorithm
-
-1. Load audio via pydub (mono, first 60 seconds)
-2. Calculate RMS energy envelope
-3. Autocorrelation analysis on envelope
-4. Peak detection in 60-200 BPM range
-5. Octave variant generation (half/double tempo)
-6. Grouping by similar tempo with scoring
-7. Return best BPM candidate
-
----
-
-## Key Detection
-
-The `key.py` module provides musical key detection (root pitch class) using pitch-period autocorrelation.
-
-### Key Functions
-
-- `detect_key(path)` — Detect key for a file (with caching)
-- `get_cached_key(path)` — Get cached key value (no detection)
-- `set_cached_key(path, key_val)` — Manually set key
-- `flush_cache()` — Save cache to disk
-
-### Cache Location
-
-`~/.sampson/key_cache.json` — stores path+mtime → key mapping
-
-### Algorithm
-
-1. Load audio via pydub (mono, downsampled to 8kHz)
-2. Pitch-period autocorrelation analysis
-3. Peak detection in frequency range (60-1000 Hz)
-4. Pitch class histogram accumulation across octaves
-5. Peak clustering and chord type detection
-6. Return key label (e.g., "C", "F#", "A#")
-
----
-
-## Audio Playback
-
-`playback.py` uses different backends per platform:
-- **macOS**: `AppKit.NSSound` — native, zero extra deps, imported lazily to avoid race conditions with tkinter
-- **Windows/Linux**: `pygame.mixer` from `pygame-ce` — wider format support (MP3, OGG, FLAC)
-
-**Key functions in `playback.py`:**
-- `play()` — toggle play/stop
-- `stop()` — stop playback
-- `next_file()`, `prev_file()` — navigate and auto-play
-- `on_tree_select()` — click row to play
-- `on_arrow_key()` — arrow key navigation with auto-play
-
-**Transport state** stored in `state.transport_*_btn` and updated via `playback._update_transport_state()`.
-
----
-
-## Smart Search / Structured Filter
-
-The Deck B search bar supports structured query syntax for advanced filtering:
-
-### Query Syntax
-
-| Token | Example | Description |
-|-------|---------|-------------|
-| Plain text | `kick` | Filename substring match (case-insensitive) |
-| BPM exact | `BPM:120` | Exact BPM match |
-| BPM range | `BPM:100-130` | BPM within inclusive range |
-| BPM wildcard | `BPM:12*` | Wildcard match (e.g., 120-129) |
-| Note | `Note:C` or `Note:F#` | Root note match (case-insensitive) |
-| Min length | `MinLength:10` | Duration ≥ 10 seconds |
-| Max length | `MaxLength:90` | Duration ≤ 90 seconds |
-
-### Combined Queries
-
-Multiple tokens can be combined with AND logic:
-```
-kick BPM:120-140 Note:C MinLength:5
-```
-
-This matches files containing "kick" in the name, with BPM 120-140, root note C, and duration at least 5 seconds.
-
-### Implementation
-
-The filter logic is in `preview.py`:
-- `_parse_query(text)` — tokenizes the query string
-- `apply_filter(text)` — filters `_preview_rows` based on parsed query
-- Search bypasses the 500-row preview limit and shows all matching files
-
----
-
-## Column Sorting
-
-Deck B supports sorting by BPM, Note (Key), or Length (Duration):
-
-- Click a column header to sort ascending (▲)
-- Click again to sort descending (▼)
-- Click a third time to remove sort
-- Sorting applies before filtering, so filtered results respect the sort order
-
-### Implementation
-
-- `preview.sort_by(col)` — toggles sort state and reapplies filter
-- `_sort_key_for(col, row)` — generates sortable keys for each column type
-- `_apply_sort()` — sorts `_preview_rows` in place
-- `_update_sort_headings()` — updates header text with ▲/▼ indicators
-
----
-
-## File Operations
-
-### Rename Pattern
-
-Controlled by `state.modify_names_var` (tk.BooleanVar):
-- **False (default — browse mode):** No renaming applied. Deck B shows only the original filename and metadata columns (BPM, key). Good for auditing without touching filenames.
-- **True (rename mode):** Each file is prefixed with its immediate parent folder name:
-
-```
-Source:       Drums/Kicks/kick_01.wav
-Destination:  Kicks_kick_01.wav
-```
-
-### Folder Structure Modes
-
-- **Flat** (`"flat"`) — all files in one folder
-- **Mirror** (`"mirror"`) — preserve full source directory tree
-- **One folder per parent** (`"parent"`) — group by immediate parent folder name
-
-### Worker Thread
-
-File operations run in a daemon thread (`operations._run_worker`). All UI updates go through `root.after()` for thread safety.
-
-### Conversion During Operations
-
-When conversion is enabled:
-1. Source file is converted to target format/settings
-2. Converted file is written to destination
-3. If "Move files" is enabled, original source file is deleted after successful conversion
-
-### BPM/Key Suffix
-
-When BPM/key detection is enabled and "Append to filename" is checked, the detected values are added as suffixes (e.g., `Kicks_kick_01_120bpm_C.wav`). The suffixes are protected during path-limit truncation.
-
-### Duration Reading
-
-Duration is read from file headers:
-- **WAV/AIFF:** Fast stdlib read (`wave`/`aifc` modules), no subprocess
-- **MP3/FLAC/OGG:** Falls back to ffprobe via pydub's `mediainfo()`
-- Files with unreadable headers show no length and are excluded from `MinLength`/`MaxLength` filters
-
----
-
-## Development Conventions
-
-### Variable Naming
-
-- tk/ctk widgets: descriptive with type suffix where helpful
-- StringVars: `*_var` suffix (e.g., `source_var`, `status_var`)
-- Private module state: `_leading_underscore`
-- State module globals: no underscore (they're shared)
-
-### Version Management
-
-**Always increment the version** when finishing a change. Update both locations:
-
-1. `builders.py` — `build_status_bar()`:
-   ```python
-   ctk.CTkLabel(frame, text="v0.6.1", ...)  # ← Update this
-   ```
-
-2. `SAMPSON_mac.spec` — Info.plist:
-   ```python
-   info_plist={
-       'CFBundleShortVersionString': '0.6.1',
-       'CFBundleVersion': '0.6.1',
-       ...
-   }
-   ```
-
-### Tracing Variables
-
-UI updates that depend on variable changes use `trace_add("write", callback)`:
-
-```python
-state.active_dir_var.trace_add("write", preview.on_active_dir_changed)
-state.modify_names_var.trace_add("write", lambda *_: preview.refresh_preview())
-state.profile_var.trace_add("write", _on_profile_changed)
-```
-
-### Background Threads
-
-File scanning (`preview._scan_thread`) and operations (`operations._run_worker`) run in daemon threads. Always use `root.after()` for UI updates:
-
-```python
-state.root.after(0, lambda: state.status_var.set("Done"))
-```
-
----
-
-## Testing
-
-No automated test suite exists. Testing is manual:
-
-1. Run `python main.py`
-2. Test source navigation (browse, click folders, up button)
-3. Test checkboxes (select/deselect all)
-4. Test audio playback (click preview rows, transport buttons, arrow keys)
-5. Test options (rename modes, folder structures, hardware profiles)
-6. Test audio conversion (enable conversion, select format/sample rate/bit depth)
-7. Test BPM detection (enable, run, verify cache, double-click to edit)
-8. Test key detection (enable, run, verify cache, double-click to edit)
-9. Test smart search/filter (plain text, BPM:120, Note:C, MinLength:10, combined queries)
-10. Test column sorting (click BPM/Note/Length headers, verify ▲/▼ indicators)
-11. Test dry run vs actual copy/move
-12. Test theme toggle (preserve paths and settings)
-13. Test HiDPI on Windows (verify no blurriness)
-14. Test macOS aspect ratio enforcement (resize to narrow width, verify height correction)
+## Key Conventions
+
+- **Version string:** `ui/index.html` `.version` span + `app.js` ready log line
+- **Add hardware profile:** `constants.py` → `PROFILES` dict only — nothing else changes
+- **Add audio format:** `constants.py` → `AUDIO_EXTS` set
+- **Logo files:** Must live in `ui/` (same dir as `index.html`) — WKWebView `file://` sandbox blocks `../`
+- **State sync:** Call `state.push_keys()` after mutations to reflect changes in JS
+- **Thread safety:** Long operations run in daemon threads; use `state.set()` (thread-safe) for updates
 
 ---
 
 ## Known Limitations
 
-- Unfiltered preview capped at 500 rows (`constants.MAX_PREVIEW_ROWS`); the Deck B search bar bypasses this cap and shows all matches
-- File browser only shows non-hidden subfolders and audio files
-- Destination collisions not handled — existing files will be overwritten silently
-- FFmpeg must be available (bundled with PyInstaller builds, or installed separately for dev)
-- Duration for MP3/FLAC/OGG requires ffprobe (slower than WAV/AIFF header read)
-
----
-
-## Bug Tracker
-
-See `BUGS.md` for known issues:
-
-| ID | Status | Description |
-|----|--------|-------------|
-| BUG-001 | Resolved | Center panel collapses at small window sizes |
-| BUG-002 | Resolved | macOS window oversized on Retina displays |
-| BUG-003 | Resolved in v0.6.2 | Windows console flash on conversion |
-
-**Note:** The BUGS.md file is the source of truth for bug status. The AGENTS.md may lag behind.
-
----
-
-## Quick Reference
-
-| Task | Where |
-|------|-------|
-| Add new hardware profile | `constants.py` → `PROFILES` dict |
-| Change colors | `theme.py` → color constants, `_apply_theme_colors()` |
-| Update version | `builders.py` → `build_status_bar()` and `SAMPSON_mac.spec` |
-| Fix DPI scaling | `dpi.py` → `_px()`, `_compute_dpi_scale()` |
-| Add audio formats | `constants.py` → `AUDIO_EXTS` |
-| Modify UI layout | `builders.py` → `build_app()` and `build_*()` functions |
-| Change file operations | `operations.py` → `run_tool()`, `_run_worker()` |
-| Adjust preview limit | `constants.py` → `MAX_PREVIEW_ROWS` |
-| Add conversion formats | `conversion.py` → `convert_file()`, `get_target_extension()` |
-| BPM detection algorithm | `bpm.py` → BPM detection functions |
-| Key detection algorithm | `key.py` → Key detection functions |
-| Smart search/filter | `preview.py` → `_parse_query()`, `apply_filter()` |
-| Column sorting | `preview.py` → `sort_by()`, `_apply_sort()` |
-| Platform-specific code | Check `sys.platform` ( `"win32"`, `"darwin"`, `"linux"` ) |
-
----
-
-## Architecture Decisions
-
-### Why pygame-ce over sounddevice/soundfile?
-
-- `pygame-ce` provides wider format support (MP3, OGG, FLAC)
-- Single dependency for all audio needs
-- Well-tested with PyInstaller bundling
-- SDL2 backend is cross-platform
-- macOS uses NSSound instead to avoid SDL issues and reduce bundle size
-
-### Why NSSound on macOS?
-
-- Native macOS audio playback with no extra dependencies
-- Avoids SDL/pygame audio issues on macOS
-- Lazy import prevents AppKit initialization race with tkinter
-- Reduces bundle size by ~27 MB (no pygame/SDL2)
-
-### Why static-ffmpeg for conversion?
-
-- Bundles ffmpeg + ffprobe binaries automatically
-- No separate installation required for end users
-- Falls back to system ffmpeg if available
-
-### Why mixed CTK + tk/ttk instead of pure CTK?
-
-- CTK has no Treeview equivalent (needed for file browser and preview)
-- CTK Text widget lacks color tag support (needed for log panel)
-- ttk Progressbar is more reliable for determinate progress
-
-### Why module-level globals in state.py?
-
-- Simple, Pythonic approach for a single-window desktop app
-- Avoids complex state management overhead
-- Attribute mutation on module object is visible everywhere
-- No risk of circular imports from passing state objects
-
----
-
-## macOS-Specific Notes
-
-### Code Signing and Notarization
-
-The macOS build supports full code signing and Apple notarization for distribution outside the App Store.
-
-#### Prerequisites
-
-1. **Apple Developer Account** ($99/year)
-   - Enrolled in the Apple Developer Program
-
-2. **Developer ID Certificate**
-   ```bash
-   # Download from Apple Developer Portal:
-   # Certificates, Identifiers & Profiles → Certificates → +
-   # → Developer ID Application → G2 Sub-CA (Xcode 11.4.1+)
-   # Then import into Keychain
-   ```
-
-3. **App-Specific Password**
-   - Generate at: https://appleid.apple.com/account/manage
-   - Security → App-Specific Passwords → Generate
-   - Format: `xxxx-xxxx-xxxx-xxxx`
-
-4. **Team ID**
-   - Find at: https://developer.apple.com/account#MembershipDetails
-   - 10-character string (e.g., `A1B2C3D4E5`)
-
-#### Building with Signing
-
-**Ad-hoc sign (local testing, no notarization):**
-```bash
-bash build_macos.sh
-```
-
-**Developer ID sign + notarize (distribution):**
-```bash
-export APPLE_CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-export APPLE_ID="you@example.com"
-export APPLE_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx"
-export APPLE_TEAM_ID="XXXXXXXXXX"
-
-bash build_macos.sh
-```
-
-The script will:
-1. Build the app with PyInstaller
-2. Sign all binaries with hardened runtime
-3. Submit to Apple for notarization (if credentials provided)
-4. Staple the notarization ticket
-5. Create `SAMPSON_mac_vX.Y.Z.zip` for distribution
-
-**Output:**
-- `dist/SAMPSON.app` — The signed, notarized app bundle
-- `dist/SAMPSON_mac_vX.Y.Z.zip` — Distribution zip (upload this to GitHub releases)
-
-#### Notarizing an Existing Build
-
-If you need to notarize a build that was only ad-hoc signed:
-
-```bash
-export APPLE_ID="you@example.com"
-export APPLE_APP_PASSWORD="xxxx-xxxx-xxxx-xxxx"
-export APPLE_TEAM_ID="XXXXXXXXXX"
-
-./notarize.sh dist/SAMPSON.app
-```
-
-To also re-sign with Developer ID before notarizing:
-```bash
-export APPLE_CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
-./notarize.sh dist/SAMPSON.app
-```
-
-#### Verifying Signatures
-
-```bash
-# Check code signature
-codesign -vv --deep --strict dist/SAMPSON.app
-
-# Check notarization
-spctl --assess --type execute --verbose dist/SAMPSON.app
-# Expected: "SAMPSON.app: accepted"
-
-# View signature details
-codesign -dvv dist/SAMPSON.app
-```
-
-#### Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| "replacing existing signature" warnings | Normal — script signs multiple components |
-| "bundle format is ambiguous" | Python.framework symlinks fixed by build script (step 4) |
-| "unnotarized developer id" warning | Run `xcrun stapler staple SAMPSON.app` |
-| "xattr" errors from OneDrive | Build script works in `/tmp` to avoid this |
-| Notarization rejected | Check `notarytool log` output for specific issues |
-| "No module named _struct" crash | Don't delete `python3.X/lib-dynload/` from bundle |
-| "dangling symlink" Gatekeeper error | Don't delete `tcl9/` from bundle |
-
-#### Security Entitlements
-
-The `entitlements.plist` file grants these hardened runtime exceptions:
-
-- `com.apple.security.cs.allow-unsigned-executable-memory` — Required for Python interpreter
-- `com.apple.security.cs.allow-dyld-environment-variables` — Required for dylib loading
-- `com.apple.security.cs.disable-library-validation` — Required for Python extension modules
-- `com.apple.security.files.user-selected.read-write` — File browser access
-- `com.apple.security.device.audio-input` — Audio playback access
-
-#### Distribution Checklist
-
-Before releasing a macOS build:
-
-- [ ] Build with `APPLE_CODESIGN_IDENTITY` set to Developer ID
-- [ ] Verify notarization completed successfully
-- [ ] Test on a clean macOS system (no dev tools installed)
-- [ ] Ensure no Gatekeeper warnings appear on first launch
-- [ ] Upload `SAMPSON_mac_vX.Y.Z.zip` (not the raw .app bundle)
-- [ ] Note: Users on macOS 10.15+ require notarized apps
-
-### Tcl/Tk Deprecation Warning Fix
-
-Tcl/Tk 9.0 can cause console window crashes in signed PyInstaller bundles. Fixed via:
-1. `pyi_rth_tk_silence.py` runtime hook (sets `TK_SILENCE_DEPRECATION=1`)
-2. Environment variables set in `main.py` before tkinter import
-3. `LSEnvironment` in `SAMPSON_mac.spec` Info.plist
-
-### Build Size Optimization
-
-The macOS build (`build_macos.sh`) achieves ~50% size reduction through:
-1. Stripping debug symbols (`strip=True` in spec)
-2. Excluding unused stdlib modules (sqlite3, readline, grp, resource, syslog, pygame)
-3. Removing ffprobe (not needed when passing format explicitly to pydub)
-4. Using NSSound instead of pygame/SDL2
-5. Cleaning Tcl/Tk data files (msgs, unused encodings, optional packages)
-
-### Code Signing
-
-- Set `APPLE_CODESIGN_IDENTITY` environment variable for signed builds
-- Uses ad-hoc signing (`-`) if not set
-- Re-signs after Tcl/Tk cleanup modifications
-
-### Critical macOS Build Rules
-
-1. **Never delete `python3.X/` from the bundle** — it contains `lib-dynload/*.so` (all stdlib C extensions). Deletion causes `[PYI-ERROR] Module object for struct is NULL!` on launch.
-2. **Always sign in `/tmp`, never inside OneDrive** — OneDrive injects xattrs mid-signing, invalidating the signature.
-3. **Sign all components individually, not with `--deep`** — Deep signing processes outer before inner; notarization rejects unsigned nested binaries.
-4. **Every `codesign` call needs `--options runtime --timestamp`** — notarization rejects submissions without these flags.
-5. **Use `ditto` (not `cp -r`) for all `.app` copies** — `cp -r` dereferences symlinks and breaks the Python.framework structure.
-6. **Do not delete `tcl9/` from the bundle** — PyInstaller cross-links `Resources/tcl9 ↔ Frameworks/tcl9`; deleting one side creates a dangling symlink that Gatekeeper rejects.
-
----
-
-## Git Workflow
-
-**Always commit** after completing a change (per development workflow rules).
-
-### .gitignore Notes
-
-The `.gitignore` excludes:
-- Build outputs: `dist/`, `build/`, `__pycache__/`
-- Session notes: `CLAUDE_SESSION.md` (may contain personal info / local paths)
-- User-specific scripts: `notarize.sh`
-- Archive files: `*.zip`
-- Meta-documentation: `CLAUDE.md` itself
-- Agent memory: `memory/`
+- Unfiltered preview capped at 500 rows (`MAX_PREVIEW_ROWS`); filter bypasses cap
+- Destination collisions not handled — files overwritten silently
+- FFmpeg required for conversion (bundled in dist builds)
+- Deck B amber accent bar won't track manual log panel resize (CSS flex constraint)
