@@ -90,9 +90,26 @@ html, body {
   flex-shrink: 0;
 }
 .logo {
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 0.5px;
+  overflow: hidden;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;
+}
+
+/* Dark mode: white logo has transparent padding, use object-fit to crop */
+#logo-img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+}
+
+/* Light mode: dark logo is tightly cropped */
+body.light-mode #logo-img {
+  object-fit: contain;
+  object-position: center;
 }
 .subtitle {
   flex: 1;
