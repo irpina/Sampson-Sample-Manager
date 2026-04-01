@@ -14,8 +14,50 @@
   --amber-dark: #e08c4a;
   --green: #2a9d8f;
   
+  /* Header tints */
+  --cyan-tint: rgba(0, 180, 216, 0.1);
+  --amber-tint: rgba(244, 162, 97, 0.1);
+  
   --radius: 4px;
   --header-height: 48px;
+}
+
+/* Light mode - 70s Groovy Color Scheme */
+body.light-mode {
+  --bg-root: #f5e6c8;        /* parchment cream */
+  --bg-surface: #ede0b0;     /* harvest wheat */
+  --bg-surface-2: #d4a96a;   /* caramel */
+  --border: #b8864e;         /* warm brown */
+  --text: #3b2200;           /* dark espresso */
+  --text-muted: #7a5c30;     /* warm sienna */
+  --cyan: #6b9e4f;           /* avocado green */
+  --cyan-dark: #557f3d;
+  --amber: #d4622a;          /* burnt orange */
+  --amber-dark: #b84e1e;
+  --green: #8b6914;          /* goldenrod */
+  
+  /* Header tints for light mode */
+  --cyan-tint: rgba(107, 158, 79, 0.1);
+  --amber-tint: rgba(212, 98, 42, 0.1);
+}
+
+/* Light mode specific adjustments */
+body.light-mode .file-table tbody tr:hover,
+body.light-mode .preview-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .file-table tbody tr.selected,
+body.light-mode .preview-table tbody tr.selected {
+  background: rgba(107, 158, 79, 0.2) !important;
+}
+
+body.light-mode #preview-list tr.selected td {
+  color: var(--cyan);
+}
+
+body.light-mode .preview-table td.editable:hover {
+  background: rgba(107, 158, 79, 0.15);
 }
 
 * { box-sizing: border-box; }
@@ -68,23 +110,38 @@ html, body {
 }
 .btn-icon:hover { background: var(--bg-surface-2); }
 
-/* Main grid layout */
+/* Main layout - flex row */
 .main-grid {
-  display: grid;
-  grid-template-columns: 3fr 2fr 3fr;
-  grid-template-rows: 1fr auto auto;
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  overflow: hidden;
   gap: 1px;
   background: var(--border);
-  flex: 1;
+}
+
+.deck-a {
+  flex: 3;
+  min-width: 0;
+}
+
+.center-col {
+  flex: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
-/* Deck positioning */
-.deck-a { grid-column: 1; grid-row: 1 / 2; }
-.center-panel { grid-column: 2; grid-row: 1 / 2; }
-.status-bar { grid-column: 1 / 3; grid-row: 2; }
-.log-panel { grid-column: 1 / 3; grid-row: 3; }
-.deck-b { grid-column: 3; grid-row: 1 / 4; }
+.center-panel {
+  flex: 1;
+  overflow: auto;
+}
+
+.deck-b {
+  flex: 3;
+  min-width: 0;
+}
 
 /* Deck styling */
 .deck {
@@ -109,11 +166,11 @@ html, body {
 }
 
 .deck-a .deck-header {
-  background: rgba(0, 180, 216, 0.1);
+  background: var(--cyan-tint);
 }
 
 .deck-b .deck-header {
-  background: rgba(244, 162, 97, 0.1);
+  background: var(--amber-tint);
 }
 
 .deck-label {
@@ -402,7 +459,7 @@ html, body {
   margin-top: auto;
 }
 
-.btn-run:hover { background: #238b7f; }
+.btn-run:hover { filter: brightness(0.85); }
 
 /* Status bar */
 .status-bar {
@@ -505,7 +562,7 @@ html, body {
   color: #fff;
 }
 
-.btn-play:hover { background: #238b7f; }
+.btn-play:hover { filter: brightness(0.85); }
 .btn-play:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -600,7 +657,21 @@ html, body {
   cursor: not-allowed;
 }
 
-/* Transport buttons disabled state */
+/* Transport buttons */
+.btn-transport {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-transport:hover:not(:disabled) {
+  background: var(--bg-surface);
+}
+
 .btn-transport:disabled,
 .btn-play:disabled,
 .btn-stop:disabled {

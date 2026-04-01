@@ -8,6 +8,32 @@ const APP_STATE = {};
 let selectedPreviewIndex = -1;
 let isEditing = false;  // Prevent keyboard nav while editing
 
+// Theme toggle handler
+function toggleTheme() {
+  const isDark = !document.body.classList.contains('light-mode');
+  document.body.classList.toggle('light-mode');
+  
+  // Update button text
+  const btn = $('#theme-toggle');
+  if (btn) {
+    btn.textContent = isDark ? '☀ Light' : '☾ Dark';
+  }
+  
+  // Swap logo
+  updateLogo(isDark);
+  
+  // Persist to Python state
+  pywebview.api.set_option('is_dark', !isDark);
+}
+
+// Update logo based on theme
+function updateLogo(isDark) {
+  const logoImg = $('#logo-img');
+  if (logoImg) {
+    logoImg.src = isDark ? 'sampsontransparentwhite.png' : 'sampsontransparent2.png';
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Init
 // ---------------------------------------------------------------------------
@@ -35,6 +61,23 @@ window._onStateUpdate = function(patch) {
 // Rendering (selective updates)
 // ---------------------------------------------------------------------------
 function renderAll() {
+  // Apply theme
+  const isDark = APP_STATE.is_dark !== false;
+  if (isDark) {
+    document.body.classList.remove('light-mode');
+  } else {
+    document.body.classList.add('light-mode');
+  }
+  
+  // Update theme toggle button
+  const themeBtn = $('#theme-toggle');
+  if (themeBtn) {
+    themeBtn.textContent = isDark ? '☾ Dark' : '☀ Light';
+  }
+  
+  // Update logo
+  updateLogo(isDark);
+  
   renderDeckA();
   renderCenterPanel();
   renderStatus();
@@ -44,6 +87,21 @@ function renderAll() {
 
 function renderPatch(patch) {
   const keys = Object.keys(patch);
+  
+  // Handle theme change
+  if (keys.includes('is_dark')) {
+    const isDark = patch.is_dark !== false;
+    if (isDark) {
+      document.body.classList.remove('light-mode');
+    } else {
+      document.body.classList.add('light-mode');
+    }
+    const themeBtn = $('#theme-toggle');
+    if (themeBtn) {
+      themeBtn.textContent = isDark ? '☾ Dark' : '☀ Light';
+    }
+    updateLogo(isDark);
+  }
   
   if (keys.includes('dir_entries') || keys.includes('active_dir') || keys.includes('src_count')) {
     renderDeckA();
@@ -384,6 +442,9 @@ function updateTransportButtons() {
 // Event handlers
 // ---------------------------------------------------------------------------
 function setupEventListeners() {
+  // Theme toggle
+  $('#theme-toggle')?.addEventListener('click', toggleTheme);
+  
   // Browse buttons
   $('#btn-browse-a')?.addEventListener('click', () => pywebview.api.browse_source());
   $('#btn-browse-b')?.addEventListener('click', () => pywebview.api.browse_dest());

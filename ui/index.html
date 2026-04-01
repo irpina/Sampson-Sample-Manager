@@ -10,7 +10,9 @@
   <div class="app">
     <!-- Header -->
     <header class="header">
-      <div class="logo">♪ SAMPSON</div>
+      <div class="logo">
+        <img id="logo-img" src="sampsontransparentwhite.png" alt="SAMPSON" height="28" />
+      </div>
       <div class="subtitle">Universal Audio Sample Manager</div>
       <button id="theme-toggle" class="btn-icon">☾ Dark</button>
     </header>
@@ -60,135 +62,138 @@
         </div>
       </div>
 
-      <!-- CENTER PANEL -->
-      <div class="center-panel">
-        <div class="center-content">
-          <!-- Top options -->
-          <div class="options-row">
-            <label class="check-label"><input type="checkbox" id="opt-move" data-key="move" /> Move files</label>
-            <label class="check-label"><input type="checkbox" id="opt-dry" data-key="dry" checked /> Dry run</label>
-          </div>
-
-          <!-- Custom prefix -->
-          <div class="option-block">
-            <label class="check-label"><input type="checkbox" id="opt-rename" data-key="modify_names" /> Modify file names</label>
-            <div class="indented">
-              <input type="text" id="custom-prefix" class="text-input" data-key="custom_prefix" placeholder="Prefix (max 10 chars)" maxlength="10" disabled />
+      <!-- CENTER COLUMN -->
+      <div class="center-col">
+        <!-- CENTER PANEL -->
+        <div class="center-panel">
+          <div class="center-content">
+            <!-- Top options -->
+            <div class="options-row">
+              <label class="check-label"><input type="checkbox" id="opt-move" data-key="move" /> Move files</label>
+              <label class="check-label"><input type="checkbox" id="opt-dry" data-key="dry" checked /> Dry run</label>
             </div>
-          </div>
 
-          <!-- Collapsible sections -->
-          <div class="collapsible" id="section-output">
-            <button class="collapsible-header">
-              <span class="chevron">▶</span> Output structure
-            </button>
-            <div class="collapsible-content">
-              <label class="radio-label"><input type="radio" name="output" value="flat" data-key="struct_mode" checked /> Flat</label>
-              <label class="radio-label"><input type="radio" name="output" value="mirror" data-key="struct_mode" /> Mirror</label>
-              <label class="radio-label"><input type="radio" name="output" value="parent" data-key="struct_mode" /> By parent</label>
-            </div>
-          </div>
-
-          <div class="collapsible" id="section-device">
-            <button class="collapsible-header">
-              <span class="chevron">▶</span> Target device
-            </button>
-            <div class="collapsible-content">
-              <select id="target-device" class="select-input" data-key="profile">
-                <option value="Generic">Generic</option>
-                <option value="M8">M8</option>
-                <option value="MPC One">MPC One</option>
-                <option value="SP-404mkII">SP-404mkII</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="collapsible" id="section-audio">
-            <button class="collapsible-header">
-              <span class="chevron">▶</span> Audio conversion
-            </button>
-            <div class="collapsible-content">
-              <label class="check-label"><input type="checkbox" id="opt-convert" data-key="convert_enabled" /> Convert files</label>
-              <div class="conversion-grid">
-                <div class="field">
-                  <label>Format</label>
-                  <select id="conv-format" data-key="convert_format" disabled>
-                    <option value="wav">WAV</option>
-                    <option value="aiff">AIFF</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>Sample rate</label>
-                  <select id="conv-sr" data-key="convert_sample_rate" disabled>
-                    <option value="keep">Keep</option>
-                    <option value="44100">44.1 kHz</option>
-                    <option value="48000">48 kHz</option>
-                    <option value="96000">96 kHz</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>Bit depth</label>
-                  <select id="conv-bd" data-key="convert_bit_depth" disabled>
-                    <option value="keep">Keep</option>
-                    <option value="16">16-bit</option>
-                    <option value="24">24-bit</option>
-                    <option value="32">32-bit</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>Channels</label>
-                  <select id="conv-ch" data-key="convert_channels" disabled>
-                    <option value="keep">Keep</option>
-                    <option value="mono">Mono</option>
-                    <option value="stereo">Stereo</option>
-                  </select>
-                </div>
+            <!-- Custom prefix -->
+            <div class="option-block">
+              <label class="check-label"><input type="checkbox" id="opt-rename" data-key="modify_names" /> Modify file names</label>
+              <div class="indented">
+                <input type="text" id="custom-prefix" class="text-input" data-key="custom_prefix" placeholder="Prefix (max 10 chars)" maxlength="10" disabled />
               </div>
-              <label class="check-label"><input type="checkbox" id="opt-normalize" data-key="convert_normalize" disabled /> Normalize</label>
-              <label class="check-label"><input type="checkbox" id="opt-follow-device" data-key="convert_follow_profile" checked disabled /> Follow device profile</label>
             </div>
-          </div>
 
-          <div class="collapsible" id="section-bpm">
-            <button class="collapsible-header">
-              <span class="chevron">▶</span> BPM detection
-            </button>
-            <div class="collapsible-content">
-              <label class="check-label"><input type="checkbox" id="opt-detect-bpm" data-key="bpm_enabled" /> Detect BPM</label>
-              <label class="check-label"><input type="checkbox" id="opt-append-bpm" data-key="bpm_append" disabled /> Append to filename</label>
-              <label class="check-label"><input type="checkbox" id="opt-fresh-bpm" data-key="bpm_fresh" disabled /> Re-scan all (ignore cache)</label>
+            <!-- Collapsible sections -->
+            <div class="collapsible" id="section-output">
+              <button class="collapsible-header">
+                <span class="chevron">▶</span> Output structure
+              </button>
+              <div class="collapsible-content">
+                <label class="radio-label"><input type="radio" name="output" value="flat" data-key="struct_mode" checked /> Flat</label>
+                <label class="radio-label"><input type="radio" name="output" value="mirror" data-key="struct_mode" /> Mirror</label>
+                <label class="radio-label"><input type="radio" name="output" value="parent" data-key="struct_mode" /> By parent</label>
+              </div>
             </div>
-          </div>
 
-          <div class="collapsible" id="section-key">
-            <button class="collapsible-header">
-              <span class="chevron">▶</span> Key detection
-            </button>
-            <div class="collapsible-content">
-              <label class="check-label"><input type="checkbox" id="opt-detect-key" data-key="key_enabled" /> Detect key</label>
-              <label class="check-label"><input type="checkbox" id="opt-append-key" data-key="key_append" disabled /> Append to filename</label>
-              <label class="check-label"><input type="checkbox" id="opt-fresh-key" data-key="key_fresh" disabled /> Re-scan all (ignore cache)</label>
+            <div class="collapsible" id="section-device">
+              <button class="collapsible-header">
+                <span class="chevron">▶</span> Target device
+              </button>
+              <div class="collapsible-content">
+                <select id="target-device" class="select-input" data-key="profile">
+                  <option value="Generic">Generic</option>
+                  <option value="M8">M8</option>
+                  <option value="MPC One">MPC One</option>
+                  <option value="SP-404mkII">SP-404mkII</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          <!-- RUN button -->
-          <button id="btn-run" class="btn-run">▶ RUN</button>
+            <div class="collapsible" id="section-audio">
+              <button class="collapsible-header">
+                <span class="chevron">▶</span> Audio conversion
+              </button>
+              <div class="collapsible-content">
+                <label class="check-label"><input type="checkbox" id="opt-convert" data-key="convert_enabled" /> Convert files</label>
+                <div class="conversion-grid">
+                  <div class="field">
+                    <label>Format</label>
+                    <select id="conv-format" data-key="convert_format" disabled>
+                      <option value="wav">WAV</option>
+                      <option value="aiff">AIFF</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Sample rate</label>
+                    <select id="conv-sr" data-key="convert_sample_rate" disabled>
+                      <option value="keep">Keep</option>
+                      <option value="44100">44.1 kHz</option>
+                      <option value="48000">48 kHz</option>
+                      <option value="96000">96 kHz</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Bit depth</label>
+                    <select id="conv-bd" data-key="convert_bit_depth" disabled>
+                      <option value="keep">Keep</option>
+                      <option value="16">16-bit</option>
+                      <option value="24">24-bit</option>
+                      <option value="32">32-bit</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Channels</label>
+                    <select id="conv-ch" data-key="convert_channels" disabled>
+                      <option value="keep">Keep</option>
+                      <option value="mono">Mono</option>
+                      <option value="stereo">Stereo</option>
+                    </select>
+                  </div>
+                </div>
+                <label class="check-label"><input type="checkbox" id="opt-normalize" data-key="convert_normalize" disabled /> Normalize</label>
+                <label class="check-label"><input type="checkbox" id="opt-follow-device" data-key="convert_follow_profile" checked disabled /> Follow device profile</label>
+              </div>
+            </div>
+
+            <div class="collapsible" id="section-bpm">
+              <button class="collapsible-header">
+                <span class="chevron">▶</span> BPM detection
+              </button>
+              <div class="collapsible-content">
+                <label class="check-label"><input type="checkbox" id="opt-detect-bpm" data-key="bpm_enabled" /> Detect BPM</label>
+                <label class="check-label"><input type="checkbox" id="opt-append-bpm" data-key="bpm_append" disabled /> Append to filename</label>
+                <label class="check-label"><input type="checkbox" id="opt-fresh-bpm" data-key="bpm_fresh" disabled /> Re-scan all (ignore cache)</label>
+              </div>
+            </div>
+
+            <div class="collapsible" id="section-key">
+              <button class="collapsible-header">
+                <span class="chevron">▶</span> Key detection
+              </button>
+              <div class="collapsible-content">
+                <label class="check-label"><input type="checkbox" id="opt-detect-key" data-key="key_enabled" /> Detect key</label>
+                <label class="check-label"><input type="checkbox" id="opt-append-key" data-key="key_append" disabled /> Append to filename</label>
+                <label class="check-label"><input type="checkbox" id="opt-fresh-key" data-key="key_fresh" disabled /> Re-scan all (ignore cache)</label>
+              </div>
+            </div>
+
+            <!-- RUN button -->
+            <button id="btn-run" class="btn-run">▶ RUN</button>
+          </div>
         </div>
-      </div>
 
-      <!-- STATUS BAR (spans under A and Center) -->
-      <div class="status-bar">
-        <div class="progress-container">
-          <div class="progress-bar" id="progress-bar"></div>
+        <!-- STATUS BAR -->
+        <div class="status-bar">
+          <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+          <span id="status-dot" class="status-dot idle">●</span>
+          <span id="status-text">Ready</span>
+          <span class="version">v0.8.0</span>
         </div>
-        <span id="status-dot" class="status-dot idle">●</span>
-        <span id="status-text">Ready</span>
-        <span class="version">v0.8.0</span>
-      </div>
 
-      <!-- LOG PANEL (spans under A and Center) -->
-      <div class="log-panel">
-        <div id="log-output" class="log-output"></div>
+        <!-- LOG PANEL -->
+        <div class="log-panel">
+          <div id="log-output" class="log-output"></div>
+        </div>
       </div>
 
       <!-- DECK B -->
