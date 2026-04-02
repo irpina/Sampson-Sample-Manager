@@ -10,7 +10,7 @@ Scans selected folders in a background thread; populates `state["preview_entries
 
 | Function | Description |
 |----------|-------------|
-| `refresh()` | Entry point — cancel any pending scan, spawn new background thread |
+| `refresh()` | Entry point — spawn background thread to scan selected folders/files |
 | `sort_by(col)` | Toggle sort on `"bpm"` \| `"key"` \| `"duration"`; cycles asc → desc → off |
 | `apply_filter(text)` | Filter `_preview_rows` by query, update `state["preview_entries"]` |
 | `set_file_bpm(filepath, bpm)` | Set manual BPM override + refresh |
@@ -83,3 +83,4 @@ Users can double-click the "Will become" column in Deck B to manually override t
 - `files with unreadable headers` show no length and are excluded from `MinLength`/`MaxLength` filters
 - Filename matching is case-insensitive substring (not glob, not regex)
 - **Name overrides** take precedence over `_compute_output()` but subfolder (`rel_sub`) is still computed normally
+- **Unified selection** — `_scan_thread` handles both directories (scanned via `rglob`) and individual files (added directly) from `selected_folders`

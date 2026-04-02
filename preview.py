@@ -301,18 +301,17 @@ def _scan_thread(path_str: str):
     
     if selected:
         files = []
-        for folder_path in selected:
-            p = Path(folder_path)
+        already = set()
+        for item_path in selected:
+            p = Path(item_path)
             if p.is_dir():
-                files += [f for f in p.rglob("*")
-                          if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
-        
-        # Also include audio files sitting directly in source_root
-        # (browser lists them but they're not in any selected subfolder)
-        already = set(files)
-        for f in sorted(source_root.iterdir()):
-            if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS and f not in already:
-                files.append(f)
+                for f in p.rglob("*"):
+                    if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file() and f not in already:
+                        files.append(f)
+                        already.add(f)
+            elif p.is_file() and p.suffix.lower() in constants.AUDIO_EXTS and p not in already:
+                files.append(p)
+                already.add(p)
     else:
         files = []
     

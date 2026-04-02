@@ -78,11 +78,12 @@ def navigate_to(path_str: str) -> dict[str, any]:
         audio = sorted(f for f in p.iterdir()
                        if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS)
         for f in audio:
+            state._selected_folders.add(str(f))  # Add files to selection
             entries.append({
                 "name": f.name,
                 "path": str(f),
                 "type": "file",
-                "checked": False,
+                "checked": True,        # Default checked
                 "icon": "♪",
                 "is_audio": True,
             })
@@ -126,9 +127,9 @@ def toggle_folder(path: str, checked: bool) -> None:
 
 
 def select_all_visible() -> None:
-    """Select all visible folders."""
+    """Select all visible folders and files."""
     for entry in state._state.get("dir_entries", []):
-        if entry.get("type") == "folder":
+        if entry.get("type") in ("folder", "file"):
             entry["checked"] = True
             state._selected_folders.add(entry["path"])
     
@@ -138,9 +139,9 @@ def select_all_visible() -> None:
 
 
 def deselect_all_visible() -> None:
-    """Deselect all visible folders."""
+    """Deselect all visible folders and files."""
     for entry in state._state.get("dir_entries", []):
-        if entry.get("type") == "folder":
+        if entry.get("type") in ("folder", "file"):
             entry["checked"] = False
             state._selected_folders.discard(entry["path"])
     

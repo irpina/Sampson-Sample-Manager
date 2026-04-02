@@ -1,4 +1,4 @@
-/* SAMPSON v0.8.1 — Frontend controller */
+/* SAMPSON v0.8.2 — Frontend controller */
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -46,7 +46,7 @@ async function init() {
   Object.assign(APP_STATE, initialState);
   
   renderAll();
-  log("SAMPSON v0.8.1 ready", "info");
+  log("SAMPSON v0.8.2 ready", "info");
 }
 
 // ---------------------------------------------------------------------------
@@ -136,13 +136,13 @@ function renderDeckA() {
   $('#breadcrumb-a').textContent = APP_STATE.active_dir || '/';
   $('#file-count').textContent = `${APP_STATE.src_count || 0} audio files`;
   
-  // Update header checkbox state
-  const folders = (APP_STATE.dir_entries || []).filter(e => e.type === 'folder');
-  const checkedCount = folders.filter(e => e.checked).length;
+  // Update header checkbox state (counts both folders and files)
+  const checkableEntries = (APP_STATE.dir_entries || []).filter(e => e.type === 'folder' || e.type === 'file');
+  const checkedCount = checkableEntries.filter(e => e.checked).length;
   const headerCb = $('#check-all');
-  if (headerCb && folders.length > 0) {
-    headerCb.checked = checkedCount === folders.length;
-    headerCb.indeterminate = checkedCount > 0 && checkedCount < folders.length;
+  if (headerCb && checkableEntries.length > 0) {
+    headerCb.checked = checkedCount === checkableEntries.length;
+    headerCb.indeterminate = checkedCount > 0 && checkedCount < checkableEntries.length;
   } else if (headerCb) {
     headerCb.checked = false;
     headerCb.indeterminate = false;
@@ -158,7 +158,7 @@ function renderDeckA() {
     tr.dataset.path = entry.path;
     tr.dataset.type = entry.type;
     
-    const checkHtml = entry.type === 'folder' 
+    const checkHtml = (entry.type === 'folder' || entry.type === 'file')
       ? `<input type="checkbox" ${entry.checked ? 'checked' : ''} />`
       : '';
     
