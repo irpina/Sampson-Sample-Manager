@@ -15,6 +15,8 @@ Scans selected folders in a background thread; populates `state["preview_entries
 | `apply_filter(text)` | Filter `_preview_rows` by query, update `state["preview_entries"]` |
 | `set_file_bpm(filepath, bpm)` | Set manual BPM override + refresh |
 | `set_file_key(filepath, key)` | Set manual key override + refresh |
+| `set_file_name(filepath, name)` | Set manual filename override (stem only) + refresh |
+| `get_name_override(filepath)` | Get manual name override for a file (or None) |
 
 ## Preview Entry Shape
 
@@ -53,6 +55,22 @@ Filter bypasses the 500-row `MAX_PREVIEW_ROWS` cap — all matches shown.
 | `_duration_cache` | `path → float` seconds (cleared each refresh) |
 | `_sort_col` | `"bpm" \| "key" \| "duration" \| None` |
 | `_sort_asc` | `bool` |
+| `_name_overrides` | `srcpath → manual dest stem` (persists across refreshes) |
+
+## Manual Name Overrides
+
+Users can double-click the "Will become" column in Deck B to manually override the output filename. This bypasses the normal rename logic (including custom prefix).
+
+**API:**
+- `set_file_name(filepath, name)` — Set override (stem only, extension auto-added) or empty to clear
+- `get_name_override(filepath)` — Retrieve override stem (or None)
+
+**Behavior:**
+- Overrides persist across settings changes (BPM append, struct mode, etc.)
+- Overrides are cleared when navigating to a new folder in Deck A (`browser.navigate_to()`)
+- Manual names show in amber italic (`td.col-dest.overridden`) to indicate override active
+- Extension is always preserved based on conversion settings (manual stem + auto extension)
+- Row entry has `"name_manual": true` when an override is active
 
 ## Critical Rules
 
@@ -64,3 +82,4 @@ Filter bypasses the 500-row `MAX_PREVIEW_ROWS` cap — all matches shown.
 - `apply_filter()` operates on `_preview_rows` — always call after sort, not instead of sort
 - `files with unreadable headers` show no length and are excluded from `MinLength`/`MaxLength` filters
 - Filename matching is case-insensitive substring (not glob, not regex)
+- **Name overrides** take precedence over `_compute_output()` but subfolder (`rel_sub`) is still computed normally

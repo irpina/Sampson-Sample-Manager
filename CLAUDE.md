@@ -185,6 +185,7 @@ Add a new device by inserting one entry into `PROFILES` dict — no other files 
 | BPM detection algorithm | `bpm._detect_bpm_algorithm()` |
 | Key detection algorithm | `key._detect_key_algorithm()` |
 | macOS code signing | `build_macos.sh` |
+| Override output filename per-file | `preview.set_file_name()` + `preview._name_overrides` |
 
 ## Known limitations
 

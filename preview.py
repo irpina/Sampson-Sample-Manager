@@ -22,6 +22,7 @@ _preview_rows: list = []   # All row data for filtering/sorting
 _duration_cache: dict = {}  # str(path) → float | None
 _sort_col: str | None = None  # "bpm" | "key" | "duration" | None
 _sort_asc: bool = True
+_name_overrides: dict[str, str] = {}  # srcpath → manual dest stem
 
 
 # ── Duration & helpers ───────────────────────────────────────────────────────
@@ -244,6 +245,34 @@ def apply_filter(text: str = ""):
         state.set("preview_count_label", status_msg, push=False)
 
 
+# ── Name overrides ───────────────────────────────────────────────────────────
+
+def get_name_override(filepath) -> str | None:
+    """Get manual name override for a file (stem only, no extension)."""
+    return _name_overrides.get(str(filepath))
+
+
+def set_file_name(filepath: str, name: str) -> bool:
+    """Set or clear manual name override for a file.
+    
+    Args:
+        filepath: Full path to source file
+        name: New filename stem (no extension), or empty to clear override
+    
+    Returns:
+        True if successful
+    """
+    p = Path(filepath)
+    if not p.exists():
+        return False
+    if name:
+        _name_overrides[str(p)] = name
+    else:
+        _name_overrides.pop(str(p), None)
+    refresh()
+    return True
+
+
 # ── Main refresh logic ───────────────────────────────────────────────────────
 
 def refresh():
@@ -345,19 +374,33 @@ def _populate_preview(files: list[Path], source_root: Path, durations: dict):
             custom_prefix=custom_prefix
         )
         
-        # Add visual placeholders
-        if bpm_enabled and bpm_append and bpm_val is None:
-            p = Path(new_name)
-            new_name = p.stem + "_???bpm" + p.suffix
+        # Check for manual name override
+        name_manual = False
+        manual_override = _name_overrides.get(str(f))
+        if manual_override:
+            name_manual = True
+            # Use manual name — preserve extension from conversion if active
+            if convert_enabled:
+                new_name = manual_override + get_target_extension(target_format)
+            else:
+                # Keep original extension
+                new_name = manual_override + Path(new_name).suffix
         
-        if key_enabled and key_append and key_val is None:
-            p = Path(new_name)
-            new_name = p.stem + "_???" + p.suffix
+        # Add visual placeholders (skip for manual overrides)
+        if not manual_override:
+            if bpm_enabled and bpm_append and bpm_val is None:
+                p = Path(new_name)
+                new_name = p.stem + "_???bpm" + p.suffix
+            
+            if key_enabled and key_append and key_val is None:
+                p = Path(new_name)
+                new_name = p.stem + "_???" + p.suffix
         
         # Add conversion indicator
         if convert_enabled:
-            new_name_stem = Path(new_name).stem
-            new_name = new_name_stem + get_target_extension(target_format)
+            if not manual_override:
+                new_name_stem = Path(new_name).stem
+                new_name = new_name_stem + get_target_extension(target_format)
             display_name = f"{new_name} [c]"
         else:
             display_name = new_name
@@ -367,6 +410,7 @@ def _populate_preview(files: list[Path], source_root: Path, durations: dict):
         row = {
             "src_name": f.name,
             "dest_name": display_name,
+            "name_manual": name_manual,
             "subfolder": rel_sub if (modify_names and struct_mode != "flat") else "",
             "bpm": bpm_display,
             "key": key_display,

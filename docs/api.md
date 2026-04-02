@@ -33,6 +33,7 @@ Exposes Python backend to JavaScript as `window.pywebview.api.*`. All public met
 | `sort_preview(column)` | Sort by `"bpm"` \| `"key"` \| `"duration"` |
 | `set_file_bpm(filepath, bpm)` | Manually override BPM for a file |
 | `set_file_key(filepath, key)` | Manually override key for a file |
+| `set_file_name(filepath, name)` | Manually override output filename (stem only) |
 
 ### Playback
 | Method | Description |

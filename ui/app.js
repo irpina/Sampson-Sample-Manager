@@ -324,8 +324,8 @@ function renderDeckB() {
     tr.dataset.srcpath = entry.srcpath;
     
     tr.innerHTML = `
-      <td class="col-src">${escapeHtml(entry.src_name)}</td>
-      <td class="col-dest">${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
+      <td class="col-src" title="${escapeHtml(entry.src_name)}">${escapeHtml(entry.src_name)}</td>
+      <td class="col-dest${entry.name_manual ? ' overridden' : ''}" title="${entry.dest_name ? escapeHtml(entry.dest_name) : ''}">${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
       <td class="col-bpm editable" data-field="bpm">${entry.bpm || '—'}</td>
       <td class="col-key editable" data-field="key">${entry.key || '—'}</td>
       <td class="col-length">${entry.length || '—'}</td>
@@ -338,9 +338,10 @@ function renderDeckB() {
       }
     });
     
-    // Double-click BPM/Key to edit
+    // Double-click BPM/Key/Dest to edit
     const bpmCell = tr.querySelector('.col-bpm');
     const keyCell = tr.querySelector('.col-key');
+    const destCell = tr.querySelector('.col-dest');
     
     if (bpmCell && bpmCell.textContent !== '—') {
       bpmCell.addEventListener('dblclick', (e) => {
@@ -353,6 +354,14 @@ function renderDeckB() {
       keyCell.addEventListener('dblclick', (e) => {
         e.stopPropagation();
         startInlineEdit(tr, entry, 'key');
+      });
+    }
+    
+    if (destCell && destCell.textContent !== '—') {
+      destCell.classList.add('editable');
+      destCell.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        startInlineEdit(tr, entry, 'dest_name');
       });
     }
     
@@ -383,8 +392,20 @@ async function startInlineEdit(row, entry, field) {
   if (isEditing) return;
   isEditing = true;
   
-  const cell = row.querySelector(`.col-${field}`);
-  const currentValue = entry[field] || '';
+  const isDestName = field === 'dest_name';
+  const cell = row.querySelector(isDestName ? '.col-dest' : `.col-${field}`);
+  
+  // For dest_name: strip [c] indicator and extension — edit stem only
+  let currentValue;
+  if (isDestName) {
+    currentValue = (entry.dest_name || '').replace(/ \[c\]$/, '');
+    // Strip extension so user edits just the stem
+    const dotIdx = currentValue.lastIndexOf('.');
+    if (dotIdx > 0) currentValue = currentValue.slice(0, dotIdx);
+  } else {
+    currentValue = entry[field] || '';
+  }
+  const originalValue = currentValue;
   const isBpm = field === 'bpm';
   
   // Replace cell content with input
@@ -395,7 +416,12 @@ async function startInlineEdit(row, entry, field) {
   
   function save() {
     const newValue = input.value.trim();
-    if (newValue && newValue !== currentValue) {
+    if (isDestName) {
+      if (newValue !== originalValue) {
+        pywebview.api.set_file_name(entry.srcpath, newValue);
+      }
+      isEditing = false;
+    } else if (newValue && newValue !== currentValue) {
       if (isBpm) {
         const bpm = parseFloat(newValue);
         if (!isNaN(bpm) && bpm >= 30 && bpm <= 300) {
@@ -404,8 +430,10 @@ async function startInlineEdit(row, entry, field) {
       } else {
         pywebview.api.set_file_key(entry.srcpath, newValue);
       }
+      isEditing = false;
+    } else {
+      isEditing = false;
     }
-    isEditing = false;
     // Re-render will restore the cell
   }
   

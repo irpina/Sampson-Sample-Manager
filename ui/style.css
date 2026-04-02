@@ -616,8 +616,29 @@ body.light-mode #logo-img {
   background: var(--border);
 }
 /* Preview table column widths */
+.preview-table { table-layout: fixed; }
+
+.preview-table .col-src   { width: 32%; }
+.preview-table .col-dest  { width: 32%; }
+.preview-table .col-bpm   { width: 12%; }
+.preview-table .col-key   { width: 12%; }
+.preview-table .col-length { width: 12%; }
+
+.preview-table .col-src,
+.preview-table .col-dest {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .preview-table th { cursor: default; }
 .preview-table th:hover { background: var(--bg-surface-2); }
+
+/* Overridden dest name cells */
+.preview-table td.col-dest.overridden {
+  font-style: italic;
+  color: var(--amber);
+}
 
 /* Selected row highlighting */
 #preview-list tr.selected {

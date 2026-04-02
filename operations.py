@@ -10,6 +10,7 @@ import state
 import constants
 import bpm as bpm_module
 import key as key_module
+import preview
 from conversion import (
     check_ffmpeg, convert_file, get_target_extension,
     parse_sample_rate, parse_bit_depth, parse_channels
@@ -218,8 +219,17 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
             custom_prefix=custom_prefix
         )
         
-        # Apply extension change if converting
-        if convert_options:
+        # Check for manual name override
+        manual_override = preview.get_name_override(f)
+        if manual_override:
+            if convert_options:
+                new_name = manual_override + get_target_extension(
+                    convert_options["output_format"])
+            else:
+                new_name = manual_override + Path(new_name).suffix
+        
+        # Apply extension change if converting (only if no manual override)
+        elif convert_options:
             new_name = Path(new_name).stem + get_target_extension(
                 convert_options["output_format"])
         

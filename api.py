@@ -295,3 +295,9 @@ class SampsonAPI:
         import preview
         success = preview.set_file_key(filepath, key)
         return {"success": success}
+
+    def set_file_name(self, filepath: str, name: str) -> dict:
+        """Set manual filename override for a file (stem only, no extension)."""
+        import preview
+        success = preview.set_file_name(filepath, name)
+        return {"ok": success}

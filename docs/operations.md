@@ -56,6 +56,14 @@ _compute_output(
 3. Flush BPM/key caches once at end
 4. Call registered refresh callback (updates preview)
 
+## Name Overrides
+
+Manual filename overrides from `preview.get_name_override()` take precedence over `_compute_output()`:
+- Override is the **stem only** (no extension)
+- Extension is auto-added based on conversion settings (`.wav`, `.aif`, or original)
+- Subfolder (`rel_sub`) is still computed by `_compute_output()` normally
+- Operations use the same override logic as preview for consistency
+
 ## Critical Rules
 
 - **`_compute_output()` must stay identical between preview and execution** — any rename logic change must update both
@@ -65,3 +73,4 @@ _compute_output(
 - BPM/key suffix is protected from path-limit truncation by `_apply_path_limit(protect=True)`
 - `state.set("is_running", True)` at start, `False` at end (even on exception)
 - Worker runs in a daemon thread — it will be killed on app exit without cleanup
+- **Name overrides** from preview module are checked after `_compute_output()` and override just the filename (not the subfolder)

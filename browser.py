@@ -27,6 +27,9 @@ def navigate_to(path_str: str) -> dict[str, any]:
 
     state.set("active_dir", str(p), push=False)
     
+    # Clear name overrides on folder navigation
+    preview._name_overrides.clear()
+    
     # Clear previous selection tracking for this view
     # (Keep existing selections — they persist across navigation)
     

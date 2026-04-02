@@ -100,6 +100,26 @@ Both deck accent bars extend full height naturally — no calc() hacks.
 - `.btn-run:hover` / `.btn-play:hover`: use `filter: brightness(0.85)` (theme-neutral)
 - `.btn-transport`: styled consistently with other buttons (background, border, hover)
 - Logo: `.logo { overflow: hidden; height: 28px; width: 120px }` + `#logo-img { object-fit: cover; object-position: center 40% }` for white logo padding compensation
+- Preview table columns: fixed widths via `.col-src` (32%), `.col-dest` (32%), `.col-bpm` (12%), `.col-key` (12%), `.col-length` (12%)
+- Ellipsis on name columns: `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`
+- Override styling: `.col-dest.overridden` shows amber italic text
+
+### Double-Click Editing
+
+Deck B table supports inline editing via double-click:
+
+| Column | Edit Behavior |
+|--------|---------------|
+| BPM | Double-click → inline input → `set_file_bpm()` |
+| Note | Double-click → inline input → `set_file_key()` |
+| Will become | Double-click → inline input → `set_file_name()` (edits stem only) |
+
+**Name editing details:**
+- User edits only the **filename stem** (no extension)
+- Extension is auto-preserved (.wav, .aif, etc.)
+- Conversion indicator `[c]` is stripped for editing, preserved on save
+- Empty value clears the override (returns to auto-computed name)
+- Styled with `.overridden` class (amber italic) to indicate active override
 
 ---
 
@@ -108,6 +128,8 @@ Both deck accent bars extend full height naturally — no calc() hacks.
 - **Never use `../` paths for assets** — use relative paths from `ui/` (e.g. `sampsontransparentwhite.png`, not `../sampsontransparentwhite.png`)
 - **All API results come via state push** — don't rely on return values from `pywebview.api.*` for data; check `APP_STATE` after the push
 - **`window._onStateUpdate(patch)`** must remain available — Python calls it via `evaluate_js()`
-- **`isEditing` flag** prevents keyboard navigation while an inline BPM/key edit is active — check it before handling `keydown`
+- **`isEditing` flag** prevents keyboard navigation while an inline BPM/key/dest_name edit is active — check it before handling `keydown`
 - **`escapeHtml()`** must be used on all user-controlled strings rendered into innerHTML
 - **`pywebviewready`** event fires when the bridge is ready — do NOT call `pywebview.api.*` before this event
+- **Double-click on dest_name** sets `isEditing = true`, calls `startInlineEdit()` with `field = 'dest_name'`
+- **Name override persistence** — clears on folder navigation, survives settings changes
