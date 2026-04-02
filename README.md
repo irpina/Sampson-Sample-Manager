@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="sampsontransparentwhite.png">
-    <source media="(prefers-color-scheme: light)" srcset="sampsontransparent2.png">
-    <img src="sampsontransparent2.png" alt="SAMPSON Logo" width="400">
+    <source media="(prefers-color-scheme: dark)" srcset="ui/sampsontransparentwhite.png">
+    <source media="(prefers-color-scheme: light)" srcset="ui/sampsontransparent2.png">
+    <img src="ui/sampsontransparent2.png" alt="SAMPSON Logo" width="400">
   </picture>
 </p>
 
