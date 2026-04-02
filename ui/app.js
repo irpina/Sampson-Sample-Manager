@@ -1,4 +1,4 @@
-/* SAMPSON v0.8.0 — Frontend controller */
+/* SAMPSON v0.8.1 — Frontend controller */
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -46,7 +46,7 @@ async function init() {
   Object.assign(APP_STATE, initialState);
   
   renderAll();
-  log("SAMPSON v0.8.0 ready", "info");
+  log("SAMPSON v0.8.1 ready", "info");
 }
 
 // ---------------------------------------------------------------------------

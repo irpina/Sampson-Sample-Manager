@@ -13,7 +13,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-There is no test suite.
+There is no test suite. Per-module developer reference docs live in `docs/` (state.md, api.md, browser.md, preview.md, operations.md, bpm.md, key.md, conversion.md, playback.md, ui.md, constants.md).
 
 ## Build
 
@@ -69,10 +69,10 @@ state.py       ← no app imports
 conversion.py  → state
 bpm.py         → conversion
 key.py         → conversion
-browser.py     → state, constants
-preview.py     → state, constants, operations, bpm, key, conversion
-playback.py    → state
 operations.py  → state, constants, conversion, bpm, key
+preview.py     → state, constants, operations, bpm, key, conversion
+browser.py     → state, constants, preview
+playback.py    → state
 api.py         → state, browser, preview, playback, operations, conversion
 main.py        → state, api
 ```
@@ -191,4 +191,4 @@ Add a new device by inserting one entry into `PROFILES` dict — no other files 
 - Unfiltered preview capped at `MAX_PREVIEW_ROWS` (500); filter bar bypasses this cap.
 - Destination collisions not handled — existing files are overwritten silently.
 - FFmpeg must be available (bundled in PyInstaller builds; installed separately for dev runs using conversion).
-- Deck B amber accent bar will not track if the user manually resizes the log panel (structural CSS constraint — the bar height is driven by the flex container, not a calculated offset).
+
