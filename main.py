@@ -118,7 +118,7 @@ def main():
     webview.start(
         debug=False,  # Set to True for dev
         http_server=False,
-        gui='qt' if sys.platform != 'darwin' else 'cocoa',
+        gui='edgechromium' if sys.platform == 'win32' else ('qt' if sys.platform == 'linux' else 'cocoa'),
     )
 
 
