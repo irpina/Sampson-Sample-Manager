@@ -8,7 +8,7 @@
 
 **Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux, macOS) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, convert formats for specific devices, preview exactly how they'll be renamed and structured, then copy or move them in one click.
 
-> Pre-built binaries for **Windows** (`.exe`), **macOS** (`.app`), and **Linux** available on the [Releases](https://github.com/irpina/Sampson-Sample-Manager/releases) page — no Python required.
+> Pre-built binaries for **macOS** (`.app`) and **Linux** available on the [Releases](https://github.com/irpina/Sampson-Sample-Manager/releases) page — no Python required.
 
 ---
 
@@ -64,9 +64,8 @@ Grab the latest release for your platform from the [Releases](https://github.com
 
 | Platform | Download | Notes |
 |----------|----------|-------|
-| Windows | `SAMPSON.exe` | Portable executable |
-| macOS | `SAMPSON-vX.X.X-macOS.zip` | Apple Silicon, signed & notarized |
-| Linux | `SAMPSON` | Binary (requires SDL2)
+| macOS | `SAMPSON_mac_vX.X.X.zip` | Apple Silicon, signed & notarized |
+| Linux | `SAMPSON_linux_vX.X.X.tar.gz` | x86_64 binary |
 
 ---
 
@@ -78,7 +77,7 @@ python main.py
 ```
 
 Requires Python 3.10+. Core dependencies:
-- `pygame-ce` — audio playback (Windows/Linux)
+- `pygame-ce` — audio playback (Linux)
 - `AppKit` (NSSound) — audio playback (macOS native)
 - `pywebview` — modern web-based UI
 - `pydub` — audio conversion
@@ -86,17 +85,19 @@ Requires Python 3.10+. Core dependencies:
 
 ### Linux prerequisites
 
-On Linux, pywebview requires GTK and WebKit2:
+The pre-built Linux binary uses Qt/WebEngine (bundled — no extra install needed).
+
+Running from source requires the Qt WebEngine stack:
 
 ```bash
 # Debian/Ubuntu
-sudo apt install python3-gi gir1.2-webkit2-4.0
+sudo apt install python3-pyqt6 python3-pyqt6.qtwebengine
 
 # Fedora
-sudo dnf install pygobject3 webkit2gtk3
+sudo dnf install python3-qt6-webengine
 
 # Arch
-sudo pacman -S python-gobject webkit2gtk
+sudo pacman -S python-pyqt6-webengine
 ```
 
 ### Building a binary
@@ -106,7 +107,7 @@ pip install pyinstaller
 pyinstaller SAMPSON.spec
 ```
 
-The binary will be in `dist/SAMPSON` (macOS/Linux) or `dist/SAMPSON.exe` (Windows).
+The binary will be in `dist/SAMPSON` (macOS/Linux).
 
 ---
 
@@ -171,49 +172,26 @@ Click **☀ Light** / **☾ Dark** in the top-right corner to switch themes. Sou
 
 ---
 
-## Platform Notes
-
-### macOS (v0.4.0+)
-
-The macOS build has been optimized for size and reliability:
-
-- **Build size reduced 50%** — from 158 MB down to ~79 MB
-- **Native audio playback** — Uses AppKit NSSound instead of SDL2/pygame
-- **Signed & Notarized** — No Gatekeeper warnings on launch
-- **Apple Silicon** — Native ARM64 build (M1/M2/M3)
-
-The size reduction was achieved through:
-1. Stripping debug symbols
-2. Removing unused stdlib modules
-3. Eliminating ffprobe (pydub now uses explicit format hints)
-4. Replacing pygame/SDL2 with native NSSound
-5. Cleaning Tcl/Tk data files
-
----
-
 ## Project structure
 
 ```
 SAMPSON/
-├── main.py              # entry point — DPI setup, creates root window, starts app
+├── main.py              # entry point — initialises app, launches pywebview window
+├── api.py               # JS↔Python bridge — all calls from the UI land here
 ├── state.py             # all shared mutable globals (widgets, vars, flags)
 ├── constants.py         # AUDIO_EXTS, MAX_PREVIEW_ROWS, hardware PROFILES
 ├── conversion.py        # audio conversion engine (pydub + ffmpeg)
-├── dpi.py               # Windows DPI awareness and _px() scaling helper
-├── theme.py             # colour constants, _apply_theme_colors(), setup_styles()
-├── log_panel.py         # operation log helpers
 ├── operations.py        # file copy/move/conversion worker
 ├── browser.py           # Deck A file browser — navigation and browse dialogs
 ├── preview.py           # Deck B rename preview, hover tooltip, background scan
 ├── bpm.py               # BPM detection engine (energy-envelope autocorrelation)
 ├── key.py               # Musical key / root-note detection
-├── playback.py          # audio playback via pygame-ce (Win/Linux) or NSSound (macOS)
-├── SAMPSON_mac.spec     # PyInstaller configuration for macOS builds
-├── build_macos.sh       # macOS build script with size optimization
-├── pyi_rth_tk_silence.py # Runtime hook for Tcl/Tk crash fix
-├── builders.py          # all build_* UI functions, toggle_theme(), build_app()
+├── playback.py          # audio playback via pygame-ce (Linux) or NSSound (macOS)
+├── ui/                  # HTML/CSS/JS front-end (index.html, app.js, style.css, logos)
+├── build_macos.sh       # macOS build script (sign, notarize, zip)
 ├── requirements.txt     # Python dependencies
-└── SAMPSON.spec         # PyInstaller configuration
+├── SAMPSON.spec         # PyInstaller configuration (macOS + Linux)
+└── docs/                # per-module documentation
 ```
 
 ---
