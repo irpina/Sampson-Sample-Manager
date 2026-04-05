@@ -46,7 +46,7 @@ echo "[ 1/7 ] Pre-fetching ffmpeg binaries..."
 # ── 2. PyInstaller build ───────────────────────────────────────────────────────
 echo ""
 echo "[ 2/7 ] Running PyInstaller..."
-.venv/bin/pyinstaller SAMPSON_mac.spec --clean -y
+.venv/bin/pyinstaller SAMPSON.spec --clean -y
 
 # ── 3. Clean up non-runtime Tcl/Tk data ───────────────────────────────────────
 echo ""
@@ -202,7 +202,7 @@ fi
 # We create the distribution zip in /tmp (clean), then copy the app back.
 echo ""
 echo "[ 7/7 ] Creating distribution zip (in /tmp to avoid OneDrive xattrs)..."
-VERSION=$(grep 'CFBundleShortVersionString' SAMPSON_mac.spec | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
+VERSION=$(grep 'CFBundleShortVersionString' SAMPSON.spec | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1)
 ZIPPATH="$(pwd)/dist/SAMPSON_mac_v${VERSION}.zip"
 
 # Aggressively clean ALL xattrs before zipping - this is critical!

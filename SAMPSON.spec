@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 
 datas = []
 datas += collect_data_files('pygame')
-datas += [('sampsontransparent2.png', '.')]
+datas += [('ui/sampsontransparent2.png', '.'), ('ui/sampsontransparentwhite.png', '.')]
 
 # Include UI files
 datas += [('ui', 'ui')]
@@ -56,4 +56,16 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+
+app = BUNDLE(
+    exe,
+    name='SAMPSON.app',
+    icon=None,
+    bundle_identifier='com.zacharylouden.sampson',
+    info_plist={
+        'CFBundleShortVersionString': '0.8.2',
+        'CFBundleVersion': '0.8.2',
+        'NSHighResolutionCapable': True,
+    },
 )
