@@ -31,7 +31,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['librosa', 'numpy', 'aubio', 'tkinter', 'customtkinter'],
+    excludes=['librosa', 'numpy', 'aubio', 'tkinter', 'customtkinter', 'twine'],
     noarchive=False,
     optimize=0,
 )
