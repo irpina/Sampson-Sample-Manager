@@ -5,7 +5,7 @@ static-ffmpeg>=2.5.0
 pywebview>=4.0
 
 # Qt backend for Windows/Linux (macOS uses native cocoa backend)
-pywebview[qt]>=4.0; sys_platform != "darwin"
+pywebview[qt]>=4.0; sys_platform == "linux"
 
 # Python 3.13+ compatibility (audioop was removed from stdlib)
 audioop-lts>=0.2.0; python_version >= "3.13"

@@ -4,6 +4,9 @@ build/
 __pycache__/
 *.pyc
 .DS_Store
+# Ignore generated spec files but keep our build specs
+!SAMPSON.spec
+!SAMPSON_win.spec
 *.spec
 
 # Virtual environments (platform-specific)
