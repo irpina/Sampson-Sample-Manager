@@ -8,7 +8,7 @@
 
 **Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux, macOS) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, convert formats for specific devices, preview exactly how they'll be renamed and structured, then copy or move them in one click.
 
-> Pre-built binaries for **macOS** (`.app`) and **Linux** available on the [Releases](https://github.com/irpina/Sampson-Sample-Manager/releases) page — no Python required.
+> Pre-built binaries for **Windows** (`.exe`), **macOS** (`.app`), and **Linux** available on the [Releases](https://github.com/irpina/Sampson-Sample-Manager/releases) page — no Python required.
 
 ---
 
@@ -64,6 +64,7 @@ Grab the latest release for your platform from the [Releases](https://github.com
 
 | Platform | Download | Notes |
 |----------|----------|-------|
+| Windows | `SAMPSON_win_vX.X.X.zip` | Portable executable |
 | macOS | `SAMPSON_mac_vX.X.X.zip` | Apple Silicon, signed & notarized |
 | Linux | `SAMPSON_linux_vX.X.X.tar.gz` | x86_64 binary |
 
@@ -77,7 +78,7 @@ python main.py
 ```
 
 Requires Python 3.10+. Core dependencies:
-- `pygame-ce` — audio playback (Linux)
+- `pygame-ce` — audio playback (Windows/Linux)
 - `AppKit` (NSSound) — audio playback (macOS native)
 - `pywebview` — modern web-based UI
 - `pydub` — audio conversion
@@ -107,7 +108,7 @@ pip install pyinstaller
 pyinstaller SAMPSON.spec
 ```
 
-The binary will be in `dist/SAMPSON` (macOS/Linux).
+The binary will be in `dist/SAMPSON` (macOS/Linux) or `dist/SAMPSON.exe` (Windows).
 
 ---
 
