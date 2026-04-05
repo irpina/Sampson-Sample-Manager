@@ -739,12 +739,8 @@ body.light-mode #logo-img {
 }
 .help-icon:hover { opacity: 1; }
 
-.help-icon::after {
-  content: attr(data-tip);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 7px);
-  transform: translateX(-50%);
+.tooltip-popup {
+  position: fixed;
   background: var(--bg-surface-2);
   color: var(--text);
   border: 1px solid var(--border);
@@ -755,8 +751,6 @@ body.light-mode #logo-img {
   width: 210px;
   white-space: normal;
   pointer-events: none;
-  z-index: 200;
-  display: none;
+  z-index: 9999;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
-.help-icon:hover::after { display: block; }

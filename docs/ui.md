@@ -138,7 +138,7 @@ Deck B table supports inline editing via double-click:
 
 Every option in the centre panel has an inline `?` help icon that shows a tooltip on hover.
 
-**Implementation:** CSS-only — no JS. Each icon is a `<span class="help-icon" data-tip="...">?</span>` appended inside the `<label>` (or after the `<select>`). The tooltip text is in the `data-tip` attribute. Styling is in `style.css` under `/* ── Help tooltips */`.
+**Implementation:** JS + CSS. Each icon is a `<span class="help-icon" data-tip="...">?</span>`. On hover, JS appends a `.tooltip-popup` div to `<body>` and positions it via `getBoundingClientRect()`, bypassing `overflow: auto` on `.center-panel`. See the IIFE at the bottom of `app.js`.
 
 **Adding a new option with help text:**
 ```html

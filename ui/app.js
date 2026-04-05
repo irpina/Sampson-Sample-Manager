@@ -639,5 +639,49 @@ function log(message, type = 'info') {
   console.log(`[${type}] ${message}`);
 }
 
+// ── Help tooltips ─────────────────────────────────────────────────────────────
+(function () {
+  let tip = null;
+
+  function showTip(el) {
+    const text = el.getAttribute('data-tip');
+    if (!text) return;
+    tip = document.createElement('div');
+    tip.className = 'tooltip-popup';
+    tip.textContent = text;
+    document.body.appendChild(tip);
+    positionTip(el);
+  }
+
+  function positionTip(el) {
+    if (!tip) return;
+    const r = el.getBoundingClientRect();
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    // Prefer above; clamp to viewport edges
+    let top = r.top - th - 7;
+    if (top < 6) top = r.bottom + 7;
+    let left = r.left + r.width / 2 - tw / 2;
+    if (left < 6) left = 6;
+    if (left + tw > window.innerWidth - 6) left = window.innerWidth - tw - 6;
+    tip.style.top  = top + 'px';
+    tip.style.left = left + 'px';
+  }
+
+  function hideTip() {
+    if (tip) { tip.remove(); tip = null; }
+  }
+
+  document.addEventListener('mouseover', function (e) {
+    const el = e.target.closest('.help-icon');
+    if (el) { hideTip(); showTip(el); }
+  });
+
+  document.addEventListener('mouseout', function (e) {
+    const el = e.target.closest('.help-icon');
+    if (el) hideTip();
+  });
+})();
+
 // Start once pywebview is ready
 window.addEventListener('pywebviewready', init);
