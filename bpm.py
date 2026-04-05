@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Optional, List, Tuple
 
 from conversion import _find_ffmpeg_path
+from constants import MIN_BPM_DURATION_MS
 
 # ── Cache ─────────────────────────────────────────────────────────────────────
 _CACHE_DIR  = Path.home() / ".sampson"
@@ -262,6 +263,11 @@ def detect_bpm(path, force=False):
             return None
         
         audio = audio.set_channels(1)
+        
+        # Skip files too short for reliable BPM detection
+        if len(audio) < MIN_BPM_DURATION_MS:
+            _log(f"[BPM] SKIP: {path.name} too short ({len(audio)}ms < {MIN_BPM_DURATION_MS}ms)")
+            return None
         
         if len(audio) > 60000:
             audio = audio[:60000]
