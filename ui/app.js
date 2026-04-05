@@ -47,6 +47,7 @@ async function init() {
   
   renderAll();
   log("SAMPSON v0.8.2 ready", "info");
+  pywebview.api.on_ready();
 }
 
 // ---------------------------------------------------------------------------

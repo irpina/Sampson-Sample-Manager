@@ -3,7 +3,7 @@
 Exposes Python backend to JavaScript as `window.pywebview.api.*`. All public methods on `SampsonAPI` are callable from JS.
 
 ## Imports
-- **Imports:** `state`, `constants`, `browser`, `preview`, `playback`, `operations`, `conversion`
+- **Imports:** `state`, `constants`, `browser`, `preview`, `playback`, `operations`, `conversion`, `settings`
 - **Imported by:** `main.py` only
 
 ## Method Reference
@@ -12,6 +12,7 @@ Exposes Python backend to JavaScript as `window.pywebview.api.*`. All public met
 | Method | Description |
 |--------|-------------|
 | `get_state()` | Return full state dict to JS on init |
+| `on_ready()` | Called by JS after initial render; applies saved source dir with fallback chain |
 | `set_option(key, value)` | Generic setter with side effects (see below) |
 | `set_options(options)` | Batch update multiple options |
 

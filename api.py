@@ -16,6 +16,7 @@ import browser
 import preview
 import playback
 import operations
+import settings as app_settings
 from conversion import check_ffmpeg
 
 
@@ -29,6 +30,27 @@ class SampsonAPI:
     def get_state(self) -> dict[str, Any]:
         """Return full application state."""
         return state.get_all()
+
+    def on_ready(self) -> None:
+        """Called by JS after initial render — applies startup source directory."""
+        last = app_settings.get_last_source()
+
+        # Fallback chain: saved path → cwd → app dir → nothing
+        candidates = []
+        if last:
+            candidates.append(last)
+        candidates.append(os.getcwd())
+        if getattr(sys, 'frozen', False):
+            candidates.append(os.path.dirname(sys.executable))
+        else:
+            candidates.append(os.path.dirname(os.path.abspath(__file__)))
+
+        for path in candidates:
+            if path and Path(path).is_dir():
+                state.set("source", path)
+                self._on_source_changed(path)
+                return
+        # All fallbacks failed — start empty, don't crash
 
     def set_option(self, key: str, value: Any) -> None:
         """Generic setter for any option key."""
@@ -63,6 +85,7 @@ class SampsonAPI:
             if result and len(result) > 0:
                 path = result[0]
                 state.set("source", path)
+                app_settings.set_last_source(path)
                 self._on_source_changed(path)
                 return path
         except Exception as e:
