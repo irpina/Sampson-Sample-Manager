@@ -716,3 +716,47 @@ body.light-mode #logo-img {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* ── Help tooltips ────────────────────────────────────────────────────────── */
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  color: var(--bg-root);
+  font-size: 8px;
+  font-weight: 700;
+  cursor: help;
+  margin-left: 5px;
+  opacity: 0.55;
+  position: relative;
+  vertical-align: middle;
+  flex-shrink: 0;
+  user-select: none;
+}
+.help-icon:hover { opacity: 1; }
+
+.help-icon::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  transform: translateX(-50%);
+  background: var(--bg-surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.4;
+  width: 210px;
+  white-space: normal;
+  pointer-events: none;
+  z-index: 200;
+  display: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.help-icon:hover::after { display: block; }

@@ -134,5 +134,21 @@ Deck B table supports inline editing via double-click:
 - **Double-click on dest_name** sets `isEditing = true`, calls `startInlineEdit()` with `field = 'dest_name'`
 - **Name override persistence** — clears on folder navigation, survives settings changes
 
+### Help Tooltips
+
+Every option in the centre panel has an inline `?` help icon that shows a tooltip on hover.
+
+**Implementation:** CSS-only — no JS. Each icon is a `<span class="help-icon" data-tip="...">?</span>` appended inside the `<label>` (or after the `<select>`). The tooltip text is in the `data-tip` attribute. Styling is in `style.css` under `/* ── Help tooltips */`.
+
+**Adding a new option with help text:**
+```html
+<label class="check-label">
+  <input type="checkbox" id="opt-foo" data-key="foo" />
+  Option name<span class="help-icon" data-tip="Explain what this does in one or two sentences.">?</span>
+</label>
+```
+
+**Rule:** Every new control added to the centre panel MUST include a `.help-icon` span with a `data-tip`. Keep tip text under 120 characters. Do not use HTML inside `data-tip`.
+
 ---
 *SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

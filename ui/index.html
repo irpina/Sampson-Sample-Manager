@@ -69,15 +69,15 @@
           <div class="center-content">
             <!-- Top options -->
             <div class="options-row">
-              <label class="check-label"><input type="checkbox" id="opt-move" data-key="move" /> Move files</label>
-              <label class="check-label"><input type="checkbox" id="opt-dry" data-key="dry" checked /> Dry run</label>
+              <label class="check-label"><input type="checkbox" id="opt-move" data-key="move" /> Move files<span class="help-icon" data-tip="Moves files to the destination and deletes the originals. Use Dry run first to verify.">?</span></label>
+              <label class="check-label"><input type="checkbox" id="opt-dry" data-key="dry" checked /> Dry run<span class="help-icon" data-tip="Logs every action without writing to disk. Turn off to execute for real. On by default.">?</span></label>
             </div>
 
             <!-- Custom prefix -->
             <div class="option-block">
-              <label class="check-label"><input type="checkbox" id="opt-rename" data-key="modify_names" /> Modify file names</label>
+              <label class="check-label"><input type="checkbox" id="opt-rename" data-key="modify_names" /> Modify file names<span class="help-icon" data-tip="Prefixes output filenames with the parent folder name (e.g. Kicks_kick_01.wav). Enable to set a custom prefix.">?</span></label>
               <div class="indented">
-                <input type="text" id="custom-prefix" class="text-input" data-key="custom_prefix" placeholder="Prefix (max 10 chars)" maxlength="10" disabled />
+                <input type="text" id="custom-prefix" class="text-input" data-key="custom_prefix" placeholder="Prefix (max 10 chars)" maxlength="10" disabled /><span class="help-icon" data-tip="Replaces the parent-folder prefix with your own text (max 10 chars). e.g. KIT → KIT_kick_01.wav.">?</span>
               </div>
             </div>
 
@@ -87,9 +87,9 @@
                 <span class="chevron">▶</span> Output structure
               </button>
               <div class="collapsible-content">
-                <label class="radio-label"><input type="radio" name="output" value="flat" data-key="struct_mode" checked /> Flat</label>
-                <label class="radio-label"><input type="radio" name="output" value="mirror" data-key="struct_mode" /> Mirror</label>
-                <label class="radio-label"><input type="radio" name="output" value="parent" data-key="struct_mode" /> By parent</label>
+                <label class="radio-label"><input type="radio" name="output" value="flat" data-key="struct_mode" checked /> Flat<span class="help-icon" data-tip="All files placed directly in the destination folder.">?</span></label>
+                <label class="radio-label"><input type="radio" name="output" value="mirror" data-key="struct_mode" /> Mirror<span class="help-icon" data-tip="Recreates the full source directory tree inside the destination.">?</span></label>
+                <label class="radio-label"><input type="radio" name="output" value="parent" data-key="struct_mode" /> By parent<span class="help-icon" data-tip="Groups files into subfolders named after their immediate source parent folder.">?</span></label>
               </div>
             </div>
 
@@ -104,6 +104,7 @@
                   <option value="MPC One">MPC One</option>
                   <option value="SP-404mkII">SP-404mkII</option>
                 </select>
+                <span class="help-icon" data-tip="Enforces device path-length limits and auto-applies conversion presets. M8: 127 chars. MPC One / SP-404mkII: 255 chars.">?</span>
               </div>
             </div>
 
@@ -112,7 +113,7 @@
                 <span class="chevron">▶</span> Audio conversion
               </button>
               <div class="collapsible-content">
-                <label class="check-label"><input type="checkbox" id="opt-convert" data-key="convert_enabled" /> Convert files</label>
+                <label class="check-label"><input type="checkbox" id="opt-convert" data-key="convert_enabled" /> Convert files<span class="help-icon" data-tip="Converts audio to the format, sample rate, bit depth, and channel layout selected below.">?</span></label>
                 <div class="conversion-grid">
                   <div class="field">
                     <label>Format</label>
@@ -148,8 +149,8 @@
                     </select>
                   </div>
                 </div>
-                <label class="check-label"><input type="checkbox" id="opt-normalize" data-key="convert_normalize" disabled /> Normalize</label>
-                <label class="check-label"><input type="checkbox" id="opt-follow-device" data-key="convert_follow_profile" checked disabled /> Follow device profile</label>
+                <label class="check-label"><input type="checkbox" id="opt-normalize" data-key="convert_normalize" disabled /> Normalize<span class="help-icon" data-tip="Normalises peak audio level to 0 dBFS during conversion.">?</span></label>
+                <label class="check-label"><input type="checkbox" id="opt-follow-device" data-key="convert_follow_profile" checked disabled /> Follow device profile<span class="help-icon" data-tip="Auto-applies conversion settings (format, rate, depth) for the selected target device.">?</span></label>
               </div>
             </div>
 
@@ -158,9 +159,9 @@
                 <span class="chevron">▶</span> BPM detection
               </button>
               <div class="collapsible-content">
-                <label class="check-label"><input type="checkbox" id="opt-detect-bpm" data-key="bpm_enabled" /> Detect BPM</label>
-                <label class="check-label"><input type="checkbox" id="opt-append-bpm" data-key="bpm_append" disabled /> Append to filename</label>
-                <label class="check-label"><input type="checkbox" id="opt-fresh-bpm" data-key="bpm_fresh" disabled /> Re-scan all (ignore cache)</label>
+                <label class="check-label"><input type="checkbox" id="opt-detect-bpm" data-key="bpm_enabled" /> Detect BPM<span class="help-icon" data-tip="Analyses each file's tempo using autocorrelation. Results are cached per file.">?</span></label>
+                <label class="check-label"><input type="checkbox" id="opt-append-bpm" data-key="bpm_append" disabled /> Append to filename<span class="help-icon" data-tip="Appends the detected BPM to output filenames, e.g. kick_01_120bpm.wav.">?</span></label>
+                <label class="check-label"><input type="checkbox" id="opt-fresh-bpm" data-key="bpm_fresh" disabled /> Re-scan all (ignore cache)<span class="help-icon" data-tip="Ignores cached BPM values and re-analyses every file from scratch.">?</span></label>
               </div>
             </div>
 
@@ -169,9 +170,9 @@
                 <span class="chevron">▶</span> Key detection
               </button>
               <div class="collapsible-content">
-                <label class="check-label"><input type="checkbox" id="opt-detect-key" data-key="key_enabled" /> Detect key</label>
-                <label class="check-label"><input type="checkbox" id="opt-append-key" data-key="key_append" disabled /> Append to filename</label>
-                <label class="check-label"><input type="checkbox" id="opt-fresh-key" data-key="key_fresh" disabled /> Re-scan all (ignore cache)</label>
+                <label class="check-label"><input type="checkbox" id="opt-detect-key" data-key="key_enabled" /> Detect key<span class="help-icon" data-tip="Detects the musical root note of each file using pitch autocorrelation. Results are cached per file.">?</span></label>
+                <label class="check-label"><input type="checkbox" id="opt-append-key" data-key="key_append" disabled /> Append to filename<span class="help-icon" data-tip="Appends the detected key to output filenames, e.g. kick_01_C.wav.">?</span></label>
+                <label class="check-label"><input type="checkbox" id="opt-fresh-key" data-key="key_fresh" disabled /> Re-scan all (ignore cache)<span class="help-icon" data-tip="Ignores cached key values and re-analyses every file from scratch.">?</span></label>
               </div>
             </div>
 
