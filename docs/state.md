@@ -46,3 +46,6 @@ Data:        dir_entries, src_count, preview_count, preview_entries, log_lines
 - `log_lines` is capped at 500 entries (oldest dropped first)
 - `_VarCompat` shim provides legacy `.get()/.set()` API (from old tkinter edition) — don't add new uses
 - Progress is clamped to 0–100 in `set_progress()`
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

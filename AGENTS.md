@@ -158,3 +158,6 @@ bash build_macos.sh
 - Destination collisions not handled — files overwritten silently
 - FFmpeg required for conversion (bundled in dist builds)
 - Deck B amber accent bar won't track manual log panel resize (CSS flex constraint)
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](LICENSE).*

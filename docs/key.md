@@ -49,3 +49,6 @@ Pitch-period autocorrelation key detection (root pitch class only). Mirrors bpm.
 - FFmpeg required (delegated to `conversion._find_ffmpeg_path()`)
 - Logs prefixed with `[KEY]`; retrieve with `get_log_messages()`
 - Same cache pattern as bpm.py — call `flush_cache()` after bulk operations
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

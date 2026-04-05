@@ -48,3 +48,6 @@ List of all profile keys in display order.
 ## Adding a New Device
 
 Insert one entry into `PROFILES` — nothing else in the codebase needs changing. The UI, operations worker, and preview all read `PROFILES` dynamically.
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

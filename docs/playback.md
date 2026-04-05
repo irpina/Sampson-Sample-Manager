@@ -49,3 +49,6 @@ Both are updated via `state.set()` on every transport event.
 - **pygame mixer settings are fixed** (48kHz, 16-bit, stereo) — do not change after init
 - NSSound must be imported from `AppKit` (not a standalone package)
 - Playlist comes from `state["preview_entries"]` — index corresponds to that list
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

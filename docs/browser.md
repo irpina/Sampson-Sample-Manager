@@ -46,3 +46,6 @@ Pure path logic for Deck A. Returns JSON-serializable data for JS rendering. No 
 - **`_selected_folders` is a `set` internally** — serialized to `list` for state push.
 - **Preview refresh on every navigate** — `preview.refresh()` is called at end of `navigate_to()`.
 - Entry `type="up"` is the parent directory link (always first); clicking it calls `navigate_to(parent_path)`.
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

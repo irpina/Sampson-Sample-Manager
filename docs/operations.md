@@ -74,3 +74,6 @@ Manual filename overrides from `preview.get_name_override()` take precedence ove
 - `state.set("is_running", True)` at start, `False` at end (even on exception)
 - Worker runs in a daemon thread — it will be killed on app exit without cleanup
 - **Name overrides** from preview module are checked after `_compute_output()` and override just the filename (not the subfolder)
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

@@ -84,3 +84,6 @@ Users can double-click the "Will become" column in Deck B to manually override t
 - Filename matching is case-insensitive substring (not glob, not regex)
 - **Name overrides** take precedence over `_compute_output()` but subfolder (`rel_sub`) is still computed normally
 - **Unified selection** — `_scan_thread` handles both directories (scanned via `rglob`) and individual files (added directly) from `selected_folders`
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

@@ -67,3 +67,6 @@ Monkey-patch `pydub.utils.Popen` in all modules that use pydub to add the
 - `preview.py` — Added patch before `mediainfo` call
 
 ---
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](LICENSE).*

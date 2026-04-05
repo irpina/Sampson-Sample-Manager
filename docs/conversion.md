@@ -51,3 +51,6 @@ convert_file(src, dst, output_format="wav", sample_rate=None, bit_depth=None, ch
 - **Windows console:** `CREATE_NO_WINDOW` flag (0x08000000) used for all subprocesses to suppress flash
 - **Static-ffmpeg:** only available inside PyInstaller bundles; falls back gracefully in dev
 - `_find_ffmpeg_path()` is also called by `bpm.py` and `key.py` — single discovery point for all modules
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

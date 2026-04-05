@@ -77,3 +77,6 @@ Setting these keys triggers additional behavior:
 - Never return large data structures directly from methods — push via `state.push_keys()` instead
 - `check_ffmpeg()` is non-fatal — absence triggers a warning, not a hard failure
 - Platform detection for `get_drives()`: `sys.platform == "win32"` / `"darwin"` / else linux
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

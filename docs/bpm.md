@@ -44,3 +44,6 @@ Energy-envelope autocorrelation BPM detection with persistent cache. No numpy or
 - Low-energy or silent files may return `None`
 - Logs prefixed with `[BPM]`; retrieve with `get_log_messages()` after detection
 - Cache stored in user home dir — available across runs, shared between preview and operations
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

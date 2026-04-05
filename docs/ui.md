@@ -133,3 +133,6 @@ Deck B table supports inline editing via double-click:
 - **`pywebviewready`** event fires when the bridge is ready — do NOT call `pywebview.api.*` before this event
 - **Double-click on dest_name** sets `isEditing = true`, calls `startInlineEdit()` with `field = 'dest_name'`
 - **Name override persistence** — clears on folder navigation, survives settings changes
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](../LICENSE).*

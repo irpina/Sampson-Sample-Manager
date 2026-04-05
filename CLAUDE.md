@@ -193,3 +193,6 @@ Add a new device by inserting one entry into `PROFILES` dict — no other files 
 - Destination collisions not handled — existing files are overwritten silently.
 - FFmpeg must be available (bundled in PyInstaller builds; installed separately for dev runs using conversion).
 
+
+---
+*SAMPSON is licensed under the [GNU General Public License v3.0](LICENSE).*
