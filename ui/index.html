@@ -98,14 +98,14 @@
               <button class="collapsible-header">
                 <span class="chevron">▶</span> Target device
               </button>
-              <div class="collapsible-content">
-                <select id="target-device" class="select-input" data-key="profile">
+              <div class="collapsible-content" style="display:flex;align-items:center;gap:6px;">
+                <span class="help-icon" data-tip="Enforces device path-length limits and auto-applies conversion presets. M8: 127 chars. MPC One / SP-404mkII: 255 chars.">?</span>
+                <select id="target-device" class="select-input" data-key="profile" style="flex:1;">
                   <option value="Generic">Generic</option>
                   <option value="M8">M8</option>
                   <option value="MPC One">MPC One</option>
                   <option value="SP-404mkII">SP-404mkII</option>
                 </select>
-                <span class="help-icon" data-tip="Enforces device path-length limits and auto-applies conversion presets. M8: 127 chars. MPC One / SP-404mkII: 255 chars.">?</span>
               </div>
             </div>
 
