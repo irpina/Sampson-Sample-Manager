@@ -188,6 +188,7 @@ SAMPSON/
 ├── bpm.py               # BPM detection engine (energy-envelope autocorrelation)
 ├── key.py               # Musical key / root-note detection
 ├── playback.py          # audio playback via pygame-ce (Linux) or NSSound (macOS)
+├── settings.py          # Persistent app settings (last source directory)
 ├── ui/                  # HTML/CSS/JS front-end (index.html, app.js, style.css, logos)
 ├── build_macos.sh       # macOS build script (sign, notarize, zip)
 ├── requirements.txt     # Python dependencies

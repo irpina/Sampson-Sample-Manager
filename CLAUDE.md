@@ -66,6 +66,7 @@ Linux runtime deps for audio: `libsdl2-2.0-0 libsdl2-mixer-2.0-0` (apt) or `SDL2
 ```
 constants.py   ← no imports
 state.py       ← no app imports
+settings.py    ← stdlib only
 conversion.py  → state
 bpm.py         → conversion
 key.py         → conversion
@@ -116,7 +117,8 @@ The main body uses a **flex row** layout (`.main-grid`):
 .main-grid (flex row, fills remaining height)
   ├── .deck-a    (flex: 3, full height, cyan left border)
   ├── .center-col (flex: 2, flex column)
-  │     ├── .center-panel  (flex: 1, scrollable options)
+  │     ├── .center-panel    (flex: 1, scrollable options)
+  │     ├── .run-container   (static — always visible RUN button)
   │     ├── .status-bar
   │     └── .log-panel
   └── .deck-b    (flex: 3, full height, amber left border)
@@ -148,6 +150,7 @@ Wraps **pydub** with **ffmpeg** as backend:
 
 Energy-envelope autocorrelation — no `numpy`/`librosa`. Delegates ffmpeg discovery to `conversion._find_ffmpeg_path()`.
 - Cache: `~/.sampson/bpm_cache.json` (keyed by path + mtime)
+- Files shorter than `MIN_BPM_DURATION_MS` (3000ms default, in `constants.py`) are skipped — one-shots too short for reliable detection
 - API: `detect_bpm(path, force=False)`, `get_cached_bpm()`, `set_cached_bpm()`, `flush_cache()`
 - Manual override: double-click BPM cell in Deck B
 
@@ -157,9 +160,13 @@ Pitch-period autocorrelation. Mirrors BPM architecture exactly.
 - Cache: `~/.sampson/key_cache.json`
 - API: `detect_key(path, force=False)`, `get_cached_key()`, `set_cached_key()`, `flush_cache()`
 
+### Startup source restoration (`settings.py`)
+
+On launch, `api.on_ready()` (called by JS after `renderAll()`) restores the last used source directory from `~/.sampson/settings.json`. Fallback chain: saved path → `os.getcwd()` → app directory → empty (no crash). Source is saved to settings on every `browse_source()` call.
+
 ### Hardware profiles (`constants.py`)
 
-Add a new device by inserting one entry into `PROFILES` dict — no other files need changing. Each entry has `path_limit` (int or None) and `conversion` (dict or None for auto-conversion preset).
+Add a new device by inserting one entry into `PROFILES` dict AND adding an `<option>` to the `#target-device` `<select>` in `ui/index.html`. Each entry has `path_limit` (int or None) and `conversion` (dict or None).
 
 ### Deck B live filter
 
@@ -173,7 +180,9 @@ Add a new device by inserting one entry into `PROFILES` dict — no other files 
 
 | Task | Where |
 |------|-------|
-| Add hardware profile | `constants.py` → `PROFILES` |
+| Persistent app settings | `settings.py` → `get_last_source()` / `set_last_source()` |
+| Add hardware profile | `constants.py` → `PROFILES` + `ui/index.html` → `#target-device` select |
+| BPM skip threshold | `constants.py` → `MIN_BPM_DURATION_MS` |
 | Change theme colors | `ui/style.css` → `:root` (dark) or `body.light-mode` (light) |
 | Update version label | `ui/index.html` → `.version` span + `app.js` log line |
 | Modify layout | `ui/index.html` + `ui/style.css` |

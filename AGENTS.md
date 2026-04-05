@@ -67,6 +67,7 @@ Each module has a focused reference in `docs/`. Load only what you need:
 ```
 constants.py   ← no imports
 state.py       ← stdlib only
+settings.py    ← stdlib only
 conversion.py  → state
 bpm.py         → conversion
 key.py         → conversion
@@ -95,6 +96,7 @@ sampson/
 ├── key.py               # Key detection + cache
 ├── conversion.py        # Audio conversion pipeline (pydub + ffmpeg)
 ├── playback.py          # Audio playback (NSSound / pygame-ce)
+├── settings.py          # Persistent settings (~/.sampson/settings.json)
 ├── ui/
 │   ├── index.html       # Single-page app shell
 │   ├── app.js           # JS controller (554 lines)
@@ -144,7 +146,7 @@ bash build_macos.sh
 ## Key Conventions
 
 - **Version string:** `ui/index.html` `.version` span + `app.js` ready log line
-- **Add hardware profile:** `constants.py` → `PROFILES` dict only — nothing else changes
+- **Add hardware profile:** `constants.py` → `PROFILES` dict **AND** `ui/index.html` → `#target-device` `<select>`
 - **Add audio format:** `constants.py` → `AUDIO_EXTS` set
 - **Logo files:** Must live in `ui/` (same dir as `index.html`) — WKWebView `file://` sandbox blocks `../`
 - **State sync:** Call `state.push_keys()` after mutations to reflect changes in JS
@@ -158,6 +160,7 @@ bash build_macos.sh
 - Destination collisions not handled — files overwritten silently
 - FFmpeg required for conversion (bundled in dist builds)
 - Deck B amber accent bar won't track manual log panel resize (CSS flex constraint)
+- Files shorter than 3 seconds are skipped for BPM/key detection (too short for reliable analysis)
 
 ---
 *SAMPSON is licensed under the [GNU General Public License v3.0](LICENSE).*
