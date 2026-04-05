@@ -1,4 +1,4 @@
-/* SAMPSON v0.8.2 — Frontend controller */
+/* SAMPSON v0.9.0 — Frontend controller */
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -46,7 +46,7 @@ async function init() {
   Object.assign(APP_STATE, initialState);
   
   renderAll();
-  log("SAMPSON v0.8.2 ready", "info");
+  log("SAMPSON v0.9.0 ready", "info");
   pywebview.api.on_ready();
 }
 
