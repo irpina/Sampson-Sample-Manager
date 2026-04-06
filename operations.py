@@ -558,14 +558,14 @@ def _sync_plan_worker(source: Path, dest: Path):
                 for f in dest_files:
                     dest_size_groups.setdefault(f.stat().st_size, []).append(f)
                 
-                seen_hashes = {}
+                dest_seen_hashes = {}
                 for group in dest_size_groups.values():
                     if len(group) < 2:
                         continue
                     for f in sorted(group):  # alphabetical — keep first
                         try:
                             h = _hash_file(f)
-                            if h in seen_hashes:
+                            if h in dest_seen_hashes:
                                 plan.append({
                                     "action": "delete",
                                     "src_name": "",
@@ -574,10 +574,10 @@ def _sync_plan_worker(source: Path, dest: Path):
                                     "dest_display": f.name,
                                     "rel_sub": "",
                                     "new_name": "",
-                                    "duplicate_of": seen_hashes[h].name,
+                                    "duplicate_of": dest_seen_hashes[h].name,
                                 })
                             else:
-                                seen_hashes[h] = f
+                                dest_seen_hashes[h] = f
                         except Exception:
                             pass
         
