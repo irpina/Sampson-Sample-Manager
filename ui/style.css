@@ -766,6 +766,33 @@ body.light-mode #logo-img {
 
 /* ── Sync System Styles ───────────────────────────────────────────────────── */
 
+/* Preview header with label and auto-detect badge */
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sync-auto-badge {
+  font-size: 0.75rem;
+  color: var(--amber);
+  background: var(--amber-tint);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--amber);
+  white-space: nowrap;
+}
+
+.sync-auto-badge.hidden {
+  display: none;
+}
+
+/* Light mode overrides */
+body.light-mode .sync-auto-badge {
+  background: rgba(212, 98, 42, 0.15);
+}
+
 /* Sync container */
 .sync-container {
   display: flex;

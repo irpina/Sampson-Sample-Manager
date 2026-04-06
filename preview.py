@@ -273,6 +273,31 @@ def set_file_name(filepath: str, name: str) -> bool:
     return True
 
 
+# ── Sync auto-detection ──────────────────────────────────────────────────────
+
+def get_expected_dest_paths(dest: Path) -> set[str]:
+    """Return set of expected destination paths based on current preview rows.
+    
+    Used for auto-sync detection: if any of these paths already exist in
+    the destination folder, it was likely previously processed by SAMPSON.
+    """
+    result = set()
+    if not _preview_rows:
+        return result
+    
+    for row in _preview_rows:
+        # Strip conversion indicator from display name
+        name = row["dest_name"].replace(" [c]", "")
+        subfolder = row.get("subfolder", "")
+        if subfolder:
+            full = str(dest / subfolder / name)
+        else:
+            full = str(dest / name)
+        result.add(full)
+    
+    return result
+
+
 # ── Main refresh logic ───────────────────────────────────────────────────────
 
 def refresh():

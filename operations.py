@@ -297,6 +297,32 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
 # SYNC SYSTEM — Plan → Preview → Execute
 # =============================================================================
 
+def auto_sync_check(dest: Path):
+    """Check if destination contains files from a previous SAMPSON run.
+    
+    If any expected destination files exist, auto-trigger sync plan computation.
+    Called when destination folder is selected.
+    """
+    if not dest or not dest.is_dir():
+        state.set("sync_auto_detected", False)
+        return
+    
+    import preview
+    expected = preview.get_expected_dest_paths(dest)
+    if not expected:
+        state.set("sync_auto_detected", False)
+        return  # Source not loaded yet — skip
+    
+    for path_str in expected:
+        if Path(path_str).exists():
+            state.set("sync_auto_detected", True)
+            state.add_log("Previous SAMPSON run detected — switching to sync mode", "info")
+            compute_sync_plan()  # Auto-trigger plan
+            return
+    
+    state.set("sync_auto_detected", False)
+
+
 def compute_sync_plan():
     """Public entry point — validates inputs and starts plan computation thread."""
     source_str = state.get("active_dir", "").strip()

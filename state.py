@@ -79,6 +79,7 @@ _state: dict[str, Any] = {
     "sync_plan_counts": {"add": 0, "update": 0, "delete": 0, "skip": 0},
     "sync_in_progress": False,
     "sync_show_plan": False,  # whether to show sync plan in Deck B
+    "sync_auto_detected": False,  # true when previous run detected in dest
 }
 
 # ---------------------------------------------------------------------------

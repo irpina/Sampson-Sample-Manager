@@ -61,6 +61,9 @@ class SampsonAPI:
             self._on_source_changed(value)
         elif key == "dest":
             preview.refresh()
+            # Check for previous SAMPSON run and auto-trigger sync if found
+            if value and isinstance(value, str) and Path(value).is_dir():
+                operations.auto_sync_check(Path(value))
         elif key in ("modify_names", "custom_prefix", "struct_mode", "profile"):
             preview.refresh()
         elif key == "preview_filter":
@@ -103,6 +106,8 @@ class SampsonAPI:
                 path = result[0]
                 state.set("dest", path)
                 preview.refresh()
+                # Check for previous SAMPSON run and auto-trigger sync if found
+                operations.auto_sync_check(Path(path))
                 return path
         except Exception as e:
             state.add_log(f"Browse error: {e}", "error")

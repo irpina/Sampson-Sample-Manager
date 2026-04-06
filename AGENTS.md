@@ -70,6 +70,22 @@ A file is marked for UPDATE if:
 
 Otherwise, it's marked SKIP.
 
+### Auto-Sync Detection
+
+When a destination folder is selected, SAMPSON automatically checks if it contains files from a previous run. If any expected output paths already exist, the sync plan is automatically computed and Deck B switches to sync plan view.
+
+**New state key:**
+- `sync_auto_detected` — True when a previous SAMPSON run is detected in the destination
+
+**Trigger points:**
+- `browse_dest()` — after native folder picker selection
+- `set_option('dest', ...)` — when dest is set programmatically
+
+**UI indicator:**
+- Amber badge "↻ Previous run detected" appears in Deck B header when auto-detected
+
+**Edge case:** If source isn't loaded when dest is selected, detection is skipped (expected paths would be empty). User can manually click Preview Sync in this case.
+
 ---
 
 ## Project Overview

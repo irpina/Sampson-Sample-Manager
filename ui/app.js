@@ -124,7 +124,8 @@ function renderPatch(patch) {
   if (keys.includes('preview_entries') || keys.includes('preview_count') || 
       keys.includes('dest') || keys.includes('is_playing') ||
       keys.includes('sync_plan') || keys.includes('sync_show_plan') ||
-      keys.includes('sync_plan_ready') || keys.includes('sync_plan_counts')) {
+      keys.includes('sync_plan_ready') || keys.includes('sync_plan_counts') ||
+      keys.includes('sync_auto_detected')) {
     renderDeckB();
   }
   if (keys.includes('sync_plan_ready') || keys.includes('sync_in_progress')) {
@@ -281,6 +282,12 @@ function renderStatus() {
   if (runBtn) {
     runBtn.disabled = APP_STATE.is_running;
     runBtn.textContent = APP_STATE.is_running ? 'Running…' : '▶ RUN';
+  }
+  
+  // Sync auto-detect badge
+  const autoBadge = $('#sync-auto-badge');
+  if (autoBadge) {
+    autoBadge.classList.toggle('hidden', !APP_STATE.sync_auto_detected);
   }
 }
 
