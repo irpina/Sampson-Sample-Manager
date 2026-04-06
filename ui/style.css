@@ -763,3 +763,97 @@ body.light-mode #logo-img {
   z-index: 9999;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
+
+/* ── Sync System Styles ───────────────────────────────────────────────────── */
+
+/* Sync container */
+.sync-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-root);
+  border-top: 1px solid var(--border);
+}
+
+.btn-sync-preview,
+.btn-sync-execute,
+.btn-sync-clear {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-sync-preview {
+  background: var(--bg-surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-sync-preview:hover:not(:disabled) {
+  background: var(--bg-surface);
+}
+
+.btn-sync-execute {
+  background: var(--green);
+  color: #fff;
+}
+
+.btn-sync-execute:hover:not(:disabled) {
+  filter: brightness(0.85);
+}
+
+.btn-sync-clear {
+  background: var(--bg-surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  flex: 0 0 auto;
+  min-width: 60px;
+}
+
+.btn-sync-clear:hover:not(:disabled) {
+  background: var(--bg-surface);
+  color: var(--text);
+}
+
+.btn-sync-preview:disabled,
+.btn-sync-execute:disabled,
+.btn-sync-clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Sync status */
+.sync-status {
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-root);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+/* Sync plan action colors */
+.sync-action-add { color: #2ecc71 !important; font-weight: 600; }      /* Green */
+.sync-action-update { color: #f39c12 !important; font-weight: 600; }   /* Amber/Orange */
+.sync-action-delete { color: #e74c3c !important; font-weight: 600; }   /* Red */
+.sync-action-skip { color: var(--text-muted) !important; }             /* Gray */
+
+/* Light mode overrides for sync actions */
+body.light-mode .sync-action-add { color: #27ae60 !important; }
+body.light-mode .sync-action-update { color: #d35400 !important; }
+body.light-mode .sync-action-delete { color: #c0392b !important; }
+body.light-mode .sync-action-skip { color: var(--text-muted) !important; }
+
+/* Sync table column widths (when showing action column) */
+.preview-table.sync-mode .col-action { width: 12%; }
+.preview-table.sync-mode .col-src { width: 28%; }
+.preview-table.sync-mode .col-dest { width: 48%; }
+
+/* Hide filter row in sync view */
+.filter-row.hidden {
+  display: none;
+}

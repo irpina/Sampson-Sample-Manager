@@ -46,7 +46,7 @@ async function init() {
   Object.assign(APP_STATE, initialState);
   
   renderAll();
-  log("SAMPSON v0.9.0 ready", "info");
+  log("SAMPSON v0.10.0 ready", "info");
   pywebview.api.on_ready();
 }
 
@@ -111,18 +111,24 @@ function renderPatch(patch) {
                        'profile', 'convert_enabled', 'convert_format', 'convert_sample_rate',
                        'convert_bit_depth', 'convert_channels', 'convert_normalize',
                        'convert_follow_profile', 'bpm_enabled', 'bpm_append', 'bpm_fresh',
-                       'key_enabled', 'key_append', 'key_fresh', 'section_open'].includes(k))) {
+                       'key_enabled', 'key_append', 'key_fresh', 'section_open', 'sync_mode'].includes(k))) {
     renderCenterPanel();
   }
-  if (keys.includes('status') || keys.includes('progress') || keys.includes('is_running')) {
+  if (keys.includes('status') || keys.includes('progress') || keys.includes('is_running') || 
+      keys.includes('sync_in_progress')) {
     renderStatus();
   }
   if (keys.includes('log_lines')) {
     renderLog();
   }
   if (keys.includes('preview_entries') || keys.includes('preview_count') || 
-      keys.includes('dest') || keys.includes('is_playing')) {
+      keys.includes('dest') || keys.includes('is_playing') ||
+      keys.includes('sync_plan') || keys.includes('sync_show_plan') ||
+      keys.includes('sync_plan_ready') || keys.includes('sync_plan_counts')) {
     renderDeckB();
+  }
+  if (keys.includes('sync_plan_ready') || keys.includes('sync_in_progress')) {
+    renderSyncControls();
   }
   if (keys.includes('is_playing')) {
     updateTransportButtons();
@@ -200,6 +206,9 @@ function renderCenterPanel() {
   const structMode = APP_STATE.struct_mode || 'flat';
   $$(`input[name="output"][value="${structMode}"]`).forEach(el => el.checked = true);
   
+  const syncMode = APP_STATE.sync_mode || 'additive';
+  $$(`input[name="sync_mode"][value="${syncMode}"]`).forEach(el => el.checked = true);
+  
   $('#target-device').value = APP_STATE.profile || 'Generic';
   
   // Audio conversion
@@ -238,7 +247,8 @@ function renderCenterPanel() {
       'device': 'section-device',
       'conversion': 'section-audio',
       'bpm': 'section-bpm',
-      'key': 'section-key'
+      'key': 'section-key',
+      'sync': 'section-sync'
     }[key];
     const el = $(`#${sectionId}`);
     if (el) {
@@ -295,82 +305,146 @@ function renderLog() {
 }
 
 // ---------------------------------------------------------------------------
-// Deck B (Preview)
+// Deck B (Preview / Sync Plan)
 // ---------------------------------------------------------------------------
 function renderDeckB() {
   $('#deck-b-path').value = APP_STATE.dest || '';
   
-  const count = APP_STATE.preview_count || 0;
-  $('#preview-label').textContent = count > 0 
-    ? `${count} files in preview` 
-    : 'Navigate source to see preview';
+  const showSyncPlan = APP_STATE.sync_show_plan || false;
+  const syncPlan = APP_STATE.sync_plan || [];
   
-  const tbody = $('#preview-list');
-  tbody.innerHTML = '';
+  // Toggle between preview and sync plan view
+  const filterRow = $('#filter-row');
+  const tableHead = $('#preview-table-head');
+  const table = $('#preview-table');
   
-  const entries = APP_STATE.preview_entries || [];
-  
-  // Reselect by srcpath after sort/filter
-  const playingPath = APP_STATE.playback_file;
-  if (playingPath && selectedPreviewIndex >= 0) {
-    const newIndex = entries.findIndex(e => e.srcpath === playingPath);
-    if (newIndex >= 0) {
-      selectedPreviewIndex = newIndex;
-    }
-  }
-  
-  entries.forEach((entry, index) => {
-    const tr = document.createElement('tr');
-    tr.dataset.index = index;
-    tr.dataset.srcpath = entry.srcpath;
+  if (showSyncPlan) {
+    // Show sync plan view
+    filterRow.classList.add('hidden');
+    table.classList.add('sync-mode');
     
-    tr.innerHTML = `
-      <td class="col-src" title="${escapeHtml(entry.src_name)}">${escapeHtml(entry.src_name)}</td>
-      <td class="col-dest${entry.name_manual ? ' overridden' : ''}" title="${entry.dest_name ? escapeHtml(entry.dest_name) : ''}">${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
-      <td class="col-bpm editable" data-field="bpm">${entry.bpm || '—'}</td>
-      <td class="col-key editable" data-field="key">${entry.key || '—'}</td>
-      <td class="col-length">${entry.length || '—'}</td>
+    const counts = APP_STATE.sync_plan_counts || {add: 0, update: 0, delete: 0, skip: 0};
+    $('#preview-label').textContent = `Sync plan: ${counts.add} add · ${counts.update} update · ${counts.delete} delete · ${counts.skip} skip`;
+    
+    // Update table header for sync mode
+    tableHead.innerHTML = `
+      <tr>
+        <th class="col-action">Action</th>
+        <th class="col-src">Source</th>
+        <th class="col-dest">Destination</th>
+      </tr>
     `;
     
-    // Row click to select & play
-    tr.addEventListener('click', (e) => {
-      if (!e.target.classList.contains('editable') && !isEditing) {
-        selectPreview(index);
-      }
+    // Render sync plan entries
+    const tbody = $('#preview-list');
+    tbody.innerHTML = '';
+    
+    syncPlan.forEach((entry, index) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = index;
+      
+      const actionClass = `sync-action-${entry.action}`;
+      const actionLabel = entry.action.toUpperCase();
+      const srcName = entry.src_name || '—';
+      
+      tr.innerHTML = `
+        <td class="col-action ${actionClass}">${actionLabel}</td>
+        <td class="col-src" title="${escapeHtml(srcName)}">${escapeHtml(srcName)}</td>
+        <td class="col-dest" title="${escapeHtml(entry.dest_display)}">${escapeHtml(entry.dest_display)}</td>
+      `;
+      
+      tbody.appendChild(tr);
     });
     
-    // Double-click BPM/Key/Dest to edit
-    const bpmCell = tr.querySelector('.col-bpm');
-    const keyCell = tr.querySelector('.col-key');
-    const destCell = tr.querySelector('.col-dest');
+  } else {
+    // Show normal preview view
+    filterRow.classList.remove('hidden');
+    table.classList.remove('sync-mode');
     
-    if (bpmCell && bpmCell.textContent !== '—') {
-      bpmCell.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        startInlineEdit(tr, entry, 'bpm');
-      });
+    const count = APP_STATE.preview_count || 0;
+    $('#preview-label').textContent = count > 0 
+      ? `${count} files in preview` 
+      : 'Navigate source to see preview';
+    
+    // Restore original table header
+    tableHead.innerHTML = `
+      <tr>
+        <th class="col-src">Original name</th>
+        <th class="col-dest">Will become</th>
+        <th class="col-bpm">BPM</th>
+        <th class="col-key">Note</th>
+        <th class="col-length">Length</th>
+      </tr>
+    `;
+    
+    // Render preview entries
+    const tbody = $('#preview-list');
+    tbody.innerHTML = '';
+    
+    const entries = APP_STATE.preview_entries || [];
+    
+    // Reselect by srcpath after sort/filter
+    const playingPath = APP_STATE.playback_file;
+    if (playingPath && selectedPreviewIndex >= 0) {
+      const newIndex = entries.findIndex(e => e.srcpath === playingPath);
+      if (newIndex >= 0) {
+        selectedPreviewIndex = newIndex;
+      }
     }
     
-    if (keyCell && keyCell.textContent !== '—') {
-      keyCell.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        startInlineEdit(tr, entry, 'key');
+    entries.forEach((entry, index) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = index;
+      tr.dataset.srcpath = entry.srcpath;
+      
+      tr.innerHTML = `
+        <td class="col-src" title="${escapeHtml(entry.src_name)}">${escapeHtml(entry.src_name)}</td>
+        <td class="col-dest${entry.name_manual ? ' overridden' : ''}" title="${entry.dest_name ? escapeHtml(entry.dest_name) : ''}">${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
+        <td class="col-bpm editable" data-field="bpm">${entry.bpm || '—'}</td>
+        <td class="col-key editable" data-field="key">${entry.key || '—'}</td>
+        <td class="col-length">${entry.length || '—'}</td>
+      `;
+      
+      // Row click to select & play
+      tr.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('editable') && !isEditing) {
+          selectPreview(index);
+        }
       });
-    }
+      
+      // Double-click BPM/Key/Dest to edit
+      const bpmCell = tr.querySelector('.col-bpm');
+      const keyCell = tr.querySelector('.col-key');
+      const destCell = tr.querySelector('.col-dest');
+      
+      if (bpmCell && bpmCell.textContent !== '—') {
+        bpmCell.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          startInlineEdit(tr, entry, 'bpm');
+        });
+      }
+      
+      if (keyCell && keyCell.textContent !== '—') {
+        keyCell.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          startInlineEdit(tr, entry, 'key');
+        });
+      }
+      
+      if (destCell && destCell.textContent !== '—') {
+        destCell.classList.add('editable');
+        destCell.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          startInlineEdit(tr, entry, 'dest_name');
+        });
+      }
+      
+      tbody.appendChild(tr);
+    });
     
-    if (destCell && destCell.textContent !== '—') {
-      destCell.classList.add('editable');
-      destCell.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        startInlineEdit(tr, entry, 'dest_name');
-      });
-    }
-    
-    tbody.appendChild(tr);
-  });
-  
-  highlightPreviewRow();
-  updateTransportButtons();
+    highlightPreviewRow();
+    updateTransportButtons();
+  }
 }
 
 function setupPreviewTable() {
@@ -543,6 +617,28 @@ function setupEventListeners() {
       log(result.error, 'error');
     }
   });
+  
+  // Sync buttons
+  $('#btn-preview-sync')?.addEventListener('click', async () => {
+    const result = await pywebview.api.compute_sync_plan();
+    if (!result.success) {
+      log(result.error, 'error');
+    }
+  });
+  
+  $('#btn-execute-sync')?.addEventListener('click', async () => {
+    const result = await pywebview.api.run_sync();
+    if (!result.success) {
+      log(result.error, 'error');
+    }
+  });
+  
+  $('#btn-clear-sync')?.addEventListener('click', async () => {
+    const result = await pywebview.api.clear_sync_plan();
+    if (!result.success) {
+      log(result.error, 'error');
+    }
+  });
 }
 
 function setupCollapsibles() {
@@ -556,7 +652,8 @@ function setupCollapsibles() {
         'section-device': 'device',
         'section-audio': 'conversion',
         'section-bpm': 'bpm',
-        'section-key': 'key'
+        'section-key': 'key',
+        'section-sync': 'sync'
       };
       const sectionKey = sectionMap[collapsible.id];
       if (sectionKey) {
@@ -566,6 +663,36 @@ function setupCollapsibles() {
       }
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Sync Controls
+// ---------------------------------------------------------------------------
+function renderSyncControls() {
+  const planReady = APP_STATE.sync_plan_ready || false;
+  const inProgress = APP_STATE.sync_in_progress || false;
+  const showPlan = APP_STATE.sync_show_plan || false;
+  
+  const previewBtn = $('#btn-preview-sync');
+  const executeBtn = $('#btn-execute-sync');
+  const clearBtn = $('#btn-clear-sync');
+  const syncStatus = $('#sync-status');
+  
+  if (!previewBtn || !executeBtn || !clearBtn) return;
+  
+  previewBtn.disabled = inProgress;
+  executeBtn.disabled = !planReady || inProgress;
+  clearBtn.disabled = !showPlan || inProgress;
+  
+  // Update status text
+  if (inProgress) {
+    syncStatus.textContent = APP_STATE.status || 'Sync in progress...';
+  } else if (planReady) {
+    const counts = APP_STATE.sync_plan_counts || {add: 0, update: 0, delete: 0, skip: 0};
+    syncStatus.textContent = `Ready: ${counts.add} add · ${counts.update} update · ${counts.delete} delete · ${counts.skip} skip`;
+  } else {
+    syncStatus.textContent = '';
+  }
 }
 
 async function selectPreview(index) {

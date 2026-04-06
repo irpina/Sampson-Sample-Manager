@@ -16,6 +16,62 @@ No test suite. Testing is manual — run the app and exercise the feature.
 
 ---
 
+## Sync System (v0.10.0+)
+
+The sync system keeps a destination folder in sync with a transformed view of a source sample library.
+
+### Three-Phase Workflow
+
+1. **Plan** — `compute_sync_plan()` computes what actions are needed (add/update/delete/skip)
+2. **Preview** — Deck B switches to sync plan view showing all actions with color coding
+3. **Execute** — `run_sync()` processes the plan (ADD/UPDATE/DELETE, SKIP is no-op)
+
+### Modes
+
+- **Additive** — Only add/update files, never delete existing files in destination
+- **Mirror** — Destination exactly matches transformed source; extra files are deleted
+
+### State Keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `sync_mode` | str | `"additive"` or `"mirror"` |
+| `sync_plan` | list | Plan entries with action, src_name, dest_path, etc. |
+| `sync_plan_ready` | bool | True when plan is computed and ready to execute |
+| `sync_plan_counts` | dict | `{add, update, delete, skip}` counts |
+| `sync_in_progress` | bool | True while sync is executing |
+| `sync_show_plan` | bool | True to show sync plan in Deck B |
+
+### Plan Entry Schema
+
+```python
+{
+    "action": "add" | "update" | "skip" | "delete",
+    "src_name": str,           # source filename ("" for delete-only entries)
+    "srcpath": str | None,     # full source path
+    "dest_path": str,          # full resolved destination path
+    "dest_display": str,       # relative path for display
+    "rel_sub": str,            # relative subfolder
+    "new_name": str,           # output filename
+}
+```
+
+### API Methods
+
+- `compute_sync_plan()` — Starts plan computation in background thread
+- `run_sync()` — Executes the current plan
+- `clear_sync_plan()` — Clears plan and returns to normal preview view
+
+### File Comparison Logic
+
+A file is marked for UPDATE if:
+- Source and dest sizes differ, OR
+- Source mtime > dest mtime
+
+Otherwise, it's marked SKIP.
+
+---
+
 ## Project Overview
 
 SAMPSON uses **PyWebView**: Python backend + HTML/CSS/JS frontend in a single desktop window.
@@ -74,7 +130,7 @@ key.py         → conversion
 browser.py     → state, constants, preview
 preview.py     → state, constants, bpm, key, operations, conversion
 playback.py    → state
-operations.py  → state, constants, bpm, key, conversion
+operations.py  → state, constants, bpm, key, conversion, preview
 api.py         → state, constants, browser, preview, playback, operations, conversion
 main.py        → state, api
 ```

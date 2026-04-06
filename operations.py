@@ -292,3 +292,360 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     # Refresh preview if BPM was detected
     if bpm_enabled and state._refresh_preview_cb:
         state._refresh_preview_cb()
+
+# =============================================================================
+# SYNC SYSTEM — Plan → Preview → Execute
+# =============================================================================
+
+def compute_sync_plan():
+    """Public entry point — validates inputs and starts plan computation thread."""
+    source_str = state.get("active_dir", "").strip()
+    dest_str = state.get("dest", "").strip()
+    
+    source = Path(source_str) if source_str else None
+    dest = Path(dest_str) if dest_str else None
+
+    if not source or not source.is_dir():
+        state.add_log("Error: Please navigate to a source directory in Deck A", "error")
+        state.set_status("Error: No source directory", 0)
+        return {"success": False, "error": "No source directory"}
+    
+    if not dest or not dest.is_dir():
+        state.add_log("Error: Please select a valid destination folder in Deck B", "error")
+        state.set_status("Error: No destination directory", 0)
+        return {"success": False, "error": "No destination directory"}
+    
+    selected_folders = state.get("selected_folders", [])
+    if not selected_folders:
+        state.add_log("Warning: Please check at least one folder in Deck A", "warn")
+        state.set_status("Warning: No folders selected", 0)
+        return {"success": False, "error": "No folders selected"}
+
+    # Reset plan state
+    state.update({
+        "sync_plan": [],
+        "sync_plan_ready": False,
+        "sync_plan_counts": {"add": 0, "update": 0, "delete": 0, "skip": 0},
+        "sync_show_plan": True,
+    })
+    
+    state.set_status("Computing sync plan...", 0)
+    
+    threading.Thread(
+        target=_sync_plan_worker,
+        args=(source, dest),
+        daemon=True,
+    ).start()
+    
+    return {"success": True}
+
+
+def _sync_plan_worker(source: Path, dest: Path):
+    """Background worker to build the sync plan."""
+    try:
+        # Gather options
+        profile = state.get("profile", "Generic")
+        path_limit = constants.PROFILES.get(profile, {}).get("path_limit") if profile else None
+        struct_mode = state.get("struct_mode", "flat")
+        modify_names = state.get("modify_names", False)
+        no_rename = not modify_names
+        custom_prefix = state.get("custom_prefix", "")
+        sync_mode = state.get("sync_mode", "additive")
+        
+        # BPM/Key options
+        bpm_enabled = state.get("bpm_enabled", False)
+        bpm_append = state.get("bpm_append", False)
+        key_enabled = state.get("key_enabled", False)
+        key_append = state.get("key_append", False)
+        
+        # Conversion options
+        convert_enabled = state.get("convert_enabled", False)
+        convert_format = state.get("convert_format", "wav")
+        
+        # Gather source files
+        files = []
+        selected_folders = state.get("selected_folders", [])
+        
+        for folder_path in selected_folders:
+            p = Path(folder_path)
+            if p.is_dir():
+                files += [f for f in p.rglob("*")
+                          if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
+        
+        total = len(files)
+        if total == 0:
+            state.set_status("No audio files found.", 0)
+            state.set("sync_plan_ready", True)
+            return
+        
+        plan = []
+        expected_dest_files = set()  # Track expected files for mirror mode
+        
+        for i, f in enumerate(files, 1):
+            # Get BPM/Key values
+            bpm_val = bpm_module.get_cached_bpm(f) if bpm_enabled else None
+            key_val = key_module.get_cached_key(f) if key_enabled else None
+            
+            # Compute output path using existing logic
+            new_name, rel_sub = _compute_output(
+                f, source, dest, no_rename, struct_mode, path_limit,
+                bpm=bpm_val if (bpm_enabled and bpm_append) else None,
+                append_bpm=bpm_append,
+                key=key_val if (key_enabled and key_append) else None,
+                append_key=key_append,
+                custom_prefix=custom_prefix
+            )
+            
+            # Check for manual name override
+            manual_override = preview.get_name_override(f)
+            if manual_override:
+                if convert_enabled:
+                    new_name = manual_override + get_target_extension(convert_format)
+                else:
+                    new_name = manual_override + Path(new_name).suffix
+            elif convert_enabled:
+                new_name = Path(new_name).stem + get_target_extension(convert_format)
+            
+            # Build full destination path
+            sub_dir = dest / rel_sub if rel_sub else dest
+            dest_path = sub_dir / new_name
+            dest_path_str = str(dest_path)
+            expected_dest_files.add(dest_path_str)
+            
+            # Determine action
+            if not dest_path.exists():
+                action = "add"
+            else:
+                # Compare size and mtime
+                src_stat = f.stat()
+                dest_stat = dest_path.stat()
+                
+                if src_stat.st_size != dest_stat.st_size:
+                    action = "update"
+                elif src_stat.st_mtime > dest_stat.st_mtime:
+                    action = "update"
+                else:
+                    action = "skip"
+            
+            plan.append({
+                "action": action,
+                "src_name": f.name,
+                "srcpath": str(f),
+                "dest_path": dest_path_str,
+                "dest_display": f"{rel_sub}/{new_name}" if rel_sub else new_name,
+                "rel_sub": rel_sub,
+                "new_name": new_name,
+            })
+            
+            progress_pct = int(i / total * 100)
+            state.set_status(f"Computing sync plan... {i}/{total}", progress_pct)
+        
+        # Mirror mode: find orphan files to delete
+        if sync_mode == "mirror":
+            # Walk destination directory
+            delete_count = 0
+            for dest_file in dest.rglob("*"):
+                if dest_file.suffix.lower() in constants.AUDIO_EXTS and dest_file.is_file():
+                    dest_file_str = str(dest_file)
+                    if dest_file_str not in expected_dest_files:
+                        # Check if this is within our target subdirectories
+                        try:
+                            rel_to_dest = dest_file.relative_to(dest)
+                            plan.append({
+                                "action": "delete",
+                                "src_name": "",
+                                "srcpath": None,
+                                "dest_path": dest_file_str,
+                                "dest_display": str(rel_to_dest),
+                                "rel_sub": "",
+                                "new_name": "",
+                            })
+                            delete_count += 1
+                        except ValueError:
+                            pass
+        
+        # Compute counts
+        counts = {
+            "add": sum(1 for p in plan if p["action"] == "add"),
+            "update": sum(1 for p in plan if p["action"] == "update"),
+            "delete": sum(1 for p in plan if p["action"] == "delete"),
+            "skip": sum(1 for p in plan if p["action"] == "skip"),
+        }
+        
+        # Update state with plan
+        state.update({
+            "sync_plan": plan,
+            "sync_plan_ready": True,
+            "sync_plan_counts": counts,
+        })
+        
+        action_summary = f"{counts['add']} add · {counts['update']} update · {counts['delete']} delete · {counts['skip']} skip"
+        state.add_log(f"Sync plan ready: {action_summary}", "success")
+        state.set_status(f"Sync plan ready — {action_summary}", 100)
+        
+    except Exception as e:
+        state.add_log(f"Sync plan error: {e}", "error")
+        state.set_status(f"Sync plan failed: {e}", 0)
+        state.set("sync_plan_ready", False)
+
+
+def run_sync():
+    """Public entry point — starts sync execution in background thread."""
+    if not state.get("sync_plan_ready", False):
+        return {"success": False, "error": "No sync plan ready. Compute plan first."}
+    
+    if state.get("sync_in_progress", False):
+        return {"success": False, "error": "Sync already in progress."}
+    
+    plan = state.get("sync_plan", [])
+    if not plan:
+        return {"success": False, "error": "Sync plan is empty."}
+    
+    state.set("sync_in_progress", True)
+    state.set_status("Starting sync execution...", 0)
+    
+    threading.Thread(
+        target=_run_sync_worker,
+        args=(plan,),
+        daemon=True,
+    ).start()
+    
+    return {"success": True}
+
+
+def _run_sync_worker(plan: list):
+    """Background worker to execute the sync plan."""
+    try:
+        # Gather conversion options
+        convert_options = None
+        if state.get("convert_enabled", False):
+            if not check_ffmpeg():
+                state.add_log(
+                    "Sync Error: ffmpeg is required for audio conversion.",
+                    "error"
+                )
+                state.set_status("Error: FFmpeg not found", 0)
+                state.set("sync_in_progress", False)
+                return
+            
+            convert_options = {
+                "output_format": state.get("convert_format", "wav"),
+                "sample_rate": parse_sample_rate(state.get("convert_sample_rate", "keep")),
+                "bit_depth": parse_bit_depth(state.get("convert_bit_depth", "keep")),
+                "channels": parse_channels(state.get("convert_channels", "keep")),
+                "normalize": state.get("convert_normalize", False),
+            }
+        
+        move_files = state.get("move", False)
+        
+        # Filter to only actionable items
+        actionable = [p for p in plan if p["action"] in ("add", "update", "delete")]
+        total = len(actionable)
+        
+        if total == 0:
+            state.add_log("Sync: Nothing to do — all files up to date.", "success")
+            state.set_status("Sync complete — nothing to do", 100)
+            state.set("sync_in_progress", False)
+            return
+        
+        processed = 0
+        
+        for entry in actionable:
+            action = entry["action"]
+            dest_path = Path(entry["dest_path"])
+            
+            if action == "delete":
+                try:
+                    dest_path.unlink()
+                    state.add_log(f"DELETE: {entry['dest_display']}")
+                except Exception as e:
+                    state.add_log(f"ERROR: Failed to delete {entry['dest_display']}: {e}", "error")
+                
+                processed += 1
+                progress_pct = int(processed / total * 100)
+                state.set_status(f"Syncing... {processed}/{total}", progress_pct)
+                continue
+            
+            # Add or Update
+            srcpath = Path(entry["srcpath"]) if entry["srcpath"] else None
+            if not srcpath or not srcpath.exists():
+                state.add_log(f"ERROR: Source file not found: {entry['src_name']}", "error")
+                processed += 1
+                continue
+            
+            # Ensure parent directory exists
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            if convert_options:
+                try:
+                    success = convert_file(srcpath, dest_path, **convert_options)
+                    if not success:
+                        error_detail = state._last_conversion_error if state._last_conversion_error else "Unknown error"
+                        state.add_log(f"ERROR: Failed to convert {entry['src_name']}: {error_detail[:200]}", "error")
+                        state._last_conversion_error = None
+                        processed += 1
+                        continue
+                    if move_files:
+                        srcpath.unlink()
+                except Exception as e:
+                    state.add_log(f"ERROR: Failed to convert {entry['src_name']}: {e}", "error")
+                    processed += 1
+                    continue
+            else:
+                if move_files:
+                    shutil.move(str(srcpath), str(dest_path))
+                else:
+                    shutil.copy2(str(srcpath), str(dest_path))
+            
+            action_label = "ADD" if action == "add" else "UPDATE"
+            state.add_log(f"{action_label}: {entry['src_name']} → {entry['dest_display']}")
+            
+            processed += 1
+            progress_pct = int(processed / total * 100)
+            state.set_status(f"Syncing... {processed}/{total}", progress_pct)
+        
+        # Clean up empty directories in mirror mode
+        if state.get("sync_mode") == "mirror":
+            dest = Path(state.get("dest", ""))
+            if dest and dest.is_dir():
+                _cleanup_empty_dirs(dest)
+        
+        state.add_log("Sync complete.", "success")
+        state.set_status(f"Sync complete — {processed} files processed", 100)
+        
+        # Clear plan after successful execution
+        state.update({
+            "sync_plan": [],
+            "sync_plan_ready": False,
+            "sync_plan_counts": {"add": 0, "update": 0, "delete": 0, "skip": 0},
+            "sync_show_plan": False,
+        })
+        
+    except Exception as e:
+        state.add_log(f"Sync execution error: {e}", "error")
+        state.set_status(f"Sync failed: {e}", 0)
+    finally:
+        state.set("sync_in_progress", False)
+
+
+def _cleanup_empty_dirs(root: Path):
+    """Remove empty directories recursively (bottom-up)."""
+    for dirpath in sorted(root.rglob("*"), reverse=True):
+        if dirpath.is_dir():
+            try:
+                # Only remove if empty
+                if not any(dirpath.iterdir()):
+                    dirpath.rmdir()
+            except Exception:
+                pass
+
+
+def clear_sync_plan():
+    """Clear the current sync plan and return to normal preview view."""
+    state.update({
+        "sync_plan": [],
+        "sync_plan_ready": False,
+        "sync_plan_counts": {"add": 0, "update": 0, "delete": 0, "skip": 0},
+        "sync_show_plan": False,
+    })
+    return {"success": True}

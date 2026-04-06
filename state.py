@@ -60,6 +60,7 @@ _state: dict[str, Any] = {
         "conversion": False,
         "bpm": False,
         "key": False,
+        "sync": False,
     },
     "is_dark": True,
     "preview_filter": "",
@@ -70,6 +71,14 @@ _state: dict[str, Any] = {
     "preview_count": 0,
     "preview_entries": [],  # [{src_name, dest_name, bpm, key, length, srcpath}...]
     "log_lines": [],  # [{message, type, time}...]
+    
+    # Sync system state
+    "sync_mode": "additive",  # "mirror" | "additive"
+    "sync_plan": [],  # list of plan entry dicts
+    "sync_plan_ready": False,  # plan computed and ready to execute
+    "sync_plan_counts": {"add": 0, "update": 0, "delete": 0, "skip": 0},
+    "sync_in_progress": False,
+    "sync_show_plan": False,  # whether to show sync plan in Deck B
 }
 
 # ---------------------------------------------------------------------------

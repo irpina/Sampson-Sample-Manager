@@ -1,4 +1,4 @@
-"""PyWebView API bridge — Python ↔ JS interface for SAMPSON v0.8.0"""
+"""PyWebView API bridge — Python ↔ JS interface for SAMPSON v0.10.0"""
 
 from __future__ import annotations
 
@@ -324,3 +324,31 @@ class SampsonAPI:
         import preview
         success = preview.set_file_name(filepath, name)
         return {"ok": success}
+
+    # ========================================================================
+    # Sync System
+    # ========================================================================
+
+    def compute_sync_plan(self) -> dict:
+        """Compute the sync plan (Plan phase)."""
+        try:
+            return operations.compute_sync_plan()
+        except Exception as e:
+            state.add_log(f"Compute sync plan error: {e}", "error")
+            return {"success": False, "error": str(e)}
+
+    def run_sync(self) -> dict:
+        """Execute the computed sync plan (Execute phase)."""
+        try:
+            return operations.run_sync()
+        except Exception as e:
+            state.add_log(f"Run sync error: {e}", "error")
+            return {"success": False, "error": str(e)}
+
+    def clear_sync_plan(self) -> dict:
+        """Clear the current sync plan and return to preview view."""
+        try:
+            return operations.clear_sync_plan()
+        except Exception as e:
+            state.add_log(f"Clear sync plan error: {e}", "error")
+            return {"success": False, "error": str(e)}

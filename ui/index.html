@@ -181,6 +181,16 @@
               </div>
             </div>
 
+            <div class="collapsible" id="section-sync">
+              <button class="collapsible-header">
+                <span class="chevron">▶</span> Sync mode
+              </button>
+              <div class="collapsible-content">
+                <label class="radio-label"><input type="radio" name="sync_mode" value="additive" data-key="sync_mode" checked /> Additive<span class="help-icon" data-tip="Only add/update files, never delete existing files in destination.">?</span></label>
+                <label class="radio-label"><input type="radio" name="sync_mode" value="mirror" data-key="sync_mode" /> Mirror<span class="help-icon" data-tip="Destination exactly matches transformed source. Extra files in destination will be deleted.">?</span></label>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -189,6 +199,14 @@
           <button id="btn-run" class="btn-run">▶ RUN</button>
         </div>
 
+        <!-- SYNC CONTROLS -->
+        <div class="sync-container">
+          <button id="btn-preview-sync" class="btn-sync-preview">👁 Preview Sync</button>
+          <button id="btn-execute-sync" class="btn-sync-execute" disabled>▶ Execute Sync</button>
+          <button id="btn-clear-sync" class="btn-sync-clear" disabled>✕ Clear</button>
+        </div>
+        <div class="sync-status" id="sync-status"></div>
+
         <!-- STATUS BAR -->
         <div class="status-bar">
           <div class="progress-container">
@@ -196,7 +214,7 @@
           </div>
           <span id="status-dot" class="status-dot idle">●</span>
           <span id="status-text">Ready</span>
-          <span class="version">v0.9.0</span>
+          <span class="version">v0.10.0</span>
         </div>
 
         <!-- LOG PANEL -->
@@ -218,18 +236,18 @@
             <button id="btn-browse-b" class="btn-amber">Browse</button>
           </div>
 
-          <!-- Preview count -->
+          <!-- Preview count / Sync status -->
           <div class="preview-label" id="preview-label">Navigate source to see preview</div>
 
-          <!-- Filter bar -->
-          <div class="filter-row">
+          <!-- Filter bar (hidden in sync view) -->
+          <div class="filter-row" id="filter-row">
             <input type="text" id="filter-preview" class="filter-input" placeholder="Filter… BPM:120 Note:C" />
           </div>
 
           <!-- Preview table -->
           <div class="preview-browser">
-            <table class="preview-table">
-              <thead>
+            <table class="preview-table" id="preview-table">
+              <thead id="preview-table-head">
                 <tr>
                   <th class="col-src">Original name</th>
                   <th class="col-dest">Will become</th>
