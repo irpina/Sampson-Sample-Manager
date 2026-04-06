@@ -40,3 +40,16 @@ def set_last_source(path: str) -> None:
     _load()
     _settings["last_source"] = path
     _save()
+
+
+def get_last_dest() -> str | None:
+    """Return last used destination directory, or None if not set."""
+    _load()
+    return _settings.get("last_dest")
+
+
+def set_last_dest(path: str) -> None:
+    """Persist last used destination directory."""
+    _load()
+    _settings["last_dest"] = path
+    _save()

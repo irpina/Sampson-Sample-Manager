@@ -49,8 +49,15 @@ class SampsonAPI:
             if path and Path(path).is_dir():
                 state.set("source", path)
                 self._on_source_changed(path)
-                return
+                break
         # All fallbacks failed — start empty, don't crash
+        
+        # Restore last destination (no fallback, blank if not valid)
+        last_dest = app_settings.get_last_dest()
+        if last_dest and Path(last_dest).is_dir():
+            state.set("dest", last_dest)
+            preview.refresh()
+        # Note: no auto_sync_check here — preview scan not complete yet
 
     def set_option(self, key: str, value: Any) -> None:
         """Generic setter for any option key."""
@@ -61,8 +68,9 @@ class SampsonAPI:
             self._on_source_changed(value)
         elif key == "dest":
             preview.refresh()
-            # Check for previous SAMPSON run and auto-trigger sync if found
+            # Save and check for previous SAMPSON run
             if value and isinstance(value, str) and Path(value).is_dir():
+                app_settings.set_last_dest(value)
                 operations.auto_sync_check(Path(value))
         elif key in ("modify_names", "custom_prefix", "struct_mode", "profile"):
             preview.refresh()
@@ -105,6 +113,7 @@ class SampsonAPI:
             if result and len(result) > 0:
                 path = result[0]
                 state.set("dest", path)
+                app_settings.set_last_dest(path)
                 preview.refresh()
                 # Check for previous SAMPSON run and auto-trigger sync if found
                 operations.auto_sync_check(Path(path))
