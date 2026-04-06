@@ -87,7 +87,7 @@ All shared mutable state lives in a single Python dict in `state.py`. **Never** 
 - **Setting state in Python:** `state.set('key', value)` — does NOT auto-push to JS; caller must push.
 - **Compatibility shim:** `state._VarCompat` allows legacy `.get()/.set()` call patterns.
 
-Key state fields: `source`, `dest`, `active_dir`, `selected_folders`, `move`, `dry`, `modify_names`, `custom_prefix`, `profile`, `struct_mode`, `convert_*`, `bpm_*`, `key_*`, `status`, `progress`, `is_running`, `is_dark`, `dir_entries`, `preview_entries`, `log_lines`.
+Key state fields: `source`, `dest`, `active_dir`, `selected_folders`, `move`, `dry`, `modify_names`, `custom_prefix`, `profile`, `struct_mode`, `convert_*`, `bpm_*`, `key_*`, `dedup_enabled`, `status`, `progress`, `is_running`, `is_dark`, `dir_entries`, `preview_entries`, `log_lines`, `sync_mode`, `sync_plan`, `sync_plan_ready`, `sync_plan_counts`, `sync_in_progress`, `sync_show_plan`, `sync_auto_detected`.
 
 ### API bridge (`api.py`)
 
@@ -180,7 +180,7 @@ Add a new device by inserting one entry into `PROFILES` dict AND adding an `<opt
 
 | Task | Where |
 |------|-------|
-| Persistent app settings | `settings.py` → `get_last_source()` / `set_last_source()` |
+| Persistent app settings (source + dest) | `settings.py` → `get/set_last_source()`, `get/set_last_dest()` |
 | Add hardware profile | `constants.py` → `PROFILES` + `ui/index.html` → `#target-device` select |
 | BPM skip threshold | `constants.py` → `MIN_BPM_DURATION_MS` |
 | Change theme colors | `ui/style.css` → `:root` (dark) or `body.light-mode` (light) |
@@ -188,6 +188,9 @@ Add a new device by inserting one entry into `PROFILES` dict AND adding an `<opt
 | Modify layout | `ui/index.html` + `ui/style.css` |
 | Add JS↔Python API endpoint | `api.py` → `SampsonAPI` class + `ui/app.js` |
 | Change file operations | `operations.py` → `run_tool()`, `_run_worker()` |
+| Sync system | `operations.py` → `compute_sync_plan()`, `run_sync()` |
+| Duplicate detection | `operations.py` → `_hash_file()`, `_dedup_dest_flat()` |
+| Auto-sync detection | `operations.py` → `auto_sync_check()`, `preview.py` → `get_expected_dest_paths()` |
 | Audio conversion logic | `conversion.py` → `convert_file()` |
 | Adjust preview row limit | `constants.py` → `MAX_PREVIEW_ROWS` |
 | Add output structure mode | `operations._compute_output()` + `ui/index.html` + `ui/app.js` |
@@ -199,8 +202,9 @@ Add a new device by inserting one entry into `PROFILES` dict AND adding an `<opt
 ## Known limitations
 
 - Unfiltered preview capped at `MAX_PREVIEW_ROWS` (500); filter bar bypasses this cap.
-- Destination collisions not handled — existing files are overwritten silently.
+- Name-collision overwrites not handled — if two source files produce the same output filename, the second silently overwrites the first. Content duplicates are caught by `dedup_enabled`.
 - FFmpeg must be available (bundled in PyInstaller builds; installed separately for dev runs using conversion).
+- Auto-sync detection does not fire when source is loaded after destination is already set.
 
 
 ---

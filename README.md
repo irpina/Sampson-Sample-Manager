@@ -38,10 +38,17 @@
 - **Column sorting** — click the **BPM**, **Note**, or **Length** header in Deck B to sort ascending/descending (▲/▼); click again to flip
 - **BPM detection** — automatic tempo analysis using energy-envelope autocorrelation; cached per file, with a **Fresh scan** option to re-detect. Manual override by double-clicking the BPM cell. Optionally append `_120bpm` to output filenames.
 - **Key / Note detection** — automatic root-note detection (C, C#, D … B) using pitch-period autocorrelation; same caching and manual-override system as BPM. Optionally append `_C` to output filenames.
+- **Sync mode** — keep a destination folder (e.g. SD card) in sync with your source library without redundant work:
+  - **Additive** — add new files and update changed ones; existing destination files not in the source are left untouched
+  - **Mirror** — destination becomes an exact copy of the processed source; files no longer in the source are deleted
+  - Preview the full sync plan (add / update / delete / skip) in Deck B before executing a single byte is written
+  - Auto-detects previously processed destinations on selection and pre-computes the sync plan automatically
+- **Duplicate detection** — on by default; skips files whose audio content already exists at the destination (any filename), catches source-to-source duplicates within the same run, and cleans up existing content-duplicate files in the destination top level. Uses SHA-256 with size pre-filtering for performance
 - **Copy or Move** — copy (default, non-destructive) or move
 - **Dry run mode** — default-on; logs every action without touching the filesystem
 - **Operation log** — colour-coded (red = move, green = copy, yellow = dry run, cyan = done)
 - **Dark / Light theme** — MD3 near-black palette or warm 60s/70s pastels; toggle preserves your session
+- **Session memory** — source and destination paths are saved and restored on next launch
 - **Audio conversion** — Convert samples to device-compatible formats:
   - Output formats: WAV, AIFF
   - Sample rates: 44.1kHz, 48kHz, 96kHz (or keep original)
@@ -188,7 +195,7 @@ SAMPSON/
 ├── bpm.py               # BPM detection engine (energy-envelope autocorrelation)
 ├── key.py               # Musical key / root-note detection
 ├── playback.py          # audio playback via pygame-ce (Linux) or NSSound (macOS)
-├── settings.py          # Persistent app settings (last source directory)
+├── settings.py          # Persistent app settings (last source + destination)
 ├── ui/                  # HTML/CSS/JS front-end (index.html, app.js, style.css, logos)
 ├── build_macos.sh       # macOS build script (sign, notarize, zip)
 ├── requirements.txt     # Python dependencies
@@ -202,9 +209,10 @@ SAMPSON/
 
 - Preview is capped at **500 rows** for performance; the search bar bypasses this cap and shows all matches.
 - The file browser only shows non-hidden subfolders and audio files.
-- Destination collisions are not handled — if a renamed file already exists at the target it will be overwritten silently.
+- Name-collision overwrites are not handled — if two source files produce the same output filename, the second silently overwrites the first. Content duplicates (identical audio) are caught by the duplicate detection feature.
 - Audio conversion uses bundled ffmpeg (via `static-ffmpeg`).
 - Duration is read from file headers (WAV/AIFF instantly; MP3/FLAC/OGG via ffprobe). Files with unreadable headers show no length and are excluded from `MinLength`/`MaxLength` filters.
+- Auto-sync detection does not fire if source is loaded after the destination is already set; click **Preview Sync** manually in that case.
 
 ---
 

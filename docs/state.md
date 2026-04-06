@@ -27,7 +27,8 @@ Single source of truth for all mutable application state. Syncs to JS via `windo
 ```
 Paths:       source, dest, active_dir
 Selection:   selected_folders (list — internal _selected_folders is a set)
-Options:     move, dry, modify_names, custom_prefix, profile, struct_mode
+Options:     move, dry, modify_names, custom_prefix, profile, struct_mode,
+             dedup_enabled
 Conversion:  convert_enabled, convert_format, convert_sample_rate,
              convert_bit_depth, convert_channels, convert_normalize, convert_follow_profile
 BPM:         bpm_enabled, bpm_append, bpm_fresh
@@ -35,6 +36,8 @@ Key:         key_enabled, key_append, key_fresh
 UI:          status, progress, is_running, is_playing, playback_file,
              section_open (dict), is_dark, preview_filter
 Data:        dir_entries, src_count, preview_count, preview_entries, log_lines
+Sync:        sync_mode, sync_plan, sync_plan_ready, sync_plan_counts,
+             sync_in_progress, sync_show_plan, sync_auto_detected
 ```
 
 ## Critical Rules

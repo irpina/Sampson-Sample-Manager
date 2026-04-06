@@ -11,9 +11,17 @@ Runs the actual file operation in a daemon thread. Shares `_compute_output()` wi
 | Function | Description |
 |----------|-------------|
 | `run_tool()` | Validate inputs (source, dest, folders selected, ffmpeg if converting), spawn worker thread |
-| `_run_worker(...)` | Background worker — iterate files, detect BPM/key, convert or copy/move, log, update progress |
+| `_run_worker(...)` | Background worker — iterate files, detect BPM/key, convert or copy/move, dedup, log, update progress |
 | `_compute_output(f, source_root, dest, ...)` | **Deterministic** filename + subfolder calculation — used by both preview and execution |
 | `_apply_path_limit(name, dest_path, limit, protect)` | Shorten filename to fit within `path_limit` chars, preserving extension and BPM/key suffixes |
+| `compute_sync_plan()` | Validate inputs and start sync plan computation in background thread |
+| `_sync_plan_worker(source, dest)` | Classify each source file as add/update/skip, find mirror-mode deletes, detect dest duplicates |
+| `run_sync()` | Read `state["sync_plan"]` and start execution thread |
+| `_run_sync_worker(plan)` | Execute ADD/UPDATE/DELETE entries; SKIP is no-op |
+| `clear_sync_plan()` | Reset sync plan state and return Deck B to normal preview |
+| `auto_sync_check(dest)` | Check if dest contains prior run output; auto-trigger `compute_sync_plan()` if so |
+| `_hash_file(path)` | SHA-256 of file contents (64KB chunks) — used for duplicate detection |
+| `_dedup_dest_flat(dest, dry)` | Remove content-duplicate audio files from top level of dest only |
 
 ## `_compute_output()` Parameters
 
@@ -42,19 +50,35 @@ _compute_output(
 | `"mirror"` | Preserve full relative path from source root |
 | `"parent"` | Group by immediate parent folder name |
 
-## Worker Flow
+## Worker Flow (`_run_worker`)
 
-1. Collect all audio files from selected folders (recursive `rglob`)
-2. For each file:
+1. Pre-scan dest for audio file sizes → `dest_size_index` (dedup setup)
+2. Collect all audio files from selected folders (recursive `rglob`)
+3. For each file:
    - Call `_compute_output()` → `(new_name, rel_subfolder)`
    - Detect BPM/key if enabled (happens here, NOT in preview)
+   - **Dedup check** (if `dedup_enabled`):
+     - Source-to-dest: hash size-matched dest candidates; skip if content match found
+     - Source-to-source: hash against `seen_hashes` set; skip if already seen this run
    - If dry run: log only, no file writes
    - If convert: `conversion.convert_file()` → write to dest; if move, unlink original
    - If copy/move: `shutil.copy2()` / `shutil.move()`
-   - Log action (color-coded: red=move, green=copy, yellow=dry)
-   - Push progress via `state.set_progress()`
-3. Flush BPM/key caches once at end
-4. Call registered refresh callback (updates preview)
+   - Log action; push progress
+4. Flush BPM/key caches
+5. **Dest flat dedup** (if `dedup_enabled`): call `_dedup_dest_flat()` to clean up existing top-level duplicates
+6. Call registered refresh callback (updates preview)
+
+## Sync Plan Flow (`_sync_plan_worker`)
+
+1. Pre-scan dest top-level for content duplicates → add DELETE plan entries
+2. Pre-scan dest for audio file sizes → `dest_size_index` (dedup setup)
+3. Collect source files from selected folders
+4. For each source file:
+   - `_compute_output()` → resolved dest path
+   - Dedup check (same logic as `_run_worker`)
+   - Classify: `add` / `update` / `skip` based on dest existence + size/mtime comparison
+5. Mirror mode: walk dest for orphan files → add DELETE entries
+6. Compute counts `{add, update, delete, skip}`, push to state
 
 ## Name Overrides
 

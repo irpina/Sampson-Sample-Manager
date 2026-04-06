@@ -226,13 +226,43 @@ bash build_macos.sh
 
 ---
 
+## Duplicate Detection (v0.10.1+)
+
+When `dedup_enabled` is True (default), duplicate audio content is skipped during run and sync:
+
+- **Source-to-dest:** If a source file's content already exists at the destination (any filename), it is skipped
+- **Source-to-source:** If two source files have identical content, only the first is processed
+- **Dest flat cleanup:** Existing content-duplicate files in the top level of the destination are removed (not subdirectories)
+- Comparison uses SHA-256 with a size pre-filter for performance — only files with matching sizes are hashed
+- Source-to-dest check is skipped when conversion is enabled (format changes invalidate hashes)
+- Dry run is fully respected — duplicates are logged but not deleted
+
+**State key:** `dedup_enabled` (bool, default `True`)
+
+**Helper:** `_hash_file(path)` — SHA-256 of file contents, 64KB chunks
+
+---
+
+## Destination Persistence (v0.10.1+)
+
+Both source and destination paths are saved to `~/.sampson/settings.json` and restored on launch.
+
+- **Source:** restored with fallback chain (saved → cwd → app dir)
+- **Destination:** restored only if the saved path still exists and is a valid directory; otherwise stays blank
+- Auto-sync detection runs after dest is restored/selected — if source is already loaded and overlap is found, sync plan is auto-computed
+
+**Settings functions:** `get_last_dest()` / `set_last_dest()` in `settings.py`
+
+---
+
 ## Known Limitations
 
 - Unfiltered preview capped at 500 rows (`MAX_PREVIEW_ROWS`); filter bypasses cap
-- Destination collisions not handled — files overwritten silently
+- Name-collision overwrites not handled — if two source files produce the same output filename, the second silently overwrites the first (content duplicates are caught by dedup, but renamed collisions are not)
 - FFmpeg required for conversion (bundled in dist builds)
 - Deck B amber accent bar won't track manual log panel resize (CSS flex constraint)
 - Files shorter than 3 seconds are skipped for BPM/key detection (too short for reliable analysis)
+- Auto-sync detection does not fire when source is loaded after destination is already set
 
 ---
 *SAMPSON is licensed under the [GNU General Public License v3.0](LICENSE).*
