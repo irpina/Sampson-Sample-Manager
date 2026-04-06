@@ -362,6 +362,10 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
         detected_count = sum(1 for f in files if key_module.get_cached_key(f) is not None)
         state.add_log(f"[KEY] Detected key for {detected_count}/{total} file{s}")
     
+    # Destination dedup cleanup (top level only, not subdirectories)
+    if dedup_enabled and dest and dest.is_dir():
+        _dedup_dest_flat(dest, dry)
+    
     state.add_log("Done.", "success")
     state.set_status(f"Complete — {total} file{s} processed.", 100)
     state.set("is_running", False)
@@ -369,6 +373,49 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     # Refresh preview if BPM was detected
     if bpm_enabled and state._refresh_preview_cb:
         state._refresh_preview_cb()
+
+
+def _dedup_dest_flat(dest: Path, dry: bool) -> int:
+    """Remove content-duplicate audio files from the top level of dest only.
+    
+    Keeps the alphabetically first file among duplicates. Returns count removed.
+    """
+    if not dest or not dest.is_dir():
+        return 0
+    
+    # Get only top-level audio files
+    files = [f for f in dest.iterdir()
+             if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS]
+    
+    if len(files) < 2:
+        return 0
+    
+    # Group by size
+    size_groups = {}
+    for f in files:
+        size_groups.setdefault(f.stat().st_size, []).append(f)
+    
+    removed = 0
+    for group in size_groups.values():
+        if len(group) < 2:
+            continue
+        
+        seen = {}  # hash -> file path (first occurrence)
+        for f in sorted(group):  # alphabetical — keep first
+            try:
+                h = _hash_file(f)
+                if h in seen:
+                    prefix = "[DRY] " if dry else ""
+                    state.add_log(f"{prefix}DEDUP: {f.name} — duplicate of {seen[h].name}, removed from destination")
+                    if not dry:
+                        f.unlink()
+                    removed += 1
+                else:
+                    seen[h] = f
+            except Exception:
+                pass
+    
+    return removed
 
 # =============================================================================
 # SYNC SYSTEM — Plan → Preview → Execute
@@ -499,6 +546,40 @@ def _sync_plan_worker(source: Path, dest: Path):
         
         plan = []
         expected_dest_files = set()  # Track expected files for mirror mode
+        
+        # Destination flat dedup: scan top level for duplicates, add DELETE entries
+        if dedup_enabled and dest and dest.is_dir():
+            dest_files = [f for f in dest.iterdir()
+                          if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS]
+            
+            if len(dest_files) >= 2:
+                # Group by size
+                dest_size_groups = {}
+                for f in dest_files:
+                    dest_size_groups.setdefault(f.stat().st_size, []).append(f)
+                
+                seen_hashes = {}
+                for group in dest_size_groups.values():
+                    if len(group) < 2:
+                        continue
+                    for f in sorted(group):  # alphabetical — keep first
+                        try:
+                            h = _hash_file(f)
+                            if h in seen_hashes:
+                                plan.append({
+                                    "action": "delete",
+                                    "src_name": "",
+                                    "srcpath": None,
+                                    "dest_path": str(f),
+                                    "dest_display": f.name,
+                                    "rel_sub": "",
+                                    "new_name": "",
+                                    "duplicate_of": seen_hashes[h].name,
+                                })
+                            else:
+                                seen_hashes[h] = f
+                        except Exception:
+                            pass
         
         for i, f in enumerate(files, 1):
             # Get BPM/Key values

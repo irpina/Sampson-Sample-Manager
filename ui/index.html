@@ -187,8 +187,8 @@
                 <span class="chevron">▶</span> Sync mode
               </button>
               <div class="collapsible-content">
-                <label class="radio-label"><input type="radio" name="sync_mode" value="additive" data-key="sync_mode" checked /> Additive<span class="help-icon" data-tip="Only add/update files, never delete existing files in destination.">?</span></label>
-                <label class="radio-label"><input type="radio" name="sync_mode" value="mirror" data-key="sync_mode" /> Mirror<span class="help-icon" data-tip="Destination exactly matches transformed source. Extra files in destination will be deleted.">?</span></label>
+                <label class="radio-label"><input type="radio" name="sync_mode" value="additive" data-key="sync_mode" checked /> Additive<span class="help-icon" data-tip="Adds new files and updates changed ones. Files already on the destination that aren't in your source are left untouched — nothing is deleted.">?</span></label>
+                <label class="radio-label"><input type="radio" name="sync_mode" value="mirror" data-key="sync_mode" /> Mirror<span class="help-icon" data-tip="Makes the destination an exact copy of your processed source. Any files on the destination that don't come from your current source selection will be deleted.">?</span></label>
               </div>
             </div>
 
