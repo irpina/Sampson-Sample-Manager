@@ -176,6 +176,16 @@ def run_tool():
     ).start()
 
 
+def _hash_file(path: Path) -> str:
+    """Compute SHA-256 hash of file contents."""
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(65536), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode,
                 convert_options=None, bpm_enabled=False, bpm_append=False, bpm_fresh=False,
                 key_enabled=False, key_append=False, key_fresh=False, custom_prefix=""):
@@ -198,6 +208,22 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     label = "MOVE" if move_files else "COPY"
     prefix = "[DRY] " if dry else ""
     conv_label = " [convert]" if convert_options else ""
+    
+    # Duplicate detection setup
+    dedup_enabled = state.get("dedup_enabled", True)
+    dest_size_index = {}
+    dest_hash_cache = {}
+    seen_hashes = set()
+    seen_hashes_by_size = set()
+    
+    if dedup_enabled and dest and dest.is_dir():
+        # Pre-scan destination: build size -> [paths] index
+        for dest_file in dest.rglob("*"):
+            if dest_file.suffix.lower() in constants.AUDIO_EXTS and dest_file.is_file():
+                size = dest_file.stat().st_size
+                if size not in dest_size_index:
+                    dest_size_index[size] = []
+                dest_size_index[size].append(dest_file)
 
     for i, f in enumerate(files, 1):
         bpm_val = bpm_module.detect_bpm(f, force=bpm_fresh) if bpm_enabled else None
@@ -236,8 +262,59 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
         sub_dir = dest / rel_sub if rel_sub else dest
         target = sub_dir / new_name
         dest_display = f"{rel_sub}/{new_name}" if rel_sub else new_name
+        
+        # Duplicate detection check
+        if dedup_enabled:
+            src_size = f.stat().st_size
+            src_hash = None
+            duplicate_of = None
+            
+            # Source-to-dest check (only if not converting, since format changes hash)
+            if not convert_options and src_size in dest_size_index:
+                for candidate in dest_size_index[src_size]:
+                    # Lazy hash computation with cache
+                    dest_hash = dest_hash_cache.get(str(candidate))
+                    if dest_hash is None:
+                        try:
+                            dest_hash = _hash_file(candidate)
+                            dest_hash_cache[str(candidate)] = dest_hash
+                        except Exception:
+                            continue
+                    if src_hash is None:
+                        try:
+                            src_hash = _hash_file(f)
+                        except Exception:
+                            break
+                    if src_hash == dest_hash:
+                        duplicate_of = candidate.name
+                        break
+            
+            # Source-to-source check (within this run)
+            if duplicate_of is None:
+                if src_size in seen_hashes_by_size:
+                    if src_hash is None:
+                        try:
+                            src_hash = _hash_file(f)
+                        except Exception:
+                            pass
+                    if src_hash and src_hash in seen_hashes:
+                        duplicate_of = "earlier file in this run"
+            
+            if duplicate_of:
+                state.add_log(f"SKIP (duplicate): {f.name} — content already exists as {duplicate_of}")
+                continue
+            
+            # Track this file's hash for future source-to-source checks
+            if src_hash is None:
+                try:
+                    src_hash = _hash_file(f)
+                except Exception:
+                    pass
+            if src_hash:
+                seen_hashes.add(src_hash)
+                seen_hashes_by_size.add(src_size)
+        
         msg = f"{prefix}{label}{conv_label}: {f.name}  →  {dest_display}"
-
         state.add_log(msg)
         
         progress_pct = int(i / total * 100)
@@ -388,6 +465,22 @@ def _sync_plan_worker(source: Path, dest: Path):
         convert_enabled = state.get("convert_enabled", False)
         convert_format = state.get("convert_format", "wav")
         
+        # Duplicate detection setup
+        dedup_enabled = state.get("dedup_enabled", True)
+        dest_size_index = {}
+        dest_hash_cache = {}
+        seen_hashes = set()
+        seen_hashes_by_size = set()
+        
+        if dedup_enabled and dest and dest.is_dir():
+            # Pre-scan destination: build size -> [paths] index
+            for dest_file in dest.rglob("*"):
+                if dest_file.suffix.lower() in constants.AUDIO_EXTS and dest_file.is_file():
+                    size = dest_file.stat().st_size
+                    if size not in dest_size_index:
+                        dest_size_index[size] = []
+                    dest_size_index[size].append(dest_file)
+        
         # Gather source files
         files = []
         selected_folders = state.get("selected_folders", [])
@@ -438,8 +531,60 @@ def _sync_plan_worker(source: Path, dest: Path):
             dest_path_str = str(dest_path)
             expected_dest_files.add(dest_path_str)
             
+            # Duplicate detection check
+            is_duplicate = False
+            duplicate_of = None
+            
+            if dedup_enabled:
+                src_size = f.stat().st_size
+                src_hash = None
+                
+                # Source-to-dest check (only if not converting)
+                if not convert_enabled and src_size in dest_size_index:
+                    for candidate in dest_size_index[src_size]:
+                        # Lazy hash computation with cache
+                        dest_hash = dest_hash_cache.get(str(candidate))
+                        if dest_hash is None:
+                            try:
+                                dest_hash = _hash_file(candidate)
+                                dest_hash_cache[str(candidate)] = dest_hash
+                            except Exception:
+                                continue
+                        if src_hash is None:
+                            try:
+                                src_hash = _hash_file(f)
+                            except Exception:
+                                break
+                        if src_hash == dest_hash:
+                            is_duplicate = True
+                            duplicate_of = str(candidate.name)
+                            break
+                
+                # Source-to-source check (within this run)
+                if not is_duplicate and src_size in seen_hashes_by_size:
+                    if src_hash is None:
+                        try:
+                            src_hash = _hash_file(f)
+                        except Exception:
+                            pass
+                    if src_hash and src_hash in seen_hashes:
+                        is_duplicate = True
+                        duplicate_of = "earlier file in this run"
+                
+                # Track this file's hash
+                if src_hash is None and not is_duplicate:
+                    try:
+                        src_hash = _hash_file(f)
+                    except Exception:
+                        pass
+                if src_hash:
+                    seen_hashes.add(src_hash)
+                    seen_hashes_by_size.add(src_size)
+            
             # Determine action
-            if not dest_path.exists():
+            if is_duplicate:
+                action = "skip"
+            elif not dest_path.exists():
                 action = "add"
             else:
                 # Compare size and mtime
@@ -461,6 +606,7 @@ def _sync_plan_worker(source: Path, dest: Path):
                 "dest_display": f"{rel_sub}/{new_name}" if rel_sub else new_name,
                 "rel_sub": rel_sub,
                 "new_name": new_name,
+                "duplicate_of": duplicate_of if is_duplicate else None,
             })
             
             progress_pct = int(i / total * 100)

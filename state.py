@@ -80,6 +80,9 @@ _state: dict[str, Any] = {
     "sync_in_progress": False,
     "sync_show_plan": False,  # whether to show sync plan in Deck B
     "sync_auto_detected": False,  # true when previous run detected in dest
+    
+    # Duplicate detection
+    "dedup_enabled": True,  # skip files with identical content
 }
 
 # ---------------------------------------------------------------------------

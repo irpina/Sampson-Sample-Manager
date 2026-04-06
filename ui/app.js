@@ -107,7 +107,7 @@ function renderPatch(patch) {
   if (keys.includes('dir_entries') || keys.includes('active_dir') || keys.includes('src_count')) {
     renderDeckA();
   }
-  if (keys.some(k => ['move', 'dry', 'modify_names', 'custom_prefix', 'struct_mode', 
+  if (keys.some(k => ['move', 'dry', 'dedup_enabled', 'modify_names', 'custom_prefix', 'struct_mode', 
                        'profile', 'convert_enabled', 'convert_format', 'convert_sample_rate',
                        'convert_bit_depth', 'convert_channels', 'convert_normalize',
                        'convert_follow_profile', 'bpm_enabled', 'bpm_append', 'bpm_fresh',
@@ -200,6 +200,7 @@ function renderDeckA() {
 function renderCenterPanel() {
   $('#opt-move').checked = APP_STATE.move || false;
   $('#opt-dry').checked = APP_STATE.dry !== false;
+  $('#opt-dedup').checked = APP_STATE.dedup_enabled !== false;
   $('#opt-rename').checked = APP_STATE.modify_names || false;
   $('#custom-prefix').value = APP_STATE.custom_prefix || '';
   $('#custom-prefix').disabled = !APP_STATE.modify_names;
