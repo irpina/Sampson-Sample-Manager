@@ -1104,10 +1104,10 @@ const Slicer = {
     this.render();
   },
   
-  addMarkerAtCursor() {
-    // Add a marker at current time
+  addMarkerAtCursor(timeMs = null) {
+    // Add a marker at current time (or provided time)
     const slices = APP_STATE.slicer_slices || [];
-    const timeMs = this.currentTime * 1000;
+    if (timeMs === null) timeMs = this.currentTime * 1000;
     
     // Find where to insert
     let insertIndex = slices.length;
@@ -1406,6 +1406,16 @@ function setupSlicerEvents() {
     Slicer.currentTime = timeFrac * (Slicer.fileInfo?.duration || 0);
     Slicer.updateTimeDisplay();
     Slicer.drawWaveform();
+  });
+  
+  // Double-click on canvas to insert slice marker at clicked position
+  $('#slicer-canvas')?.addEventListener('dblclick', (e) => {
+    if (!Slicer.fileInfo) return;
+    const rect = e.target.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    const timeFrac = Slicer.viewStart + pct * (Slicer.viewEnd - Slicer.viewStart);
+    const timeMs = timeFrac * Slicer.fileInfo.duration * 1000;
+    Slicer.addMarkerAtCursor(timeMs);
   });
   
   // Mouse wheel zoom - X zoom on wheel, Y zoom on Shift+wheel
