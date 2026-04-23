@@ -1009,6 +1009,16 @@ const Slicer = {
       const x = this.timeToX(slice.start_ms / 1000, width);
       const endX = this.timeToX(slice.end_ms / 1000, width);
       
+      // Highlight the slice currently being previewed
+      if (i === this.previewSliceIndex) {
+        const clipX = Math.max(0, x);
+        const clipEndX = Math.min(width, endX);
+        if (clipEndX > clipX) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+          ctx.fillRect(clipX, 0, clipEndX - clipX, height);
+        }
+      }
+      
       // Draw start marker (only if visible)
       if (x >= -2 && x <= width + 2) {
         ctx.strokeStyle = accentA;
@@ -1302,9 +1312,7 @@ const Slicer = {
     const slice = slices[index];
     this.previewSliceIndex = index;
     this.renderSliceList(); // Update highlight
-    
-    // Zoom waveform to this slice
-    this.zoomToSlice(index);
+    this.drawWaveform();     // Re-draw to show active slice highlight
     
     const result = await pywebview.api.slicer_preview_slice(
       APP_STATE.slicer_file, slice.start_ms, slice.end_ms
@@ -1335,7 +1343,9 @@ const Slicer = {
   // Called when external playback state changes
   onPlaybackStopped() {
     this.playing = false;
+    this.previewSliceIndex = -1;
     $('#slicer-play').textContent = '▶';
+    this.drawWaveform();
   }
 };
 
