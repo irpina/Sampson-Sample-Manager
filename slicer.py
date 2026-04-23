@@ -84,6 +84,27 @@ def _ms_to_str(ms: float) -> str:
     return f"{minutes}:{seconds:05.3f}"
 
 
+def _snap_to_zero_crossing(samples, pos: int, search_samples: int) -> int:
+    """Snap a sample index to the nearest zero crossing, preferring backward.
+
+    Backward search is preferred because snapping earlier keeps the
+    transient's attack intact at the start of the next slice.
+    Returns `pos` if no crossing is found within ±search_samples.
+    """
+    n = len(samples)
+    if pos <= 0 or pos >= n - 1:
+        return pos
+    lo = max(1, pos - search_samples)
+    for i in range(pos, lo - 1, -1):
+        if (samples[i] >= 0) != (samples[i - 1] >= 0):
+            return i
+    hi = min(n - 1, pos + search_samples)
+    for i in range(pos, hi):
+        if (samples[i] >= 0) != (samples[i + 1] >= 0):
+            return i
+    return pos
+
+
 def auto_slice_silence(
     path: str,
     threshold_db: float = -40.0,
@@ -318,20 +339,11 @@ def auto_slice_transients(
     sensitivity: float = 1.5,
     min_spacing_ms: float = 100.0,
 ) -> dict[str, Any]:
-    """Auto-slice audio based on onset detection.
+    """Auto-slice audio using FMP-style onset detection.
 
-    Pipeline: pre-emphasis HPF → log-compressed short-time RMS →
-    half-wave rectified onset difference function → adaptive local-mean
-    threshold → peak picking.
-
-    Args:
-        path: Audio file path.
-        sensitivity: Multiplier over local-mean ODF. Typical 1.0–3.0,
-                     default 1.5. Lower = more slices.
-        min_spacing_ms: Minimum time between detected onsets.
-
-    Returns:
-        Dict with slices list.
+    Pipeline: pre-emphasis → log-RMS → HWR-diff ODF → normalize to [0,1]
+    → subtract centered local mean → peak-pick against λ over a window
+    → snap each transient to nearest zero crossing in the raw signal.
     """
     try:
         import math
@@ -348,7 +360,7 @@ def auto_slice_transients(
         max_val = 2 ** (audio.sample_width * 8 - 1)
         n_samples = len(samples)
 
-        # 1. Pre-emphasis HPF: y[n] = x[n] - 0.97*x[n-1], normalized to [-1,1]
+        # 1. Pre-emphasis HPF
         pre = array('d', [0.0]) * n_samples
         prev = 0
         for i in range(n_samples):
@@ -356,21 +368,18 @@ def auto_slice_transients(
             pre[i] = (s - 0.97 * prev) / max_val
             prev = s
 
-        # 2. Log-compressed short-time RMS (5ms window, 2.5ms hop)
-        win = max(1, int(sr * 0.005))
-        hop = max(1, win // 2)
+        # 2. Log-compressed short-time RMS (wider: 20ms window, 10ms hop)
+        win = max(1, int(sr * 0.020))
+        hop = max(1, int(sr * 0.010))
         n_frames = max(0, (n_samples - win) // hop + 1)
 
+        full_slice = {
+            "start_ms": 0.0, "end_ms": duration_ms,
+            "start_str": _ms_to_str(0), "end_str": _ms_to_str(duration_ms),
+            "duration_ms": duration_ms, "duration_str": _ms_to_str(duration_ms),
+        }
         if n_frames < 3:
-            return {
-                "success": True,
-                "slices": [{
-                    "start_ms": 0.0, "end_ms": duration_ms,
-                    "start_str": _ms_to_str(0), "end_str": _ms_to_str(duration_ms),
-                    "duration_ms": duration_ms, "duration_str": _ms_to_str(duration_ms),
-                }],
-                "count": 1,
-            }
+            return {"success": True, "slices": [full_slice], "count": 1}
 
         log_energy = [0.0] * n_frames
         for f in range(n_frames):
@@ -389,45 +398,71 @@ def auto_slice_transients(
             if d > 0.0:
                 odf[f] = d
 
-        # 4. Cumulative sum for O(1) trailing-window mean
+        # 4. Normalize ODF to [0, 1]
+        max_odf = max(odf) if odf else 0.0
+        if max_odf <= 1e-12:
+            return {"success": True, "slices": [full_slice], "count": 1}
+        odf = [v / max_odf for v in odf]
+
+        # 5. Subtract centered local mean → residual
         cumsum = [0.0] * (n_frames + 1)
         for i in range(n_frames):
             cumsum[i + 1] = cumsum[i] + odf[i]
 
-        local_win_frames = max(1, int(0.3 * sr / hop))  # 300ms trailing
-        min_gap = max(1, int(min_spacing_ms / 1000 * sr / hop))
-        floor = 0.005  # absolute floor: reject noise-only regions
+        avg_half = max(1, int(0.5 * sr / hop))  # ±500ms = 1s centered window
+        residual = [0.0] * n_frames
+        for f in range(n_frames):
+            lo = max(0, f - avg_half)
+            hi = min(n_frames, f + avg_half + 1)
+            local_mean = (cumsum[hi] - cumsum[lo]) / (hi - lo)
+            r = odf[f] - local_mean
+            residual[f] = r if r > 0.0 else 0.0
 
-        # 5. Peak-picking with adaptive threshold
+        # 6. Peak-pick over ±30ms window against λ
+        # λ mapping: sensitivity 1.0 → 0.05 (many), 3.0 → 0.15 (few)
+        lambda_ = sensitivity * 0.05
+        peak_half = max(1, int(0.03 * sr / hop))
+        min_gap = max(1, int(min_spacing_ms / 1000 * sr / hop))
+
         transient_frames = []
         last = -min_gap
-        for f in range(1, n_frames - 1):
-            lo = max(0, f - local_win_frames)
-            width = f + 1 - lo
-            local_mean = (cumsum[f + 1] - cumsum[lo]) / width
-            thresh = sensitivity * local_mean + floor
+        for f in range(n_frames):
+            if residual[f] <= lambda_:
+                continue
+            if f - last < min_gap:
+                continue
+            pk_lo = max(0, f - peak_half)
+            pk_hi = min(n_frames, f + peak_half + 1)
+            is_max = True
+            for k in range(pk_lo, pk_hi):
+                if k != f and residual[k] > residual[f]:
+                    is_max = False
+                    break
+            if not is_max:
+                continue
+            transient_frames.append(f)
+            last = f
 
-            if (odf[f] > thresh
-                and odf[f] >= odf[f - 1]
-                and odf[f] >= odf[f + 1]
-                and f - last >= min_gap):
-                transient_frames.append(f)
-                last = f
+        # 7. Zero-crossing snap on raw samples
+        search_samples = max(1, int(sr * 0.010))  # ±10ms search window
+        transient_samples = [
+            _snap_to_zero_crossing(samples, f * hop, search_samples)
+            for f in transient_frames
+        ]
+        transient_ms_list = [s * 1000.0 / sr for s in transient_samples]
 
-        transient_ms_list = [f * hop * 1000.0 / sr for f in transient_frames]
-
+        # 8. Build slices
         slices = []
         start_ms = 0.0
         for t_ms in transient_ms_list:
-            end_ms = t_ms
-            dur = end_ms - start_ms
+            dur = t_ms - start_ms
             if dur >= 50:
                 slices.append({
-                    "start_ms": start_ms, "end_ms": end_ms,
-                    "start_str": _ms_to_str(start_ms), "end_str": _ms_to_str(end_ms),
+                    "start_ms": start_ms, "end_ms": t_ms,
+                    "start_str": _ms_to_str(start_ms), "end_str": _ms_to_str(t_ms),
                     "duration_ms": dur, "duration_str": _ms_to_str(dur),
                 })
-            start_ms = end_ms
+            start_ms = t_ms
 
         if start_ms < duration_ms - 50:
             slices.append({
@@ -438,17 +473,12 @@ def auto_slice_transients(
             })
 
         if not slices:
-            slices.append({
-                "start_ms": 0.0, "end_ms": duration_ms,
-                "start_str": _ms_to_str(0), "end_str": _ms_to_str(duration_ms),
-                "duration_ms": duration_ms, "duration_str": _ms_to_str(duration_ms),
-            })
+            slices.append(full_slice)
 
         return {"success": True, "slices": slices, "count": len(slices)}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
-
 
 def preview_slice(path: str, start_ms: float, end_ms: float) -> dict[str, Any]:
     """Extract a slice to a temp WAV and return its path for playback.
