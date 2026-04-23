@@ -854,6 +854,7 @@ const Slicer = {
   previewSliceIndex: -1,
   playEnd: null,      // null = play to fileInfo.duration; set to slice end for preview
   _playGen: 0,        // invalidates stale RAF loops when new playback starts
+  _inSlicePreview: false,  // true while slice preview is running; blocks is_playing hook
   draggingMarker: null,
   
   // Open slicer with a file
@@ -1319,6 +1320,7 @@ const Slicer = {
     this.currentTime = slice.start_ms / 1000;
     this.playEnd = slice.end_ms / 1000;
     this.playing = true;
+    this._inSlicePreview = true;
     this.startPlayheadUpdate();
     
     const result = await pywebview.api.slicer_preview_slice(
@@ -1351,6 +1353,7 @@ const Slicer = {
   onPlaybackStopped() {
     this.playing = false;
     this.playEnd = null;
+    this._inSlicePreview = false;
     this.previewSliceIndex = -1;
     $('#slicer-play').textContent = '▶';
     this.drawWaveform();
@@ -1408,6 +1411,8 @@ function setupSlicerEvents() {
   
   $('#slicer-stop')?.addEventListener('click', async () => {
     await pywebview.api.preview_stop();
+    Slicer._inSlicePreview = false;
+    Slicer.previewSliceIndex = -1;
     Slicer.playing = false;
     Slicer.currentTime = 0;
     $('#slicer-play').textContent = '▶';
@@ -1555,7 +1560,7 @@ renderPatch = function(patch) {
   }
   
   // Handle external playback stop
-  if (keys.includes('is_playing') && !APP_STATE.is_playing && Slicer.playing) {
+  if (keys.includes('is_playing') && !APP_STATE.is_playing && Slicer.playing && !Slicer._inSlicePreview) {
     Slicer.onPlaybackStopped();
   }
 };
