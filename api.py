@@ -449,10 +449,11 @@ class SampsonAPI:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    def slicer_auto_fixed(self, filepath: str, slice_length_ms: float) -> dict:
+    def slicer_auto_fixed(self, filepath: str, slice_length_ms: float = 0.0,
+                          target_count: int | None = None) -> dict:
         """Run auto-slice based on fixed length."""
         try:
-            result = slicer.auto_slice_fixed(filepath, slice_length_ms)
+            result = slicer.auto_slice_fixed(filepath, slice_length_ms, target_count)
             if result.get("success"):
                 state.set("slicer_slices", result["slices"])
             return result
@@ -460,10 +461,13 @@ class SampsonAPI:
             return {"success": False, "error": str(e)}
 
     def slicer_auto_transients(self, filepath: str, sensitivity: float = 1.5,
-                               min_spacing_ms: float = 100.0) -> dict:
+                               min_spacing_ms: float = 100.0,
+                               target_count: int | None = None) -> dict:
         """Run auto-slice based on transient detection."""
         try:
-            result = slicer.auto_slice_transients(filepath, sensitivity, min_spacing_ms)
+            result = slicer.auto_slice_transients(
+                filepath, sensitivity, min_spacing_ms, target_count
+            )
             if result.get("success"):
                 state.set("slicer_slices", result["slices"])
             return result

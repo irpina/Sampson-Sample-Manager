@@ -288,25 +288,35 @@ def auto_slice_bpm(path: str, bpm: float, beats_per_slice: int = 1) -> dict[str,
         return {"success": False, "error": str(e)}
 
 
-def auto_slice_fixed(path: str, slice_length_ms: float) -> dict[str, Any]:
+def auto_slice_fixed(
+    path: str,
+    slice_length_ms: float = 0.0,
+    target_count: int | None = None,
+) -> dict[str, Any]:
     """Auto-slice audio file into fixed-length chunks.
-    
+
     Args:
         path: Path to audio file
         slice_length_ms: Length of each slice in milliseconds
-        
+        target_count: If set, overrides slice_length_ms (length = duration / count)
+
     Returns:
         Dict with slices list
     """
     try:
         from pydub import AudioSegment
-        
+
         audio = AudioSegment.from_file(path)
         duration_ms = len(audio)
-        
+
+        if target_count is not None and target_count >= 1:
+            slice_length_ms = duration_ms / target_count
+        elif slice_length_ms is None or slice_length_ms <= 0:
+            return {"success": False, "error": "slice_length_ms or target_count required"}
+
         slices = []
         start_ms = 0.0
-        
+
         while start_ms < duration_ms:
             end_ms = min(start_ms + slice_length_ms, duration_ms)
             duration = end_ms - start_ms
@@ -338,12 +348,16 @@ def auto_slice_transients(
     path: str,
     sensitivity: float = 1.5,
     min_spacing_ms: float = 100.0,
+    target_count: int | None = None,
 ) -> dict[str, Any]:
     """Auto-slice audio using FMP-style onset detection.
 
     Pipeline: pre-emphasis → log-RMS → HWR-diff ODF → normalize to [0,1]
     → subtract centered local mean → peak-pick against λ over a window
     → snap each transient to nearest zero crossing in the raw signal.
+
+    If target_count is set, sensitivity is ignored and the strongest
+    (target_count - 1) onsets are selected, subject to min_spacing.
     """
     try:
         import math
@@ -420,28 +434,59 @@ def auto_slice_transients(
 
         # 6. Peak-pick over ±30ms window against λ
         # λ mapping: sensitivity 1.0 → 0.05 (many), 3.0 → 0.15 (few)
-        lambda_ = sensitivity * 0.05
         peak_half = max(1, int(0.03 * sr / hop))
         min_gap = max(1, int(min_spacing_ms / 1000 * sr / hop))
 
-        transient_frames = []
-        last = -min_gap
-        for f in range(n_frames):
-            if residual[f] <= lambda_:
-                continue
-            if f - last < min_gap:
-                continue
-            pk_lo = max(0, f - peak_half)
-            pk_hi = min(n_frames, f + peak_half + 1)
-            is_max = True
-            for k in range(pk_lo, pk_hi):
-                if k != f and residual[k] > residual[f]:
-                    is_max = False
+        if target_count is not None and target_count >= 1:
+            # Target-count mode: collect all local maxima, greedy top-N by strength
+            candidates = []
+            for f in range(n_frames):
+                if residual[f] <= 0.0:
+                    continue
+                pk_lo = max(0, f - peak_half)
+                pk_hi = min(n_frames, f + peak_half + 1)
+                is_max = True
+                for k in range(pk_lo, pk_hi):
+                    if k != f and residual[k] > residual[f]:
+                        is_max = False
+                        break
+                if is_max:
+                    candidates.append((f, residual[f]))
+
+            candidates.sort(key=lambda c: c[1], reverse=True)
+
+            # N slices need N-1 transients
+            target_transients = max(0, target_count - 1)
+            selected = []
+            for frame, _ in candidates:
+                if any(abs(frame - s) < min_gap for s in selected):
+                    continue
+                selected.append(frame)
+                if len(selected) >= target_transients:
                     break
-            if not is_max:
-                continue
-            transient_frames.append(f)
-            last = f
+
+            transient_frames = sorted(selected)
+        else:
+            # λ-based detection
+            lambda_ = sensitivity * 0.05
+            transient_frames = []
+            last = -min_gap
+            for f in range(n_frames):
+                if residual[f] <= lambda_:
+                    continue
+                if f - last < min_gap:
+                    continue
+                pk_lo = max(0, f - peak_half)
+                pk_hi = min(n_frames, f + peak_half + 1)
+                is_max = True
+                for k in range(pk_lo, pk_hi):
+                    if k != f and residual[k] > residual[f]:
+                        is_max = False
+                        break
+                if not is_max:
+                    continue
+                transient_frames.append(f)
+                last = f
 
         # 7. Zero-crossing snap on raw samples
         search_samples = max(1, int(sr * 0.010))  # ±10ms search window

@@ -365,6 +365,10 @@
               <label>Slice length (ms)</label>
               <input type="number" id="fixed-length" class="text-input" value="500" min="50" step="50" />
             </div>
+            <div class="slicer-field">
+              <label>Target slices (optional) <span class="help-icon" data-tip="If set, slice length = duration ÷ target count. Overrides slice length above.">?</span></label>
+              <input type="number" id="fixed-target-count" class="text-input" placeholder="auto" min="1" max="999" step="1" />
+            </div>
           </div>
 
           <!-- Transient mode controls -->
@@ -377,6 +381,10 @@
             <div class="slicer-field">
               <label>Min spacing (ms)</label>
               <input type="number" id="transient-spacing" class="text-input" value="100" min="50" step="10" />
+            </div>
+            <div class="slicer-field">
+              <label>Target slices (optional) <span class="help-icon" data-tip="If set, picks the N−1 strongest onsets to produce exactly N slices. Overrides sensitivity.">?</span></label>
+              <input type="number" id="transient-target-count" class="text-input" placeholder="auto" min="1" max="999" step="1" />
             </div>
           </div>
 

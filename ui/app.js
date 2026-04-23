@@ -1200,12 +1200,16 @@ const Slicer = {
         break;
       case 'fixed':
         const length = parseFloat($('#fixed-length').value);
-        result = await pywebview.api.slicer_auto_fixed(filepath, length);
+        const fixedCountStr = $('#fixed-target-count').value.trim();
+        const fixedTargetCount = fixedCountStr ? parseInt(fixedCountStr, 10) : null;
+        result = await pywebview.api.slicer_auto_fixed(filepath, length, fixedTargetCount);
         break;
       case 'transients':
         const sensitivity = parseFloat($('#transient-threshold').value);
         const spacing = parseFloat($('#transient-spacing').value);
-        result = await pywebview.api.slicer_auto_transients(filepath, sensitivity, spacing);
+        const transCountStr = $('#transient-target-count').value.trim();
+        const transTargetCount = transCountStr ? parseInt(transCountStr, 10) : null;
+        result = await pywebview.api.slicer_auto_transients(filepath, sensitivity, spacing, transTargetCount);
         break;
     }
     
