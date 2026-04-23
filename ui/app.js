@@ -452,6 +452,7 @@ function renderDeckB() {
     
     highlightPreviewRow();
     updateTransportButtons();
+    updateSlicerButtonState();
   }
 }
 
@@ -709,9 +710,20 @@ async function selectPreview(index) {
   
   selectedPreviewIndex = index;
   highlightPreviewRow();
+  updateSlicerButtonState();
   
   const entry = entries[index];
   await pywebview.api.preview_play(entry.srcpath);
+}
+
+function updateSlicerButtonState() {
+  const slicerBtn = $('#open-slicer');
+  if (!slicerBtn) return;
+  
+  const entries = APP_STATE.preview_entries || [];
+  const hasSelection = selectedPreviewIndex >= 0 && selectedPreviewIndex < entries.length;
+  slicerBtn.disabled = !hasSelection;
+  slicerBtn.title = hasSelection ? 'Open sample slicer' : 'Select a file in Deck B first';
 }
 
 function highlightPreviewRow() {
@@ -819,5 +831,708 @@ function log(message, type = 'info') {
   });
 })();
 
+// ============================================================================
+// Sample Slicer
+// ============================================================================
+
+const Slicer = {
+  isOpen: false,
+  fileInfo: null,
+  waveform: null,
+  slices: [],
+  // Viewport state for X/Y zoom and pan
+  viewStart: 0.0,   // fraction of total duration (0.0–1.0)
+  viewEnd: 1.0,     // fraction of total duration (0.0–1.0)
+  ampScale: 1.0,    // Y amplitude multiplier (1.0 = fit, 2.0 = doubled)
+  isPanning: false,
+  panStartX: 0,
+  panStartViewStart: 0,
+  // Playback state
+  playing: false,
+  currentTime: 0,
+  selectedSliceIndex: -1,
+  previewSliceIndex: -1,
+  draggingMarker: null,
+  
+  // Open slicer with a file
+  async open(filepath) {
+    if (!filepath) {
+      // Try to get selected file from preview
+      const entries = APP_STATE.preview_entries || [];
+      if (selectedPreviewIndex >= 0 && selectedPreviewIndex < entries.length) {
+        filepath = entries[selectedPreviewIndex].srcpath;
+      } else {
+        // Show visible feedback to user
+        pywebview.api.set_option('status', 'Select a file in Deck B to use the Slicer');
+        log('Select a file in Deck B first', 'warn');
+        return;
+      }
+    }
+    
+    // Reset zoom/pan to full view
+    this.viewStart = 0.0;
+    this.viewEnd = 1.0;
+    this.ampScale = 1.0;
+    
+    const result = await pywebview.api.slicer_open(filepath);
+    if (result.success) {
+      this.fileInfo = result.file_info;
+      this.isOpen = true;
+      this.render();
+    } else {
+      log(result.error || 'Failed to open file', 'error');
+    }
+  },
+  
+  close() {
+    pywebview.api.slicer_close();
+    this.isOpen = false;
+    this.playing = false;
+    this.waveform = null;
+    this.slices = [];
+    this.render();
+  },
+  
+  render() {
+    const modal = $('#slicer-modal');
+    if (!modal) return;
+    
+    modal.classList.toggle('hidden', !this.isOpen);
+    
+    if (!this.isOpen || !this.fileInfo) return;
+    
+    // Update filename
+    $('#slicer-filename').textContent = 
+      `${this.fileInfo.name}  ·  ${this.fileInfo.sample_rate/1000}kHz  ·  ${this.fileInfo.duration.toFixed(2)}s`;
+    
+    // Update time display
+    this.updateTimeDisplay();
+    
+    // Draw waveform (double rAF needed: first for layout, second for size calc)
+    requestAnimationFrame(() => requestAnimationFrame(() => this.drawWaveform()));
+    
+    // Render slice list
+    this.renderSliceList();
+    
+    // Set default prefix
+    const prefixInput = $('#slicer-prefix');
+    if (prefixInput && !prefixInput.value) {
+      prefixInput.value = this.fileInfo.name.replace(/\.[^.]+$/, '');
+    }
+  },
+  
+  updateTimeDisplay() {
+    if (!this.fileInfo) return;
+    const current = this.formatTime(this.currentTime);
+    const total = this.formatTime(this.fileInfo.duration);
+    $('#slicer-time').textContent = `${current} / ${total}`;
+  },
+  
+  formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = (seconds % 60).toFixed(3).padStart(6, '0');
+    return `${mins}:${secs}`;
+  },
+  
+  // Helper: convert time (seconds) to canvas x, accounting for viewport
+  timeToX(timeSec, width) {
+    const duration = this.fileInfo?.duration || 1;
+    const frac = timeSec / duration;
+    return ((frac - this.viewStart) / (this.viewEnd - this.viewStart)) * width;
+  },
+
+  drawWaveform() {
+    const canvas = $('#slicer-canvas');
+    if (!canvas || !APP_STATE.slicer_waveform) return;
+    
+    const ctx = canvas.getContext('2d');
+    const allSamples = APP_STATE.slicer_waveform;
+    
+    // Sync canvas buffer to display size (handle device pixel ratio for sharpness)
+    const container = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const displayWidth = container.clientWidth;
+    const displayHeight = container.clientHeight;
+    
+    if (!displayWidth || !displayHeight) return;
+    
+    canvas.width = displayWidth * dpr;
+    canvas.height = displayHeight * dpr;
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
+    ctx.scale(dpr, dpr);
+    
+    const width = displayWidth;
+    const height = displayHeight;
+    const midY = height / 2;
+    
+    // Slice visible samples based on viewport
+    const startIdx = Math.floor(this.viewStart * allSamples.length);
+    const endIdx = Math.ceil(this.viewEnd * allSamples.length);
+    const samples = allSamples.slice(startIdx, endIdx);
+    
+    // Clear
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-surface').trim();
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw waveform
+    const accentColor = getComputedStyle(document.body).getPropertyValue('--cyan').trim();
+    ctx.fillStyle = accentColor;
+    ctx.globalAlpha = 0.6;
+    
+    const step = width / samples.length;
+    
+    for (let i = 0; i < samples.length; i++) {
+      const x = i * step;
+      const h = Math.min(Math.abs(samples[i]) * this.ampScale, 1.0) * height * 0.9;
+      ctx.fillRect(x, midY - h/2, Math.max(step, 1), h);
+    }
+    
+    ctx.globalAlpha = 1.0;
+    
+    // Draw slice markers
+    this.drawSliceMarkers(ctx, width, height);
+    
+    // Draw playhead
+    this.drawPlayhead(width, height);
+  },
+  
+  drawSliceMarkers(ctx, width, height) {
+    const slices = APP_STATE.slicer_slices || [];
+    
+    const accentA = getComputedStyle(document.body).getPropertyValue('--cyan').trim();
+    const accentB = getComputedStyle(document.body).getPropertyValue('--amber').trim();
+    
+    ctx.lineWidth = 2;
+    
+    slices.forEach((slice, i) => {
+      const x = this.timeToX(slice.start_ms / 1000, width);
+      const endX = this.timeToX(slice.end_ms / 1000, width);
+      
+      // Draw start marker (only if visible)
+      if (x >= -2 && x <= width + 2) {
+        ctx.strokeStyle = accentA;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+        
+        // Draw slice number
+        ctx.fillStyle = accentA;
+        ctx.font = '10px sans-serif';
+        ctx.fillText(String(i + 1), Math.max(3, x + 3), 12);
+      }
+      
+      // Draw end marker (if not last slice and visible)
+      if (i < slices.length - 1 && endX >= -2 && endX <= width + 2) {
+        ctx.strokeStyle = accentB;
+        ctx.beginPath();
+        ctx.moveTo(endX, 0);
+        ctx.lineTo(endX, height);
+        ctx.stroke();
+      }
+    });
+  },
+  
+  drawPlayhead(width, height) {
+    const playhead = $('#slicer-playhead');
+    if (!playhead || !this.fileInfo) return;
+    
+    const x = this.timeToX(this.currentTime, width);
+    playhead.style.left = `${Math.max(0, Math.min(width, x))}px`;
+  },
+  
+  renderSliceList() {
+    const tbody = $('#slicer-slices-tbody');
+    if (!tbody) return;
+    
+    const slices = APP_STATE.slicer_slices || [];
+    
+    tbody.innerHTML = slices.map((slice, i) => `
+      <tr data-index="${i}" class="slicer-slice-row${i === this.previewSliceIndex ? ' active' : ''}">
+        <td>
+          <button class="btn-icon slicer-play-slice" data-index="${i}" title="Preview slice">▶</button>
+          ${i + 1}
+        </td>
+        <td>${slice.start_str || this.formatTime(slice.start_ms/1000)}</td>
+        <td>${slice.end_str || this.formatTime(slice.end_ms/1000)}</td>
+        <td>${slice.duration_str || this.formatTime(slice.duration_ms/1000)}</td>
+        <td><button class="btn-icon slicer-delete-slice" data-index="${i}" title="Remove">✕</button></td>
+      </tr>
+    `).join('');
+    
+    // Play slice buttons
+    tbody.querySelectorAll('.slicer-play-slice').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const index = parseInt(e.currentTarget.dataset.index);
+        await this.previewSlice(index);
+      });
+    });
+    
+    // Delete handlers
+    tbody.querySelectorAll('.slicer-delete-slice').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const index = parseInt(e.currentTarget.dataset.index);
+        this.deleteSlice(index);
+      });
+    });
+    
+    // Row click = zoom waveform to slice
+    tbody.querySelectorAll('.slicer-slice-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        const index = parseInt(row.dataset.index);
+        this.zoomToSlice(index);
+      });
+    });
+  },
+  
+  deleteSlice(index) {
+    const slices = APP_STATE.slicer_slices || [];
+    if (index < 0 || index >= slices.length) return;
+    
+    slices.splice(index, 1);
+    
+    // Update end of previous slice if needed
+    if (index > 0 && index < slices.length) {
+      slices[index - 1].end_ms = slices[index].start_ms;
+    }
+    
+    pywebview.api.slicer_set_slices(slices);
+    this.render();
+  },
+  
+  addMarkerAtCursor() {
+    // Add a marker at current time
+    const slices = APP_STATE.slicer_slices || [];
+    const timeMs = this.currentTime * 1000;
+    
+    // Find where to insert
+    let insertIndex = slices.length;
+    for (let i = 0; i < slices.length; i++) {
+      if (slices[i].start_ms > timeMs) {
+        insertIndex = i;
+        break;
+      }
+    }
+    
+    // Create new slice
+    const newSlice = {
+      start_ms: timeMs,
+      end_ms: insertIndex < slices.length ? slices[insertIndex].start_ms : this.fileInfo.duration * 1000,
+      start_str: this.msToStr(timeMs),
+      end_str: insertIndex < slices.length ? slices[insertIndex].start_str : this.msToStr(this.fileInfo.duration * 1000),
+      duration_ms: 0,
+      duration_str: "0:00.000"
+    };
+    
+    slices.splice(insertIndex, 0, newSlice);
+    
+    // Update previous slice end
+    if (insertIndex > 0) {
+      slices[insertIndex - 1].end_ms = timeMs;
+      slices[insertIndex - 1].end_str = newSlice.start_str;
+    }
+    
+    // Recalculate durations
+    slices.forEach(slice => {
+      slice.duration_ms = slice.end_ms - slice.start_ms;
+      slice.duration_str = this.msToStr(slice.duration_ms);
+    });
+    
+    pywebview.api.slicer_set_slices(slices);
+    this.render();
+  },
+  
+  clearAll() {
+    const durationMs = (this.fileInfo?.duration || 0) * 1000;
+    APP_STATE.slicer_slices = [{
+      start_ms: 0,
+      end_ms: durationMs,
+      start_str: "0:00.000",
+      end_str: this.msToStr(durationMs),
+      duration_ms: durationMs,
+      duration_str: this.msToStr(durationMs)
+    }];
+    pywebview.api.slicer_set_slices(APP_STATE.slicer_slices);
+    this.render();
+  },
+  
+  msToStr(ms) {
+    const totalSeconds = ms / 1000;
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = (totalSeconds % 60).toFixed(3).padStart(6, '0');
+    return `${mins}:${secs}`;
+  },
+  
+  async runAutoSlice() {
+    const mode = $('#slicer-mode').value;
+    const filepath = APP_STATE.slicer_file;
+    
+    let result;
+    
+    switch (mode) {
+      case 'silence':
+        const threshold = parseFloat($('#silence-threshold').value);
+        const minLen = parseFloat($('#silence-min').value);
+        const padding = parseFloat($('#silence-padding').value);
+        result = await pywebview.api.slicer_auto_silence(filepath, threshold, minLen, padding);
+        break;
+      case 'bpm':
+        const bpm = parseFloat($('#bpm-value').value);
+        const beats = parseFloat($('#bpm-beats').value);
+        result = await pywebview.api.slicer_auto_bpm(filepath, bpm, beats);
+        break;
+      case 'fixed':
+        const length = parseFloat($('#fixed-length').value);
+        result = await pywebview.api.slicer_auto_fixed(filepath, length);
+        break;
+      case 'transients':
+        const transThreshold = parseFloat($('#transient-threshold').value);
+        const spacing = parseFloat($('#transient-spacing').value);
+        result = await pywebview.api.slicer_auto_transients(filepath, transThreshold, spacing);
+        break;
+    }
+    
+    if (result && result.success) {
+      this.render();
+    } else {
+      log(result?.error || 'Auto-slice failed', 'error');
+    }
+  },
+  
+  async export() {
+    const filepath = APP_STATE.slicer_file;
+    const slices = APP_STATE.slicer_slices || [];
+    
+    if (!slices.length) {
+      log('No slices to export', 'warn');
+      return;
+    }
+    
+    let outputDir = $('#slicer-output-dir').value;
+    if (!outputDir) {
+      outputDir = filepath.substring(0, filepath.lastIndexOf('\\') + 1) || filepath.substring(0, filepath.lastIndexOf('/') + 1);
+    }
+    
+    const prefix = $('#slicer-prefix').value;
+    const suffix = $('#slicer-suffix').value;
+    const format = $('#slicer-format').value;
+    const normalize = $('#slicer-normalize').checked;
+    const trim = $('#slicer-trim').checked;
+    
+    const result = await pywebview.api.slicer_export(
+      filepath, slices, outputDir, prefix, suffix, format, normalize, trim
+    );
+    
+    if (result.success) {
+      log('Export started...', 'info');
+    } else {
+      log(result.error || 'Export failed', 'error');
+    }
+  },
+  
+  updateProgress() {
+    const progress = APP_STATE.slicer_progress || 0;
+    const exporting = APP_STATE.slicer_exporting;
+    const status = APP_STATE.slicer_status || '';
+    
+    const progressBar = $('#slicer-progress-bar');
+    const progressContainer = $('#slicer-export-progress');
+    const statusText = $('#slicer-export-status');
+    
+    if (progressBar) progressBar.style.width = `${progress}%`;
+    if (statusText) statusText.textContent = status;
+    if (progressContainer) {
+      progressContainer.classList.toggle('hidden', !exporting && progress === 0);
+    }
+    
+    if (!exporting && APP_STATE.slicer_export_result) {
+      const result = APP_STATE.slicer_export_result;
+      if (result.success) {
+        log(`Exported ${result.count} slices to ${result.output_dir}`, 'success');
+      } else {
+        log(result.error || 'Export failed', 'error');
+      }
+      APP_STATE.slicer_export_result = null;
+    }
+  },
+  
+  // Mode control visibility
+  updateModeControls() {
+    const mode = $('#slicer-mode').value;
+    
+    ['silence', 'bpm', 'fixed', 'transients'].forEach(m => {
+      const el = $(`#${m}-controls`);
+      if (el) el.classList.toggle('hidden', m !== mode);
+    });
+  },
+  
+  // Playhead animation loop (timestamp-based for accuracy)
+  startPlayheadUpdate() {
+    if (!this.playing) return;
+    let lastTs = null;
+    const update = (timestamp) => {
+      if (!this.playing || !this.fileInfo) return;
+      if (lastTs !== null) {
+        this.currentTime += (timestamp - lastTs) / 1000;
+      }
+      lastTs = timestamp;
+      if (this.currentTime >= this.fileInfo.duration) {
+        this.currentTime = this.fileInfo.duration;
+        this.playing = false;
+        $('#slicer-play').textContent = '▶';
+        this.updateTimeDisplay();
+        this.drawWaveform();
+        return;
+      }
+      this.updateTimeDisplay();
+      this.drawWaveform();
+      requestAnimationFrame(update);
+    };
+    requestAnimationFrame(update);
+  },
+  
+  // Preview a specific slice
+  async previewSlice(index) {
+    const slices = APP_STATE.slicer_slices || [];
+    if (index < 0 || index >= slices.length) return;
+    const slice = slices[index];
+    this.previewSliceIndex = index;
+    this.renderSliceList(); // Update highlight
+    
+    // Zoom waveform to this slice
+    this.zoomToSlice(index);
+    
+    const result = await pywebview.api.slicer_preview_slice(
+      APP_STATE.slicer_file, slice.start_ms, slice.end_ms
+    );
+    if (!result.success) {
+      log(result.error || 'Preview failed', 'error');
+    }
+  },
+  
+  // Zoom waveform to show a specific slice
+  zoomToSlice(index) {
+    const slices = APP_STATE.slicer_slices || [];
+    if (index < 0 || index >= slices.length || !this.fileInfo) return;
+    const slice = slices[index];
+    const duration = this.fileInfo.duration;
+    
+    // Zoom to show the slice with 20% padding on each side
+    const sliceStart = slice.start_ms / 1000 / duration;
+    const sliceEnd = slice.end_ms / 1000 / duration;
+    const sliceRange = sliceEnd - sliceStart;
+    const padding = Math.max(sliceRange * 0.2, 0.02);
+    
+    this.viewStart = Math.max(0, sliceStart - padding);
+    this.viewEnd = Math.min(1, sliceEnd + padding);
+    this.drawWaveform();
+  },
+  
+  // Called when external playback state changes
+  onPlaybackStopped() {
+    this.playing = false;
+    $('#slicer-play').textContent = '▶';
+  }
+};
+
+// Slicer event setup
+function setupSlicerEvents() {
+  // Open button
+  $('#open-slicer')?.addEventListener('click', () => Slicer.open());
+  
+  // Close button
+  $('#slicer-close')?.addEventListener('click', () => Slicer.close());
+  
+  // Mode selector
+  $('#slicer-mode')?.addEventListener('change', () => Slicer.updateModeControls());
+  
+  // Auto slice button
+  $('#slicer-auto-btn')?.addEventListener('click', () => Slicer.runAutoSlice());
+  
+  // Slice list actions
+  $('#slicer-add-marker')?.addEventListener('click', () => Slicer.addMarkerAtCursor());
+  $('#slicer-clear-all')?.addEventListener('click', () => Slicer.clearAll());
+  
+  // Export
+  $('#slicer-export-btn')?.addEventListener('click', () => Slicer.export());
+  $('#slicer-browse-output')?.addEventListener('click', async () => {
+    const result = await pywebview.api.slicer_browse_output();
+    if (result.success && result.path) {
+      $('#slicer-output-dir').value = result.path;
+    }
+  });
+  
+  // Transport controls - hooked to actual playback
+  $('#slicer-play')?.addEventListener('click', async () => {
+    if (Slicer.playing) {
+      await pywebview.api.preview_stop();
+      Slicer.playing = false;
+      $('#slicer-play').textContent = '▶';
+    } else {
+      if (APP_STATE.slicer_file) {
+        await pywebview.api.preview_play(APP_STATE.slicer_file);
+        Slicer.playing = true;
+        $('#slicer-play').textContent = '⏸';
+        Slicer.startPlayheadUpdate();
+      }
+    }
+  });
+  
+  $('#slicer-volume')?.addEventListener('input', (e) => {
+    const vol = parseInt(e.target.value, 10);
+    pywebview.api.set_option('slicer_volume', vol);
+  });
+  
+  $('#slicer-stop')?.addEventListener('click', async () => {
+    await pywebview.api.preview_stop();
+    Slicer.playing = false;
+    Slicer.currentTime = 0;
+    $('#slicer-play').textContent = '▶';
+    Slicer.updateTimeDisplay();
+    Slicer.drawWaveform();
+  });
+  
+  // Canvas click to seek (accounting for viewport)
+  $('#slicer-canvas')?.addEventListener('click', (e) => {
+    if (Slicer._panMoved) { Slicer._panMoved = false; return; }
+    const canvas = e.target;
+    const rect = canvas.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    const timeFrac = Slicer.viewStart + pct * (Slicer.viewEnd - Slicer.viewStart);
+    Slicer.currentTime = timeFrac * (Slicer.fileInfo?.duration || 0);
+    Slicer.updateTimeDisplay();
+    Slicer.drawWaveform();
+  });
+  
+  // Mouse wheel zoom - X zoom on wheel, Y zoom on Shift+wheel
+  $('#slicer-canvas')?.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const canvas = e.target;
+    const rect = canvas.getBoundingClientRect();
+    const cursorFrac = (e.clientX - rect.left) / rect.width;
+    
+    if (e.shiftKey) {
+      // Y zoom (amplitude)
+      const delta = e.deltaY > 0 ? 0.8 : 1.25;
+      Slicer.ampScale = Math.max(0.5, Math.min(8.0, Slicer.ampScale * delta));
+    } else {
+      // X zoom (time) centered on cursor
+      const viewRange = Slicer.viewEnd - Slicer.viewStart;
+      const zoomFactor = e.deltaY > 0 ? 1.2 : 0.8;
+      const newRange = Math.max(0.02, Math.min(1.0, viewRange * zoomFactor));
+      
+      // Zoom centered on cursor position
+      const anchor = Slicer.viewStart + cursorFrac * viewRange;
+      let newStart = anchor - cursorFrac * newRange;
+      let newEnd = newStart + newRange;
+      
+      // Clamp to valid range
+      if (newStart < 0) {
+        newEnd -= newStart;
+        newStart = 0;
+      }
+      if (newEnd > 1) {
+        newStart -= (newEnd - 1);
+        newEnd = 1;
+      }
+      
+      Slicer.viewStart = Math.max(0, newStart);
+      Slicer.viewEnd = Math.min(1, newEnd);
+    }
+    Slicer.drawWaveform();
+  }, { passive: false });
+  
+  // Pan with middle-click or Alt+drag
+  $('#slicer-canvas')?.addEventListener('mousedown', (e) => {
+    if (e.button === 1 || e.altKey) {  // middle-click or Alt+drag
+      Slicer.isPanning = true;
+      Slicer._panMoved = false;
+      Slicer.panStartX = e.clientX;
+      Slicer.panStartViewStart = Slicer.viewStart;
+      e.preventDefault();
+    }
+  });
+  
+  // Zoom reset button
+  $('#slicer-zoom-reset')?.addEventListener('click', () => {
+    Slicer.viewStart = 0.0;
+    Slicer.viewEnd = 1.0;
+    Slicer.ampScale = 1.0;
+    Slicer.drawWaveform();
+  });
+  
+  // Threshold sliders
+  $('#silence-threshold')?.addEventListener('input', (e) => {
+    $('#silence-threshold-val').textContent = `${e.target.value} dB`;
+  });
+  
+  $('#transient-threshold')?.addEventListener('input', (e) => {
+    $('#transient-threshold-val').textContent = e.target.value + '×';
+  });
+  
+  // Window resize - redraw waveform
+  window.addEventListener('resize', () => {
+    if (Slicer.isOpen) {
+      Slicer.drawWaveform();
+    }
+  });
+}
+
+// Global mouse handlers for waveform panning
+window.addEventListener('mousemove', (e) => {
+  if (!Slicer.isPanning || !Slicer.isOpen) return;
+  Slicer._panMoved = true;
+  const canvas = $('#slicer-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const dx = (e.clientX - Slicer.panStartX) / rect.width;
+  const viewRange = Slicer.viewEnd - Slicer.viewStart;
+  let newStart = Math.max(0, Math.min(1 - viewRange, Slicer.panStartViewStart - dx * viewRange));
+  Slicer.viewStart = newStart;
+  Slicer.viewEnd = newStart + viewRange;
+  Slicer.drawWaveform();
+});
+
+window.addEventListener('mouseup', () => {
+  Slicer.isPanning = false;
+});
+
+// Update renderPatch to handle slicer state
+const originalRenderPatch = renderPatch;
+renderPatch = function(patch) {
+  originalRenderPatch(patch);
+  
+  const keys = Object.keys(patch);
+  
+  if (keys.includes('slicer_open')) {
+    Slicer.isOpen = APP_STATE.slicer_open;
+    Slicer.render();
+  }
+  
+  if (keys.includes('slicer_waveform') || keys.includes('slicer_slices') || 
+      keys.includes('slicer_file_info')) {
+    if (Slicer.isOpen) {
+      Slicer.render();
+    }
+  }
+  
+  if (keys.includes('slicer_progress') || keys.includes('slicer_exporting') || 
+      keys.includes('slicer_export_result')) {
+    Slicer.updateProgress();
+  }
+  
+  // Handle external playback stop
+  if (keys.includes('is_playing') && !APP_STATE.is_playing && Slicer.playing) {
+    Slicer.onPlaybackStopped();
+  }
+};
+
 // Start once pywebview is ready
-window.addEventListener('pywebviewready', init);
+window.addEventListener('pywebviewready', () => {
+  init();
+  setupSlicerEvents();
+});

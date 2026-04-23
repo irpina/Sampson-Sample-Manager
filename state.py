@@ -83,6 +83,17 @@ _state: dict[str, Any] = {
     
     # Duplicate detection
     "dedup_enabled": True,  # skip files with identical content
+    
+    # Slicer state
+    "slicer_open": False,
+    "slicer_file": "",  # currently loaded file path
+    "slicer_file_info": None,  # {name, duration, sample_rate, channels}
+    "slicer_slices": [],  # list of slice dicts
+    "slicer_waveform": None,  # downsampled waveform data
+    "slicer_progress": 0,  # 0-100 during export
+    "slicer_status": "",  # status message
+    "slicer_exporting": False,  # export in progress
+    "slicer_export_result": None,  # result of last export
 }
 
 # ---------------------------------------------------------------------------

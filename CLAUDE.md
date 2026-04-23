@@ -68,13 +68,14 @@ constants.py   ← no imports
 state.py       ← no app imports
 settings.py    ← stdlib only
 conversion.py  → state
+slicer.py      → state, conversion
 bpm.py         → conversion
 key.py         → conversion
 operations.py  → state, constants, conversion, bpm, key
 preview.py     → state, constants, operations, bpm, key, conversion
 browser.py     → state, constants, preview
 playback.py    → state
-api.py         → state, browser, preview, playback, operations, conversion
+api.py         → state, browser, preview, playback, operations, conversion, slicer
 main.py        → state, api
 ```
 

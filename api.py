@@ -17,6 +17,7 @@ import preview
 import playback
 import operations
 import settings as app_settings
+import slicer
 from conversion import check_ffmpeg
 
 
@@ -366,3 +367,144 @@ class SampsonAPI:
         except Exception as e:
             state.add_log(f"Clear sync plan error: {e}", "error")
             return {"success": False, "error": str(e)}
+
+    # ========================================================================
+    # Sample Slicer
+    # ========================================================================
+
+    def slicer_open(self, filepath: str) -> dict:
+        """Open a file in the slicer - load waveform and file info."""
+        try:
+            from pathlib import Path
+            
+            if not filepath or not Path(filepath).exists():
+                return {"success": False, "error": "File not found"}
+            
+            # Load waveform data
+            waveform_result = slicer.get_audio_samples(filepath)
+            if not waveform_result.get("success"):
+                return waveform_result
+            
+            # Get file info
+            file_info = {
+                "path": filepath,
+                "name": Path(filepath).name,
+                "duration": waveform_result["duration"],
+                "sample_rate": waveform_result["sample_rate"],
+                "channels": waveform_result["channels"],
+            }
+            
+            # Batch update all state at once for single push
+            state.update({
+                "slicer_file": filepath,
+                "slicer_file_info": file_info,
+                "slicer_waveform": waveform_result["samples"],
+                "slicer_slices": [{
+                    "start_ms": 0.0,
+                    "end_ms": waveform_result["duration"] * 1000,
+                    "start_str": "0:00.000",
+                    "end_str": slicer._ms_to_str(waveform_result["duration"] * 1000),
+                    "duration_ms": waveform_result["duration"] * 1000,
+                    "duration_str": slicer._ms_to_str(waveform_result["duration"] * 1000),
+                }],
+                "slicer_open": True,
+                "slicer_progress": 0,
+                "slicer_status": "Ready"
+            }, push=False)
+            state.push_keys(["slicer_file", "slicer_file_info", "slicer_waveform", 
+                           "slicer_slices", "slicer_open", "slicer_progress", "slicer_status"])
+            
+            return {"success": True, "file_info": file_info}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def slicer_close(self) -> dict:
+        """Close the slicer modal."""
+        state.set("slicer_open", False)
+        return {"success": True}
+
+    def slicer_set_slices(self, slices: list) -> dict:
+        """Update the current slices from JS."""
+        state.set("slicer_slices", slices)
+        return {"success": True}
+
+    def slicer_auto_silence(self, filepath: str, threshold_db: float = -40.0, 
+                            min_length_ms: float = 100.0, padding_ms: float = 10.0) -> dict:
+        """Run auto-slice based on silence detection."""
+        try:
+            result = slicer.auto_slice_silence(filepath, threshold_db, min_length_ms, padding_ms)
+            if result.get("success"):
+                state.set("slicer_slices", result["slices"])
+            return result
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def slicer_auto_bpm(self, filepath: str, bpm: float, beats_per_slice: int = 1) -> dict:
+        """Run auto-slice based on BPM grid."""
+        try:
+            result = slicer.auto_slice_bpm(filepath, bpm, beats_per_slice)
+            if result.get("success"):
+                state.set("slicer_slices", result["slices"])
+            return result
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def slicer_auto_fixed(self, filepath: str, slice_length_ms: float) -> dict:
+        """Run auto-slice based on fixed length."""
+        try:
+            result = slicer.auto_slice_fixed(filepath, slice_length_ms)
+            if result.get("success"):
+                state.set("slicer_slices", result["slices"])
+            return result
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def slicer_auto_transients(self, filepath: str, threshold: float = 3.0,
+                               min_spacing_ms: float = 100.0) -> dict:
+        """Run auto-slice based on transient detection."""
+        try:
+            result = slicer.auto_slice_transients(filepath, threshold, min_spacing_ms)
+            if result.get("success"):
+                state.set("slicer_slices", result["slices"])
+            return result
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def slicer_export(self, filepath: str, slices: list, output_dir: str,
+                      prefix: str = "", suffix: str = "_##", 
+                      output_format: str = "wav",
+                      normalize: bool = False, 
+                      trim_silence: bool = False) -> dict:
+        """Start exporting slices in background thread."""
+        try:
+            slicer.start_export_thread(
+                filepath, slices, output_dir, prefix, suffix,
+                output_format, normalize, trim_silence
+            )
+            return {"success": True, "message": "Export started"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def slicer_preview_slice(self, filepath: str, start_ms: float, end_ms: float) -> dict:
+        """Extract and play a single slice for preview."""
+        try:
+            result = slicer.preview_slice(filepath, start_ms, end_ms)
+            if not result.get("success"):
+                return result
+            playback.play_file(result["temp_path"])
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def slicer_browse_output(self) -> dict:
+        """Browse for slicer output directory."""
+        try:
+            result = webview.windows[0].create_file_dialog(
+                webview.FOLDER_DIALOG,
+                directory=state.get("source") or os.path.expanduser("~")
+            )
+            if result and len(result) > 0:
+                return {"success": True, "path": result[0]}
+        except Exception as e:
+            state.add_log(f"Browse error: {e}", "error")
+        return {"success": False, "path": None}

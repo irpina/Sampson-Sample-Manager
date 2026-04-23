@@ -126,6 +126,11 @@ body.light-mode #logo-img {
   font-size: 0.85rem;
 }
 .btn-icon:hover { background: var(--bg-surface-2); }
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  color: var(--text-muted);
+}
 
 /* Main layout - flex row */
 .main-grid {
@@ -883,4 +888,347 @@ body.light-mode .sync-action-skip { color: var(--text-muted) !important; }
 /* Hide filter row in sync view */
 .filter-row.hidden {
   display: none;
+}
+
+/* ============================================================================
+   Sample Slicer Modal
+   ============================================================================ */
+
+.slicer-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slicer-modal.hidden {
+  display: none;
+}
+
+.slicer-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.slicer-content {
+  position: relative;
+  width: 90%;
+  max-width: 1200px;
+  height: 85%;
+  background: var(--bg-root);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Header */
+.slicer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.slicer-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.slicer-icon {
+  color: var(--cyan);
+  font-size: 1.1rem;
+}
+
+.slicer-filename {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+
+/* Waveform */
+.slicer-waveform-container {
+  position: relative;
+  height: 180px;
+  background: var(--bg-surface);
+  margin: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.slicer-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.slicer-playhead {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: var(--amber);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.slicer-zoom-reset {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 5;
+  opacity: 0.7;
+}
+
+.slicer-zoom-reset:hover {
+  opacity: 1;
+}
+
+.slicer-zoom-hint {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  z-index: 5;
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.6;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Slice list row styling */
+.slicer-slice-row { cursor: pointer; }
+.slicer-slice-row:hover { background: var(--bg-surface-2); }
+.slicer-slice-row.active { background: var(--cyan-tint); }
+body.light-mode .slicer-slice-row.active { background: rgba(107, 158, 79, 0.2); }
+.slicer-play-slice { font-size: 0.7rem; padding: 1px 4px; margin-right: 4px; }
+
+/* Transport */
+.slicer-transport {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.75rem 0.5rem;
+}
+
+.slicer-time {
+  flex: 1;
+  font-family: "SF Mono", Monaco, Inconsolata, monospace;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.slicer-volume {
+  width: 100px;
+}
+
+/* Controls Grid */
+.slicer-controls {
+  display: flex;
+  flex: 1;
+  gap: 0.75rem;
+  padding: 0 0.75rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.slicer-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.slicer-panel h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.slicer-panel:first-child {
+  flex: 0 0 280px;
+}
+
+.slicer-slice-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.slicer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.slicer-section label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.slicer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.slicer-field label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.slicer-field input[type="range"] {
+  width: 100%;
+}
+
+.slicer-mode-controls.hidden {
+  display: none;
+}
+
+/* Slice List */
+.slicer-slices-container {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-root);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.slicer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.slicer-table th,
+.slicer-table td {
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.slicer-table th {
+  background: var(--bg-surface-2);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+}
+
+.slicer-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.slicer-slice-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Export Panel */
+.slicer-export {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.slicer-export-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.slicer-export-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.slicer-export-field label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.slicer-export-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-bottom: 0.35rem;
+}
+
+.slicer-export-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.slicer-export-progress.hidden {
+  display: none;
+}
+
+/* Light mode adjustments */
+body.light-mode .slicer-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+body.light-mode .slicer-panel h3 {
+  color: var(--cyan-dark);
+}
+
+body.light-mode .slicer-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Volume slider styling */
+.slicer-volume {
+  -webkit-appearance: none;
+  height: 4px;
+  background: var(--bg-surface-2);
+  border-radius: 2px;
+  outline: none;
+}
+
+.slicer-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  background: var(--cyan);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+body.light-mode .slicer-volume::-webkit-slider-thumb {
+  background: var(--cyan-dark);
 }

@@ -14,6 +14,7 @@
         <img id="logo-img" src="sampsontransparentwhite.png" alt="SAMPSON" height="28" />
       </div>
       <div class="subtitle">Universal Audio Sample Manager</div>
+      <button id="open-slicer" class="btn-icon" title="Open sample slicer">✂ Slicer</button>
       <button id="theme-toggle" class="btn-icon">☾ Dark</button>
     </header>
 
@@ -271,6 +272,180 @@
             <button id="btn-stop" class="btn-stop" disabled>⏹</button>
             <button id="btn-next" class="btn-transport" disabled>⏭</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLICER MODAL -->
+  <div id="slicer-modal" class="slicer-modal hidden">
+    <div class="slicer-backdrop"></div>
+    <div class="slicer-content">
+      <!-- Header -->
+      <div class="slicer-header">
+        <div class="slicer-title">
+          <span class="slicer-icon">✂</span>
+          <span>SLICER</span>
+          <span id="slicer-filename" class="slicer-filename"></span>
+        </div>
+        <button id="slicer-close" class="btn-icon" title="Close">✕</button>
+      </div>
+
+      <!-- Waveform -->
+      <div class="slicer-waveform-container">
+        <canvas id="slicer-canvas" class="slicer-canvas"></canvas>
+        <div id="slicer-playhead" class="slicer-playhead"></div>
+        <button id="slicer-zoom-reset" class="btn-small slicer-zoom-reset" title="Reset zoom (fit to view)">⊡ Fit</button>
+        <div class="slicer-zoom-hint">Wheel: zoom X • Shift+Wheel: zoom Y • Alt+Drag: pan</div>
+      </div>
+
+      <!-- Transport -->
+      <div class="slicer-transport">
+        <button id="slicer-play" class="btn-transport" title="Play/Pause">▶</button>
+        <button id="slicer-stop" class="btn-transport" title="Stop">⏹</button>
+        <span id="slicer-time" class="slicer-time">00:00.000 / 00:00.000</span>
+        <input type="range" id="slicer-volume" class="slicer-volume" min="0" max="100" value="80" title="Volume" />
+      </div>
+
+      <!-- Controls Grid -->
+      <div class="slicer-controls">
+        <!-- Auto Slice Panel -->
+        <div class="slicer-panel">
+          <h3>Auto Slice</h3>
+          
+          <div class="slicer-section">
+            <label>Mode</label>
+            <select id="slicer-mode" class="select-input">
+              <option value="silence">Silence Detection</option>
+              <option value="bpm">BPM Grid</option>
+              <option value="fixed">Fixed Length</option>
+              <option value="transients">Transient Detection</option>
+            </select>
+          </div>
+
+          <!-- Silence mode controls -->
+          <div id="silence-controls" class="slicer-mode-controls">
+            <div class="slicer-field">
+              <label>Threshold (dB) <span class="help-icon" data-tip="For wet/reverb-heavy audio, use -25 to -30 dB. For dry samples, -40 dB works well.">?</span></label>
+              <input type="range" id="silence-threshold" min="-60" max="-20" value="-40" />
+              <span id="silence-threshold-val">-40 dB</span>
+            </div>
+            <div class="slicer-field">
+              <label>Min length (ms)</label>
+              <input type="number" id="silence-min" class="text-input" value="100" min="50" step="10" />
+            </div>
+            <div class="slicer-field">
+              <label>Padding (ms)</label>
+              <input type="number" id="silence-padding" class="text-input" value="10" min="0" step="5" />
+            </div>
+          </div>
+
+          <!-- BPM mode controls -->
+          <div id="bpm-controls" class="slicer-mode-controls hidden">
+            <div class="slicer-field">
+              <label>BPM</label>
+              <input type="number" id="bpm-value" class="text-input" value="120" min="30" max="300" step="1" />
+            </div>
+            <div class="slicer-field">
+              <label>Beats per slice</label>
+              <select id="bpm-beats" class="select-input">
+                <option value="0.25">1/4 beat</option>
+                <option value="0.5">1/2 beat</option>
+                <option value="1" selected>1 beat</option>
+                <option value="2">2 beats</option>
+                <option value="4">4 beats</option>
+                <option value="8">8 beats</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Fixed mode controls -->
+          <div id="fixed-controls" class="slicer-mode-controls hidden">
+            <div class="slicer-field">
+              <label>Slice length (ms)</label>
+              <input type="number" id="fixed-length" class="text-input" value="500" min="50" step="50" />
+            </div>
+          </div>
+
+          <!-- Transient mode controls -->
+          <div id="transients-controls" class="slicer-mode-controls hidden">
+            <div class="slicer-field">
+              <label>Sensitivity (onset ratio) <span class="help-icon" data-tip="Higher = less sensitive. Energy must increase by this factor to trigger a slice. Works on normalized/limited audio.">?</span></label>
+              <input type="range" id="transient-threshold" min="1.5" max="8.0" value="3.0" step="0.5" />
+              <span id="transient-threshold-val">3.0×</span>
+            </div>
+            <div class="slicer-field">
+              <label>Min spacing (ms)</label>
+              <input type="number" id="transient-spacing" class="text-input" value="100" min="50" step="10" />
+            </div>
+          </div>
+
+          <button id="slicer-auto-btn" class="btn-cyan" style="width:100%;margin-top:0.5rem;">Auto Slice</button>
+        </div>
+
+        <!-- Slice List Panel -->
+        <div class="slicer-panel slicer-slice-list">
+          <h3>Slices</h3>
+          <div id="slicer-slices-container" class="slicer-slices-container">
+            <table class="slicer-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Duration</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="slicer-slices-tbody"></tbody>
+            </table>
+          </div>
+          <div class="slicer-slice-actions">
+            <button id="slicer-add-marker" class="btn-small">+ Add Marker</button>
+            <button id="slicer-clear-all" class="btn-small">Clear All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Export Panel -->
+      <div class="slicer-export">
+        <div class="slicer-export-row">
+          <div class="slicer-export-field">
+            <label>Prefix</label>
+            <input type="text" id="slicer-prefix" class="text-input" placeholder="filename" />
+          </div>
+          <div class="slicer-export-field">
+            <label>Suffix</label>
+            <input type="text" id="slicer-suffix" class="text-input" value="_##" />
+          </div>
+          <div class="slicer-export-field">
+            <label>Format</label>
+            <select id="slicer-format" class="select-input">
+              <option value="wav">WAV</option>
+              <option value="aiff">AIFF</option>
+              <option value="flac">FLAC</option>
+            </select>
+          </div>
+          <div class="slicer-export-checks">
+            <label class="check-label"><input type="checkbox" id="slicer-normalize" /> Normalize</label>
+            <label class="check-label"><input type="checkbox" id="slicer-trim" /> Trim silence</label>
+          </div>
+        </div>
+        <div class="slicer-export-row">
+          <div class="slicer-export-field" style="flex:1">
+            <label>Output folder</label>
+            <div class="path-row">
+              <input type="text" id="slicer-output-dir" class="path-input" placeholder="Same as source" readonly />
+              <button id="slicer-browse-output" class="btn-small">Browse</button>
+            </div>
+          </div>
+          <button id="slicer-export-btn" class="btn-run">Export All</button>
+        </div>
+        <div id="slicer-export-progress" class="slicer-export-progress hidden">
+          <div class="progress-container">
+            <div id="slicer-progress-bar" class="progress-bar"></div>
+          </div>
+          <span id="slicer-export-status"></span>
         </div>
       </div>
     </div>
