@@ -315,120 +315,137 @@ def auto_slice_fixed(path: str, slice_length_ms: float) -> dict[str, Any]:
 
 def auto_slice_transients(
     path: str,
-    threshold: float = 3.0,
+    sensitivity: float = 1.5,
     min_spacing_ms: float = 100.0,
 ) -> dict[str, Any]:
-    """Auto-slice audio file based on transient/onset detection.
-    
-    Uses energy delta (relative energy increase) to detect onsets.
-    This works well on normalized/limited material where absolute thresholds fail.
-    
+    """Auto-slice audio based on onset detection.
+
+    Pipeline: pre-emphasis HPF → log-compressed short-time RMS →
+    half-wave rectified onset difference function → adaptive local-mean
+    threshold → peak picking.
+
     Args:
-        path: Path to audio file
-        threshold: Onset sensitivity ratio (1.5-8.0). Energy must increase by this 
-                   factor vs previous frame to count as a transient.
-        min_spacing_ms: Minimum spacing between slices
-        
+        path: Audio file path.
+        sensitivity: Multiplier over local-mean ODF. Typical 1.0–3.0,
+                     default 1.5. Lower = more slices.
+        min_spacing_ms: Minimum time between detected onsets.
+
     Returns:
-        Dict with slices list
+        Dict with slices list.
     """
     try:
+        import math
+        from array import array
         from pydub import AudioSegment
-        
+
         audio = AudioSegment.from_file(path)
         duration_ms = len(audio)
-        
-        # Convert to mono and get samples
         if audio.channels > 1:
             audio = audio.set_channels(1)
-        
+
         samples = audio.get_array_of_samples()
-        sample_rate = audio.frame_rate
+        sr = audio.frame_rate
         max_val = 2 ** (audio.sample_width * 8 - 1)
-        
-        # Normalize samples
-        normalized = [abs(s) / max_val for s in samples]
-        
-        # Find onset points (energy increases, not absolute levels)
-        window_size = int(sample_rate * 0.01)  # 10ms window
-        hop_size = window_size // 2
-        transient_points = []
-        
-        # Calculate initial energy
-        prev_energy = 0.0
-        min_energy = 1e-6  # Avoid division by zero
-        
-        i = window_size
-        last_transient_pos = -min_spacing_ms / 1000 * sample_rate
-        
-        while i < len(normalized) - window_size:
-            # Calculate current frame energy
-            window = normalized[i:i + window_size]
-            energy = sum(x ** 2 for x in window) / len(window)
-            
-            # Onset detection: energy must increase by threshold ratio
-            if prev_energy > min_energy and energy / prev_energy > threshold:
-                # Check min spacing
-                if i - last_transient_pos >= (min_spacing_ms / 1000 * sample_rate):
-                    transient_points.append(i / sample_rate * 1000)  # Convert to ms
-                    last_transient_pos = i
-                    # Skip ahead by min_spacing to avoid double-detecting
-                    skip_samples = int(min_spacing_ms / 1000 * sample_rate)
-                    i += max(skip_samples, hop_size)
-                    prev_energy = energy
-                    continue
-            
-            prev_energy = energy
-            i += hop_size
-        
-        # Create slices between transient points
+        n_samples = len(samples)
+
+        # 1. Pre-emphasis HPF: y[n] = x[n] - 0.97*x[n-1], normalized to [-1,1]
+        pre = array('d', [0.0]) * n_samples
+        prev = 0
+        for i in range(n_samples):
+            s = samples[i]
+            pre[i] = (s - 0.97 * prev) / max_val
+            prev = s
+
+        # 2. Log-compressed short-time RMS (5ms window, 2.5ms hop)
+        win = max(1, int(sr * 0.005))
+        hop = max(1, win // 2)
+        n_frames = max(0, (n_samples - win) // hop + 1)
+
+        if n_frames < 3:
+            return {
+                "success": True,
+                "slices": [{
+                    "start_ms": 0.0, "end_ms": duration_ms,
+                    "start_str": _ms_to_str(0), "end_str": _ms_to_str(duration_ms),
+                    "duration_ms": duration_ms, "duration_str": _ms_to_str(duration_ms),
+                }],
+                "count": 1,
+            }
+
+        log_energy = [0.0] * n_frames
+        for f in range(n_frames):
+            start = f * hop
+            e = 0.0
+            for j in range(win):
+                v = pre[start + j]
+                e += v * v
+            e /= win
+            log_energy[f] = math.log1p(1000.0 * e)
+
+        # 3. Half-wave rectified difference ODF
+        odf = [0.0] * n_frames
+        for f in range(1, n_frames):
+            d = log_energy[f] - log_energy[f - 1]
+            if d > 0.0:
+                odf[f] = d
+
+        # 4. Cumulative sum for O(1) trailing-window mean
+        cumsum = [0.0] * (n_frames + 1)
+        for i in range(n_frames):
+            cumsum[i + 1] = cumsum[i] + odf[i]
+
+        local_win_frames = max(1, int(0.3 * sr / hop))  # 300ms trailing
+        min_gap = max(1, int(min_spacing_ms / 1000 * sr / hop))
+        floor = 0.005  # absolute floor: reject noise-only regions
+
+        # 5. Peak-picking with adaptive threshold
+        transient_frames = []
+        last = -min_gap
+        for f in range(1, n_frames - 1):
+            lo = max(0, f - local_win_frames)
+            width = f + 1 - lo
+            local_mean = (cumsum[f + 1] - cumsum[lo]) / width
+            thresh = sensitivity * local_mean + floor
+
+            if (odf[f] > thresh
+                and odf[f] >= odf[f - 1]
+                and odf[f] >= odf[f + 1]
+                and f - last >= min_gap):
+                transient_frames.append(f)
+                last = f
+
+        transient_ms_list = [f * hop * 1000.0 / sr for f in transient_frames]
+
         slices = []
         start_ms = 0.0
-        
-        for transient_ms in transient_points:
-            end_ms = transient_ms
-            slice_duration = end_ms - start_ms
-            
-            if slice_duration >= 50:  # At least 50ms
+        for t_ms in transient_ms_list:
+            end_ms = t_ms
+            dur = end_ms - start_ms
+            if dur >= 50:
                 slices.append({
-                    "start_ms": start_ms,
-                    "end_ms": end_ms,
-                    "start_str": _ms_to_str(start_ms),
-                    "end_str": _ms_to_str(end_ms),
-                    "duration_ms": slice_duration,
-                    "duration_str": _ms_to_str(slice_duration),
+                    "start_ms": start_ms, "end_ms": end_ms,
+                    "start_str": _ms_to_str(start_ms), "end_str": _ms_to_str(end_ms),
+                    "duration_ms": dur, "duration_str": _ms_to_str(dur),
                 })
-            
             start_ms = end_ms
-        
-        # Add final slice
+
         if start_ms < duration_ms - 50:
             slices.append({
-                "start_ms": start_ms,
-                "end_ms": duration_ms,
-                "start_str": _ms_to_str(start_ms),
-                "end_str": _ms_to_str(duration_ms),
+                "start_ms": start_ms, "end_ms": duration_ms,
+                "start_str": _ms_to_str(start_ms), "end_str": _ms_to_str(duration_ms),
                 "duration_ms": duration_ms - start_ms,
                 "duration_str": _ms_to_str(duration_ms - start_ms),
             })
-        
-        # If no transients found, return single slice
+
         if not slices:
             slices.append({
-                "start_ms": 0.0,
-                "end_ms": duration_ms,
-                "start_str": _ms_to_str(0),
-                "end_str": _ms_to_str(duration_ms),
-                "duration_ms": duration_ms,
-                "duration_str": _ms_to_str(duration_ms),
+                "start_ms": 0.0, "end_ms": duration_ms,
+                "start_str": _ms_to_str(0), "end_str": _ms_to_str(duration_ms),
+                "duration_ms": duration_ms, "duration_str": _ms_to_str(duration_ms),
             })
-        
-        return {
-            "success": True,
-            "slices": slices,
-            "count": len(slices),
-        }
-        
+
+        return {"success": True, "slices": slices, "count": len(slices)}
+
     except Exception as e:
         return {"success": False, "error": str(e)}
 

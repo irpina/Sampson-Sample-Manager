@@ -1203,9 +1203,9 @@ const Slicer = {
         result = await pywebview.api.slicer_auto_fixed(filepath, length);
         break;
       case 'transients':
-        const transThreshold = parseFloat($('#transient-threshold').value);
+        const sensitivity = parseFloat($('#transient-threshold').value);
         const spacing = parseFloat($('#transient-spacing').value);
-        result = await pywebview.api.slicer_auto_transients(filepath, transThreshold, spacing);
+        result = await pywebview.api.slicer_auto_transients(filepath, sensitivity, spacing);
         break;
     }
     
