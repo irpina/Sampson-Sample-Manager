@@ -852,6 +852,8 @@ const Slicer = {
   currentTime: 0,
   selectedSliceIndex: -1,
   previewSliceIndex: -1,
+  playEnd: null,      // null = play to fileInfo.duration; set to slice end for preview
+  _playGen: 0,        // invalidates stale RAF loops when new playback starts
   draggingMarker: null,
   
   // Open slicer with a file
@@ -1283,19 +1285,19 @@ const Slicer = {
   // Playhead animation loop (timestamp-based for accuracy)
   startPlayheadUpdate() {
     if (!this.playing) return;
+    const gen = ++this._playGen;   // stamp this loop; old loops will bail
     let lastTs = null;
     const update = (timestamp) => {
-      if (!this.playing || !this.fileInfo) return;
+      if (!this.playing || !this.fileInfo || this._playGen !== gen) return;
       if (lastTs !== null) {
         this.currentTime += (timestamp - lastTs) / 1000;
       }
       lastTs = timestamp;
-      if (this.currentTime >= this.fileInfo.duration) {
-        this.currentTime = this.fileInfo.duration;
-        this.playing = false;
-        $('#slicer-play').textContent = '▶';
+      const stopAt = this.playEnd !== null ? this.playEnd : this.fileInfo.duration;
+      if (this.currentTime >= stopAt) {
+        this.currentTime = stopAt;
         this.updateTimeDisplay();
-        this.drawWaveform();
+        this.onPlaybackStopped();
         return;
       }
       this.updateTimeDisplay();
@@ -1313,6 +1315,11 @@ const Slicer = {
     this.previewSliceIndex = index;
     this.renderSliceList(); // Update highlight
     this.drawWaveform();     // Re-draw to show active slice highlight
+    
+    this.currentTime = slice.start_ms / 1000;
+    this.playEnd = slice.end_ms / 1000;
+    this.playing = true;
+    this.startPlayheadUpdate();
     
     const result = await pywebview.api.slicer_preview_slice(
       APP_STATE.slicer_file, slice.start_ms, slice.end_ms
@@ -1343,6 +1350,7 @@ const Slicer = {
   // Called when external playback state changes
   onPlaybackStopped() {
     this.playing = false;
+    this.playEnd = null;
     this.previewSliceIndex = -1;
     $('#slicer-play').textContent = '▶';
     this.drawWaveform();
@@ -1387,6 +1395,7 @@ function setupSlicerEvents() {
         await pywebview.api.preview_play(APP_STATE.slicer_file);
         Slicer.playing = true;
         $('#slicer-play').textContent = '⏸';
+        Slicer.playEnd = null;
         Slicer.startPlayheadUpdate();
       }
     }
