@@ -500,6 +500,23 @@ class SampsonAPI:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def slicer_browse_file(self) -> dict:
+        """Open a native file picker for loading a file into the slicer.
+        Defaults to active_dir (Deck A's current directory)."""
+        try:
+            default_dir = state.get("active_dir") or ""
+            result = webview.windows[0].create_file_dialog(
+                webview.OPEN_DIALOG,
+                directory=default_dir if default_dir else os.path.expanduser("~"),
+                allow_multiple=False,
+                file_types=("Audio files (*.wav;*.aiff;*.aif;*.flac;*.mp3;*.ogg)",)
+            )
+            if result and len(result) > 0:
+                return {"success": True, "path": result[0]}
+        except Exception as e:
+            state.add_log(f"Browse error: {e}", "error")
+        return {"success": False, "path": ""}
+
     def slicer_browse_output(self) -> dict:
         """Browse for slicer output directory."""
         try:

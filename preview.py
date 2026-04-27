@@ -23,6 +23,7 @@ _duration_cache: dict = {}  # str(path) → float | None
 _sort_col: str | None = None  # "bpm" | "key" | "duration" | None
 _sort_asc: bool = True
 _name_overrides: dict[str, str] = {}  # srcpath → manual dest stem
+_scan_gen: int = 0  # Generation counter to cancel stale scans
 
 
 # ── Duration & helpers ───────────────────────────────────────────────────────
@@ -302,6 +303,7 @@ def get_expected_dest_paths(dest: Path) -> set[str]:
 
 def refresh():
     """Public entry point — start a preview refresh."""
+    global _scan_gen
     p = state.get("active_dir", "")
     if not p or not Path(p).is_dir():
         state.update({
@@ -312,22 +314,28 @@ def refresh():
         state.set_status("Navigate source to see preview")
         return
     
+    _scan_gen += 1
+    gen = _scan_gen
     state.set_status("Scanning...", 0)
-    threading.Thread(target=_scan_thread, args=(p,), daemon=True).start()
+    threading.Thread(target=_scan_thread, args=(p, gen), daemon=True).start()
 
 
-def _scan_thread(path_str: str):
+def _scan_thread(path_str: str, gen: int):
     """Background thread to scan files and compute preview."""
     global _duration_cache, _preview_rows
+    if gen != _scan_gen:
+        return
     _duration_cache = {}
     
     source_root = Path(path_str)
     selected = state.get("selected_folders", [])
     
+    files = []
     if selected:
-        files = []
         already = set()
         for item_path in selected:
+            if gen != _scan_gen:
+                return
             p = Path(item_path)
             if p.is_dir():
                 for f in p.rglob("*"):
@@ -337,11 +345,15 @@ def _scan_thread(path_str: str):
             elif p.is_file() and p.suffix.lower() in constants.AUDIO_EXTS and p not in already:
                 files.append(p)
                 already.add(p)
-    else:
-        files = []
+    
+    if gen != _scan_gen:
+        return
     
     # Get durations
     durations = {f: _get_duration(f) for f in files}
+    
+    if gen != _scan_gen:
+        return
     
     # Build preview rows
     _populate_preview(files, source_root, durations)

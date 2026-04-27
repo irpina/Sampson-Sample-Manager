@@ -291,6 +291,12 @@
         <button id="slicer-close" class="btn-icon" title="Close">✕</button>
       </div>
 
+      <!-- File load bar (shown when no file loaded) -->
+      <div id="slicer-load-bar" class="slicer-load-bar hidden">
+        <input type="text" id="slicer-load-path" class="path-input" placeholder="No file loaded — browse or select a file in Deck B first" readonly />
+        <button id="slicer-browse-file" class="btn-cyan">Browse</button>
+      </div>
+
       <!-- Waveform -->
       <div class="slicer-waveform-container">
         <canvas id="slicer-canvas" class="slicer-canvas"></canvas>

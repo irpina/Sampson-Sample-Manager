@@ -719,11 +719,8 @@ async function selectPreview(index) {
 function updateSlicerButtonState() {
   const slicerBtn = $('#open-slicer');
   if (!slicerBtn) return;
-  
-  const entries = APP_STATE.preview_entries || [];
-  const hasSelection = selectedPreviewIndex >= 0 && selectedPreviewIndex < entries.length;
-  slicerBtn.disabled = !hasSelection;
-  slicerBtn.title = hasSelection ? 'Open sample slicer' : 'Select a file in Deck B first';
+  slicerBtn.disabled = false;
+  slicerBtn.title = 'Open sample slicer';
 }
 
 function highlightPreviewRow() {
@@ -754,6 +751,7 @@ async function togglePlay() {
 // Keyboard navigation
 document.addEventListener('keydown', (e) => {
   if (isEditing) return;  // Disable while editing
+  if (Slicer.isOpen) return;  // Slicer handles its own keys
   
   const entries = APP_STATE.preview_entries || [];
   if (entries.length === 0) return;
@@ -859,31 +857,29 @@ const Slicer = {
   
   // Open slicer with a file
   async open(filepath) {
+    // Try Deck B selection if no explicit path
     if (!filepath) {
-      // Try to get selected file from preview
       const entries = APP_STATE.preview_entries || [];
       if (selectedPreviewIndex >= 0 && selectedPreviewIndex < entries.length) {
         filepath = entries[selectedPreviewIndex].srcpath;
-      } else {
-        // Show visible feedback to user
-        pywebview.api.set_option('status', 'Select a file in Deck B to use the Slicer');
-        log('Select a file in Deck B first', 'warn');
-        return;
       }
     }
-    
-    // Reset zoom/pan to full view
-    this.viewStart = 0.0;
-    this.viewEnd = 1.0;
-    this.ampScale = 1.0;
-    
-    const result = await pywebview.api.slicer_open(filepath);
-    if (result.success) {
-      this.fileInfo = result.file_info;
-      this.isOpen = true;
-      this.render();
-    } else {
-      log(result.error || 'Failed to open file', 'error');
+
+    // Reset viewport
+    this.viewStart = 0.0; this.viewEnd = 1.0; this.ampScale = 1.0;
+    this.fileInfo = null;
+    this.selectedSliceIndex = -1;
+    this.isOpen = true;
+    this.render();  // Show modal in empty state first
+
+    if (filepath) {
+      const result = await pywebview.api.slicer_open(filepath);
+      if (result.success) {
+        this.fileInfo = result.file_info;
+        this.render();
+      } else {
+        log(result.error || 'Failed to open file', 'error');
+      }
     }
   },
   
@@ -893,17 +889,33 @@ const Slicer = {
     this.playing = false;
     this.waveform = null;
     this.slices = [];
+    this.selectedSliceIndex = -1;
     this.render();
   },
   
   render() {
     const modal = $('#slicer-modal');
     if (!modal) return;
-    
     modal.classList.toggle('hidden', !this.isOpen);
-    
-    if (!this.isOpen || !this.fileInfo) return;
-    
+    if (!this.isOpen) return;
+
+    const hasFile = !!this.fileInfo;
+    const loadBar = $('#slicer-load-bar');
+    const loadPath = $('#slicer-load-path');
+    const wfContainer = $('.slicer-waveform-container');
+    const transport = $('.slicer-transport');
+    const controls = $('.slicer-controls');
+
+    // Load bar always visible; path input shows current file or placeholder
+    if (loadBar) loadBar.classList.remove('hidden');
+    if (loadPath) loadPath.value = hasFile ? this.fileInfo.path : '';
+
+    if (wfContainer) wfContainer.classList.toggle('hidden', !hasFile);
+    if (transport) transport.classList.toggle('hidden', !hasFile);
+    if (controls) controls.classList.toggle('hidden', !hasFile);
+
+    if (!hasFile) return;
+
     // Update filename
     $('#slicer-filename').textContent = 
       `${this.fileInfo.name}  ·  ${this.fileInfo.sample_rate/1000}kHz  ·  ${this.fileInfo.duration.toFixed(2)}s`;
@@ -1055,6 +1067,25 @@ const Slicer = {
     playhead.style.left = `${Math.max(0, Math.min(width, x))}px`;
   },
   
+  selectSlice(index) {
+    const slices = APP_STATE.slicer_slices || [];
+    if (index < 0 || index >= slices.length) return;
+    this.selectedSliceIndex = index;
+    this.renderSliceList();
+    // Scroll selected row into view
+    const row = $(`#slicer-slices-tbody tr[data-index="${index}"]`);
+    if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  },
+
+  selectNextSlice() {
+    const slices = APP_STATE.slicer_slices || [];
+    this.selectSlice(Math.min(this.selectedSliceIndex + 1, slices.length - 1));
+  },
+
+  selectPrevSlice() {
+    this.selectSlice(Math.max(this.selectedSliceIndex - 1, 0));
+  },
+
   renderSliceList() {
     const tbody = $('#slicer-slices-tbody');
     if (!tbody) return;
@@ -1062,7 +1093,7 @@ const Slicer = {
     const slices = APP_STATE.slicer_slices || [];
     
     tbody.innerHTML = slices.map((slice, i) => `
-      <tr data-index="${i}" class="slicer-slice-row${i === this.previewSliceIndex ? ' active' : ''}">
+      <tr data-index="${i}" class="slicer-slice-row${i === this.previewSliceIndex ? ' active' : ''}${i === this.selectedSliceIndex ? ' selected' : ''}">
         <td>
           <button class="btn-icon slicer-play-slice" data-index="${i}" title="Preview slice">▶</button>
           ${i + 1}
@@ -1169,6 +1200,7 @@ const Slicer = {
       duration_ms: durationMs,
       duration_str: this.msToStr(durationMs)
     }];
+    this.selectedSliceIndex = -1;
     pywebview.api.slicer_set_slices(APP_STATE.slicer_slices);
     this.render();
   },
@@ -1214,6 +1246,7 @@ const Slicer = {
     }
     
     if (result && result.success) {
+      this.selectedSliceIndex = -1;
       this.render();
     } else {
       log(result?.error || 'Auto-slice failed', 'error');
@@ -1371,6 +1404,21 @@ function setupSlicerEvents() {
   
   // Close button
   $('#slicer-close')?.addEventListener('click', () => Slicer.close());
+  
+  // Browse button for loading a file into slicer
+  $('#slicer-browse-file')?.addEventListener('click', async () => {
+    const result = await pywebview.api.slicer_browse_file();
+    if (result.success && result.path) {
+      await Slicer.open(result.path);
+    }
+  });
+  
+  // Arrow key navigation for slice list
+  document.addEventListener('keydown', (e) => {
+    if (!Slicer.isOpen) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); Slicer.selectNextSlice(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); Slicer.selectPrevSlice(); }
+  });
   
   // Mode selector
   $('#slicer-mode')?.addEventListener('change', () => Slicer.updateModeControls());

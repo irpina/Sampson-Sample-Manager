@@ -1021,6 +1021,13 @@ body.light-mode .sync-action-skip { color: var(--text-muted) !important; }
 .slicer-slice-row:hover { background: var(--bg-surface-2); }
 .slicer-slice-row.active { background: var(--cyan-tint); }
 body.light-mode .slicer-slice-row.active { background: rgba(107, 158, 79, 0.2); }
+.slicer-slice-row.selected {
+  border-left: 3px solid var(--cyan);
+  padding-left: calc(0.35rem - 3px);
+}
+body.light-mode .slicer-slice-row.selected {
+  border-left-color: var(--cyan-dark);
+}
 .slicer-play-slice { font-size: 0.7rem; padding: 1px 4px; margin-right: 4px; }
 
 /* Transport */
@@ -1196,6 +1203,14 @@ body.light-mode .slicer-slice-row.active { background: rgba(107, 158, 79, 0.2); 
 
 .slicer-export-progress.hidden {
   display: none;
+}
+
+/* Slicer load bar */
+.slicer-load-bar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  align-items: center;
 }
 
 /* Light mode adjustments */
