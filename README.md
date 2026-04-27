@@ -55,6 +55,13 @@
   - Bit depths: 16-bit, 24-bit, 32-bit float (or keep original)
   - Channel conversion: stereo ↔ mono
   - Auto-apply presets when selecting hardware profiles
+- **Audition Stack** — layer up to 4 samples from Deck B and preview them as a mixed playback; Shift+click rows to select (♦ indicator shows slot number), then click ⊕ Audition to open the stack panel
+  - Per-track: volume, mute, solo, start offset (ms), pitch shift (semitones ~), BPM sync (~)
+  - Master BPM (auto-detected from slot 1), loop toggle, render + preview
+- **Sample Slicer** — open any sample for visual waveform editing, auto-slice by silence/BPM/transients/fixed length, and export slices
+  - Open Slicer without a file selected — browse button defaults to Deck A's current directory; previously loaded file path is always shown
+  - Arrow keys navigate slices in the Slice Editor (no longer pass through to Deck B)
+  - Navigating Deck A cancels any in-progress directory scan
 - **HiDPI / 4K support** — DPI-aware on Windows; scales via system settings on Linux/macOS
 
 ### Supported formats

@@ -94,6 +94,15 @@ _state: dict[str, Any] = {
     "slicer_status": "",  # status message
     "slicer_exporting": False,  # export in progress
     "slicer_export_result": None,  # result of last export
+    
+    # Audition Stack state
+    "audition_open": False,
+    "audition_tracks": [None, None, None, None],  # 4-element list; None = empty slot
+    "audition_master_bpm": 120.0,
+    "audition_loop": False,
+    "audition_rendering": False,
+    "audition_status": "",
+    "audition_selection": [],  # Deck B srcpaths shift-selected (ordered, max 4)
 }
 
 # ---------------------------------------------------------------------------

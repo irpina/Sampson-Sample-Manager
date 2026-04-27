@@ -632,11 +632,37 @@ body.light-mode #logo-img {
 /* Preview table column widths */
 .preview-table { table-layout: fixed; }
 
-.preview-table .col-src   { width: 32%; }
-.preview-table .col-dest  { width: 32%; }
-.preview-table .col-bpm   { width: 12%; }
-.preview-table .col-key   { width: 12%; }
-.preview-table .col-length { width: 12%; }
+.preview-table .col-stack { width: 28px; text-align: center; padding: 0.4rem 0.2rem; }
+.preview-table .col-src   { width: 30%; }
+.preview-table .col-dest  { width: 30%; }
+.preview-table .col-bpm   { width: 11%; }
+.preview-table .col-key   { width: 11%; }
+.preview-table .col-length { width: 11%; }
+
+.stack-indicator {
+  color: var(--amber);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Audition button in Deck B header */
+.preview-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-audition {
+  background: var(--amber-tint);
+  border: 1px solid var(--amber);
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.btn-audition:hover {
+  background: var(--amber);
+  color: #000;
+}
 
 .preview-table .col-src,
 .preview-table .col-dest {
@@ -1246,4 +1272,234 @@ body.light-mode .slicer-table tbody tr:hover {
 
 body.light-mode .slicer-volume::-webkit-slider-thumb {
   background: var(--cyan-dark);
+}
+
+/* ============================================================================
+   Audition Stack Modal
+   ============================================================================ */
+
+.audition-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audition-modal.hidden {
+  display: none;
+}
+
+.audition-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.audition-content {
+  position: relative;
+  width: 90%;
+  max-width: 1100px;
+  height: 80%;
+  background: var(--bg-root);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Header */
+.audition-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.audition-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.audition-icon {
+  color: var(--amber);
+  font-size: 1.1rem;
+}
+
+/* Slots grid */
+.audition-slots {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  padding: 0.75rem;
+  overflow: auto;
+  min-height: 0;
+}
+
+.audition-slot {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.audition-slot-empty {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.audition-slot-empty-text {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.audition-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--cyan);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.35rem;
+}
+
+.audition-slot-name {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: right;
+}
+
+.audition-slot-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.audition-control-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.audition-control-row label {
+  color: var(--text-muted);
+  min-width: 45px;
+  font-size: 0.75rem;
+}
+
+.audition-control-row .check-label {
+  min-width: auto;
+  font-size: 0.8rem;
+}
+
+.audition-control-row input[type="range"] {
+  flex: 1;
+  min-width: 40px;
+}
+
+.audition-control-row input[type="number"].text-input {
+  width: 60px;
+  min-width: 50px;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.8rem;
+}
+
+.audition-val {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  min-width: 36px;
+  text-align: right;
+}
+
+.audition-slot-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+/* Global controls */
+.audition-global {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.audition-global-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.audition-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.audition-field label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.audition-field .text-input {
+  width: 70px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.audition-status {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  min-height: 1.2rem;
+}
+
+.audition-status.rendering {
+  color: var(--cyan);
+}
+
+/* Light mode adjustments */
+body.light-mode .audition-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+body.light-mode .audition-slot-header {
+  color: var(--cyan-dark);
 }

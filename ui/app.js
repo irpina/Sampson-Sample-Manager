@@ -46,7 +46,7 @@ async function init() {
   Object.assign(APP_STATE, initialState);
   
   renderAll();
-  log("SAMPSON v0.11.0 ready", "info");
+  log("SAMPSON v0.12.0 ready", "info");
   pywebview.api.on_ready();
 }
 
@@ -377,6 +377,7 @@ function renderDeckB() {
     // Restore original table header
     tableHead.innerHTML = `
       <tr>
+        <th class="col-stack"></th>
         <th class="col-src">Original name</th>
         <th class="col-dest">Will become</th>
         <th class="col-bpm">BPM</th>
@@ -405,7 +406,12 @@ function renderDeckB() {
       tr.dataset.index = index;
       tr.dataset.srcpath = entry.srcpath;
       
+      const selection = APP_STATE.audition_selection || [];
+      const slotIndex = selection.indexOf(entry.srcpath);
+      const stackIndicator = slotIndex >= 0 ? `<span class="stack-indicator" title="Slot ${slotIndex + 1}">♦${slotIndex + 1}</span>` : '';
+      
       tr.innerHTML = `
+        <td class="col-stack">${stackIndicator}</td>
         <td class="col-src" title="${escapeHtml(entry.src_name)}">${escapeHtml(entry.src_name)}</td>
         <td class="col-dest${entry.name_manual ? ' overridden' : ''}" title="${entry.dest_name ? escapeHtml(entry.dest_name) : ''}">${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
         <td class="col-bpm editable" data-field="bpm">${entry.bpm || '—'}</td>
@@ -413,8 +419,14 @@ function renderDeckB() {
         <td class="col-length">${entry.length || '—'}</td>
       `;
       
-      // Row click to select & play
+      // Row click to select & play (shift+click toggles audition stack)
       tr.addEventListener('click', (e) => {
+        if (e.shiftKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          pywebview.api.audition_toggle_selection(entry.srcpath);
+          return;
+        }
         if (!e.target.classList.contains('editable') && !isEditing) {
           selectPreview(index);
         }
@@ -1615,10 +1627,227 @@ renderPatch = function(patch) {
   if (keys.includes('is_playing') && !APP_STATE.is_playing && Slicer.playing && !Slicer._inSlicePreview) {
     Slicer.onPlaybackStopped();
   }
+  
+  // Audition Stack state
+  if (keys.includes('audition_open')) {
+    Audition.isOpen = APP_STATE.audition_open;
+    Audition.render();
+  }
+  if (keys.includes('audition_tracks') || keys.includes('audition_master_bpm') || 
+      keys.includes('audition_loop') || keys.includes('audition_status') || 
+      keys.includes('audition_rendering') || keys.includes('audition_selection')) {
+    if (Audition.isOpen) {
+      Audition.render();
+    }
+    // Re-render Deck B to update stack indicators
+    if (keys.includes('audition_selection')) {
+      renderDeckB();
+    }
+  }
 };
+
+// ============================================================================
+// Audition Stack
+// ============================================================================
+
+const Audition = {
+  isOpen: false,
+  
+  open() {
+    pywebview.api.audition_open_modal();
+  },
+  
+  close() {
+    pywebview.api.audition_close();
+    this.isOpen = false;
+    this.render();
+  },
+  
+  render() {
+    const modal = $('#audition-modal');
+    if (!modal) return;
+    modal.classList.toggle('hidden', !this.isOpen);
+    if (!this.isOpen) return;
+    
+    this.renderSlots();
+    this.updateStatus();
+    
+    // Update global controls
+    const masterBpmInput = $('#audition-master-bpm');
+    if (masterBpmInput) masterBpmInput.value = APP_STATE.audition_master_bpm || 120;
+    const loopCb = $('#audition-loop');
+    if (loopCb) loopCb.checked = APP_STATE.audition_loop || false;
+    
+    // Disable preview while rendering
+    const previewBtn = $('#audition-preview');
+    if (previewBtn) previewBtn.disabled = APP_STATE.audition_rendering || false;
+  },
+  
+  renderSlots() {
+    const container = $('#audition-slots');
+    if (!container) return;
+    
+    const tracks = APP_STATE.audition_tracks || [null, null, null, null];
+    
+    container.innerHTML = tracks.map((track, i) => {
+      if (!track) {
+        return `
+          <div class="audition-slot audition-slot-empty">
+            <div class="audition-slot-header">Slot ${i + 1}</div>
+            <div class="audition-slot-empty-text">Empty</div>
+            <button class="btn-small audition-browse-track" data-index="${i}">Browse</button>
+          </div>
+        `;
+      }
+      
+      const bpmSyncChecked = track.bpm_sync ? 'checked' : '';
+      const mutedChecked = track.muted ? 'checked' : '';
+      const soloChecked = track.solo ? 'checked' : '';
+      const sourceBpmDisplay = track.source_bpm ? `~${Math.round(track.source_bpm)} BPM` : '—';
+      
+      return `
+        <div class="audition-slot">
+          <div class="audition-slot-header">
+            <span>Slot ${i + 1}</span>
+            <span class="audition-slot-name" title="${escapeHtml(track.path || '')}">${escapeHtml(track.name || '')}</span>
+          </div>
+          <div class="audition-slot-controls">
+            <div class="audition-control-row">
+              <label class="check-label"><input type="checkbox" class="audition-mute" data-index="${i}" ${mutedChecked} /> Mute</label>
+              <label class="check-label"><input type="checkbox" class="audition-solo" data-index="${i}" ${soloChecked} /> Solo</label>
+            </div>
+            <div class="audition-control-row">
+              <label>Vol</label>
+              <input type="range" class="audition-volume" data-index="${i}" min="0" max="100" value="${track.volume || 80}" />
+              <span class="audition-val">${track.volume || 80}%</span>
+            </div>
+            <div class="audition-control-row">
+              <label>Offset ~</label>
+              <input type="number" class="audition-offset text-input" data-index="${i}" value="${track.offset_ms || 0}" min="-2000" max="2000" step="10" />
+              <span class="audition-val">ms</span>
+            </div>
+            <div class="audition-control-row">
+              <label>Pitch ~</label>
+              <input type="number" class="audition-pitch text-input" data-index="${i}" value="${track.pitch || 0}" min="-12" max="12" step="1" />
+              <span class="audition-val">st</span>
+            </div>
+            <div class="audition-control-row">
+              <label class="check-label"><input type="checkbox" class="audition-bpm-sync" data-index="${i}" ${bpmSyncChecked} /> BPM sync</label>
+              <span class="audition-val">${sourceBpmDisplay}</span>
+            </div>
+            <div class="audition-slot-actions">
+              <button class="btn-small audition-browse-track" data-index="${i}">Browse</button>
+              <button class="btn-small audition-remove-track" data-index="${i}">Remove</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    // Attach event listeners to dynamic controls
+    container.querySelectorAll('.audition-browse-track').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        const result = await pywebview.api.audition_browse_track(idx);
+        if (result.success && result.path) {
+          // Track updated by state push
+        }
+      });
+    });
+    
+    container.querySelectorAll('.audition-remove-track').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        pywebview.api.audition_remove_track(idx);
+      });
+    });
+    
+    container.querySelectorAll('.audition-mute').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        pywebview.api.audition_set_track(idx, { muted: e.target.checked });
+      });
+    });
+    
+    container.querySelectorAll('.audition-solo').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        pywebview.api.audition_set_track(idx, { solo: e.target.checked });
+      });
+    });
+    
+    container.querySelectorAll('.audition-volume').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        const val = parseInt(e.target.value, 10);
+        const valEl = e.target.nextElementSibling;
+        if (valEl) valEl.textContent = val + '%';
+        pywebview.api.audition_set_track(idx, { volume: val });
+      });
+    });
+    
+    container.querySelectorAll('.audition-offset').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        pywebview.api.audition_set_track(idx, { offset_ms: parseInt(e.target.value, 10) || 0 });
+      });
+    });
+    
+    container.querySelectorAll('.audition-pitch').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        pywebview.api.audition_set_track(idx, { pitch: parseInt(e.target.value, 10) || 0 });
+      });
+    });
+    
+    container.querySelectorAll('.audition-bpm-sync').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const idx = parseInt(e.currentTarget.dataset.index);
+        pywebview.api.audition_set_track(idx, { bpm_sync: e.target.checked });
+      });
+    });
+  },
+  
+  updateStatus() {
+    const statusEl = $('#audition-status');
+    if (!statusEl) return;
+    const status = APP_STATE.audition_status || '';
+    const rendering = APP_STATE.audition_rendering || false;
+    statusEl.textContent = status;
+    statusEl.classList.toggle('rendering', rendering);
+  },
+  
+  async preview() {
+    const result = await pywebview.api.audition_render_and_play();
+    if (!result.success) {
+      log(result.error || 'Preview failed', 'error');
+    }
+  },
+  
+  async stop() {
+    await pywebview.api.audition_stop();
+  }
+};
+
+function setupAuditionEvents() {
+  $('#btn-audition')?.addEventListener('click', () => Audition.open());
+  $('#audition-close')?.addEventListener('click', () => Audition.close());
+  
+  $('#audition-preview')?.addEventListener('click', () => Audition.preview());
+  $('#audition-stop')?.addEventListener('click', () => Audition.stop());
+  
+  $('#audition-master-bpm')?.addEventListener('change', (e) => {
+    pywebview.api.audition_set_master_bpm(parseFloat(e.target.value));
+  });
+  
+  $('#audition-loop')?.addEventListener('change', (e) => {
+    pywebview.api.set_option('audition_loop', e.target.checked);
+  });
+}
 
 // Start once pywebview is ready
 window.addEventListener('pywebviewready', () => {
   init();
   setupSlicerEvents();
+  setupAuditionEvents();
 });

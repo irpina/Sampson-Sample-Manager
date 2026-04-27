@@ -143,6 +143,7 @@ settings.py    ← stdlib only
 conversion.py  → state
 bpm.py         → conversion
 key.py         → conversion
+audition.py    → state, bpm
 browser.py     → state, constants, preview
 preview.py     → state, constants, bpm, key, operations, conversion
 playback.py    → state
@@ -169,6 +170,7 @@ sampson/
 ├── conversion.py        # Audio conversion pipeline (pydub + ffmpeg)
 ├── playback.py          # Audio playback (NSSound / pygame-ce)
 ├── settings.py          # Persistent settings (~/.sampson/settings.json)
+├── audition.py          # Audition Stack — layer up to 4 samples, render mix preview
 ├── ui/
 │   ├── index.html       # Single-page app shell
 │   ├── app.js           # JS controller (554 lines)
@@ -223,6 +225,37 @@ bash build_macos.sh
 - **Logo files:** Must live in `ui/` (same dir as `index.html`) — WKWebView `file://` sandbox blocks `../`
 - **State sync:** Call `state.push_keys()` after mutations to reflect changes in JS
 - **Thread safety:** Long operations run in daemon threads; use `state.set()` (thread-safe) for updates
+
+---
+
+## Audition Stack (v0.12.0)
+
+Layer up to 4 Deck B samples and preview their mix before committing to an operation.
+
+### Workflow
+1. Shift+click rows in Deck B to add to selection (max 4; ♦N indicator appears)
+2. Click ⊕ Audition → modal opens with selected tracks pre-loaded
+3. Adjust per-track controls (volume, mute, solo, offset, pitch, BPM sync)
+4. Click Preview → Python renders temp WAV → plays via existing playback system
+
+### Per-Track Controls
+volume · mute · solo · offset_ms (−2000–+2000) · pitch (semitones, speed-change ~) · bpm_sync (speed-change ~)
+
+### State Keys
+| Key | Type | Description |
+|-----|------|-------------|
+| `audition_open` | bool | Modal visible |
+| `audition_tracks` | list[dict\|None] | 4-element list; None = empty slot |
+| `audition_master_bpm` | float | Master BPM |
+| `audition_loop` | bool | Loop the mix |
+| `audition_rendering` | bool | True while render thread runs |
+| `audition_status` | str | Status/progress text |
+| `audition_selection` | list[str] | Deck B srcpaths shift-selected (max 4) |
+
+### Known Limitations
+- Pitch and BPM sync both use speed-change resampling (affects pitch + tempo together)
+- Loop caps at 30s to limit render time
+- Mix is not exportable in v0.12.0
 
 ---
 

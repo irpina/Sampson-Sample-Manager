@@ -216,7 +216,7 @@
           </div>
           <span id="status-dot" class="status-dot idle">●</span>
           <span id="status-text">Ready</span>
-          <span class="version">v0.11.0</span>
+          <span class="version">v0.12.0</span>
         </div>
 
         <!-- LOG PANEL -->
@@ -241,7 +241,10 @@
           <!-- Preview count / Sync status -->
           <div class="preview-header">
             <span class="preview-label" id="preview-label">Navigate source to see preview</span>
-            <span id="sync-auto-badge" class="sync-auto-badge hidden">↻ Previous run detected</span>
+            <div class="preview-header-actions">
+              <button id="btn-audition" class="btn-small btn-audition" title="Open Audition Stack">⊕ Audition</button>
+              <span id="sync-auto-badge" class="sync-auto-badge hidden">↻ Previous run detected</span>
+            </div>
           </div>
 
           <!-- Filter bar (hidden in sync view) -->
@@ -254,6 +257,7 @@
             <table class="preview-table" id="preview-table">
               <thead id="preview-table-head">
                 <tr>
+                  <th class="col-stack"></th>
                   <th class="col-src">Original name</th>
                   <th class="col-dest">Will become</th>
                   <th class="col-bpm">BPM</th>
@@ -461,6 +465,40 @@
           </div>
           <span id="slicer-export-status"></span>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDITION MODAL -->
+  <div id="audition-modal" class="audition-modal hidden">
+    <div class="audition-backdrop"></div>
+    <div class="audition-content">
+      <!-- Header -->
+      <div class="audition-header">
+        <div class="audition-title">
+          <span class="audition-icon">⊕</span>
+          <span>AUDITION STACK</span>
+        </div>
+        <button id="audition-close" class="btn-icon" title="Close">✕</button>
+      </div>
+
+      <!-- Track slots -->
+      <div class="audition-slots" id="audition-slots">
+        <!-- Slots rendered by JS -->
+      </div>
+
+      <!-- Global controls -->
+      <div class="audition-global">
+        <div class="audition-global-row">
+          <div class="audition-field">
+            <label>Master BPM ~</label>
+            <input type="number" id="audition-master-bpm" class="text-input" value="120" min="30" max="300" step="1" />
+          </div>
+          <label class="check-label"><input type="checkbox" id="audition-loop" /> Loop</label>
+          <button id="audition-preview" class="btn-cyan">▶ Preview</button>
+          <button id="audition-stop" class="btn-small">⏹ Stop</button>
+        </div>
+        <div class="audition-status" id="audition-status"></div>
       </div>
     </div>
   </div>

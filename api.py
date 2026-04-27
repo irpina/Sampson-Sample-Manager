@@ -18,6 +18,8 @@ import playback
 import operations
 import settings as app_settings
 import slicer
+import audition
+import bpm as bpm_module
 from conversion import check_ffmpeg
 
 
@@ -529,3 +531,159 @@ class SampsonAPI:
         except Exception as e:
             state.add_log(f"Browse error: {e}", "error")
         return {"success": False, "path": None}
+
+    # ========================================================================
+    # Audition Stack
+    # ========================================================================
+
+    def audition_open_modal(self) -> dict:
+        """Open the audition modal with shift-selected rows pre-loaded."""
+        try:
+            selection = state.get("audition_selection", [])
+            tracks = [None, None, None, None]
+            
+            for i, srcpath in enumerate(selection[:4]):
+                p = Path(srcpath)
+                if p.exists():
+                    source_bpm = bpm_module.get_cached_bpm(p)
+                    tracks[i] = {
+                        "path": srcpath,
+                        "name": p.name,
+                        "volume": 80,
+                        "muted": False,
+                        "solo": False,
+                        "offset_ms": 0,
+                        "pitch": 0,
+                        "bpm_sync": False,
+                        "source_bpm": source_bpm,
+                    }
+            
+            # Auto-populate master BPM from slot 1's cached BPM
+            master_bpm = 120.0
+            if tracks[0] and tracks[0].get("source_bpm"):
+                master_bpm = tracks[0]["source_bpm"]
+            
+            state.update({
+                "audition_open": True,
+                "audition_tracks": tracks,
+                "audition_master_bpm": master_bpm,
+                "audition_status": f"Ready · {len(selection)} track(s)",
+            })
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def audition_close(self) -> dict:
+        """Close the audition modal and stop playback."""
+        try:
+            import playback
+            playback.stop()
+            audition.stop_render()
+            state.set("audition_open", False)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def audition_set_track(self, index: int, params: dict) -> dict:
+        """Patch any track params."""
+        try:
+            tracks = list(state.get("audition_tracks", [None, None, None, None]))
+            if 0 <= index < 4 and tracks[index]:
+                tracks[index].update(params)
+                # Auto-populate source_bpm if bpm_sync just toggled on
+                if params.get("bpm_sync") and tracks[index].get("source_bpm") is None:
+                    p = Path(tracks[index]["path"])
+                    if p.exists():
+                        tracks[index]["source_bpm"] = bpm_module.get_cached_bpm(p)
+                state.set("audition_tracks", tracks)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def audition_remove_track(self, index: int) -> dict:
+        """Clear a slot."""
+        try:
+            tracks = list(state.get("audition_tracks", [None, None, None, None]))
+            if 0 <= index < 4:
+                tracks[index] = None
+                state.set("audition_tracks", tracks)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def audition_browse_track(self, index: int) -> dict:
+        """Open native file picker for a track slot."""
+        try:
+            default_dir = state.get("active_dir") or ""
+            result = webview.windows[0].create_file_dialog(
+                webview.OPEN_DIALOG,
+                directory=default_dir if default_dir else os.path.expanduser("~"),
+                allow_multiple=False,
+                file_types=("Audio files (*.wav;*.aiff;*.aif;*.flac;*.mp3;*.ogg)",)
+            )
+            if result and len(result) > 0:
+                path = result[0]
+                p = Path(path)
+                source_bpm = bpm_module.get_cached_bpm(p)
+                tracks = list(state.get("audition_tracks", [None, None, None, None]))
+                if 0 <= index < 4:
+                    tracks[index] = {
+                        "path": path,
+                        "name": p.name,
+                        "volume": 80,
+                        "muted": False,
+                        "solo": False,
+                        "offset_ms": 0,
+                        "pitch": 0,
+                        "bpm_sync": False,
+                        "source_bpm": source_bpm,
+                    }
+                    state.set("audition_tracks", tracks)
+                return {"success": True, "path": path}
+        except Exception as e:
+            state.add_log(f"Browse error: {e}", "error")
+        return {"success": False, "path": ""}
+
+    def audition_render_and_play(self) -> dict:
+        """Start render thread and play result."""
+        try:
+            tracks = state.get("audition_tracks", [None, None, None, None])
+            master_bpm = state.get("audition_master_bpm", 120.0)
+            loop = state.get("audition_loop", False)
+            audition.start_render_thread(tracks, master_bpm, loop)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def audition_stop(self) -> dict:
+        """Stop playback and cancel any render."""
+        try:
+            import playback
+            playback.stop()
+            audition.stop_render()
+            state.set("audition_rendering", False)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def audition_set_master_bpm(self, bpm: float) -> dict:
+        """Update master BPM."""
+        try:
+            state.set("audition_master_bpm", max(30.0, min(300.0, float(bpm))))
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def audition_toggle_selection(self, srcpath: str) -> dict:
+        """Add/remove a srcpath from audition_selection (max 4)."""
+        try:
+            selection = list(state.get("audition_selection", []))
+            if srcpath in selection:
+                selection.remove(srcpath)
+            else:
+                if len(selection) < 4:
+                    selection.append(srcpath)
+            state.set("audition_selection", selection)
+            return {"success": True, "selection": selection}
+        except Exception as e:
+            return {"success": False, "error": str(e)}

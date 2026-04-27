@@ -71,6 +71,7 @@ conversion.py  → state
 slicer.py      → state, conversion
 bpm.py         → conversion
 key.py         → conversion
+audition.py    → state, bpm
 operations.py  → state, constants, conversion, bpm, key
 preview.py     → state, constants, operations, bpm, key, conversion
 browser.py     → state, constants, preview
@@ -161,6 +162,16 @@ Pitch-period autocorrelation. Mirrors BPM architecture exactly.
 - Cache: `~/.sampson/key_cache.json`
 - API: `detect_key(path, force=False)`, `get_cached_key()`, `set_cached_key()`, `flush_cache()`
 
+### Audition Stack (`audition.py`)
+
+Layers up to 4 samples into a pre-rendered temp WAV for playback preview.
+- Mix pipeline: load → stereo/44.1kHz normalise → pitch shift → BPM stretch → volume → start offset → pad → loop → overlay → export temp WAV
+- Pitch shift and BPM stretch use speed-change resampling (tape-style, approximate)
+- Cache: reads BPM from `~/.sampson/bpm_cache.json` via `bpm.get_cached_bpm()`
+- Gen-counter cancellation: `_render_gen` incremented on each new render; stale threads bail early
+- State keys: `audition_open`, `audition_tracks` (4-element list), `audition_master_bpm`, `audition_loop`, `audition_rendering`, `audition_status`, `audition_selection`
+- API: `audition_open_modal()`, `audition_close()`, `audition_set_track()`, `audition_remove_track()`, `audition_browse_track()`, `audition_render_and_play()`, `audition_stop()`, `audition_set_master_bpm()`, `audition_toggle_selection()`
+
 ### Startup source restoration (`settings.py`)
 
 On launch, `api.on_ready()` (called by JS after `renderAll()`) restores the last used source directory from `~/.sampson/settings.json`. Fallback chain: saved path → `os.getcwd()` → app directory → empty (no crash). Source is saved to settings on every `browse_source()` call.
@@ -197,6 +208,7 @@ Add a new device by inserting one entry into `PROFILES` dict AND adding an `<opt
 | Add output structure mode | `operations._compute_output()` + `ui/index.html` + `ui/app.js` |
 | BPM detection algorithm | `bpm._detect_bpm_algorithm()` |
 | Key detection algorithm | `key._detect_key_algorithm()` |
+| Audition Stack mix logic | `audition.py` → `mix_tracks()`, `start_render_thread()` |
 | macOS code signing | `build_macos.sh` |
 | Override output filename per-file | `preview.set_file_name()` + `preview._name_overrides` |
 
