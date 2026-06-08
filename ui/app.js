@@ -866,7 +866,9 @@ const Slicer = {
   _playGen: 0,        // invalidates stale RAF loops when new playback starts
   _inSlicePreview: false,  // true while slice preview is running; blocks is_playing hook
   draggingMarker: null,
-  
+  _dragMoved: false,  // true once a boundary drag actually moved; suppresses click-seek
+  _history: [],       // undo stack of slice-array snapshots (most recent last)
+
   // Open slicer with a file
   async open(filepath) {
     // Try Deck B selection if no explicit path
@@ -881,6 +883,8 @@ const Slicer = {
     this.viewStart = 0.0; this.viewEnd = 1.0; this.ampScale = 1.0;
     this.fileInfo = null;
     this.selectedSliceIndex = -1;
+    this._history = [];
+    this.updateUndoButton();
     this.isOpen = true;
     this.render();  // Show modal in empty state first
 
@@ -888,6 +892,10 @@ const Slicer = {
       const result = await pywebview.api.slicer_open(filepath);
       if (result.success) {
         this.fileInfo = result.file_info;
+        // Reset the export prefix to this file's stem. Without this, opening a
+        // second file kept the first file's name as the prefix.
+        const prefixInput = $('#slicer-prefix');
+        if (prefixInput) prefixInput.value = this.fileInfo.name.replace(/\.[^.]+$/, '');
         this.render();
       } else {
         log(result.error || 'Failed to open file', 'error');
@@ -940,12 +948,9 @@ const Slicer = {
     
     // Render slice list
     this.renderSliceList();
-    
-    // Set default prefix
-    const prefixInput = $('#slicer-prefix');
-    if (prefixInput && !prefixInput.value) {
-      prefixInput.value = this.fileInfo.name.replace(/\.[^.]+$/, '');
-    }
+
+    // Reflect target-count override state on the relevant controls
+    this.updateTargetOverrides();
   },
   
   updateTimeDisplay() {
@@ -1135,27 +1140,81 @@ const Slicer = {
       });
     });
     
-    // Row click = zoom waveform to slice
+    // Row click = select + zoom waveform to slice (keeps keyboard nav in sync)
     tbody.querySelectorAll('.slicer-slice-row').forEach(row => {
       row.addEventListener('click', (e) => {
         if (e.target.closest('button')) return;
         const index = parseInt(row.dataset.index);
+        this.selectSlice(index);
         this.zoomToSlice(index);
       });
     });
   },
   
+  // Snapshot the current slices onto the undo stack (call BEFORE mutating).
+  pushHistory() {
+    const slices = APP_STATE.slicer_slices || [];
+    this._history.push(slices.map(s => ({ ...s })));
+    if (this._history.length > 50) this._history.shift();
+    this.updateUndoButton();
+  },
+
+  undo() {
+    if (!this._history.length) return;
+    const prev = this._history.pop();
+    APP_STATE.slicer_slices = prev;
+    this.selectedSliceIndex = -1;
+    pywebview.api.slicer_set_slices(prev);
+    this.updateUndoButton();
+    this.render();
+  },
+
+  updateUndoButton() {
+    const btn = $('#slicer-undo');
+    if (btn) btn.disabled = this._history.length === 0;
+  },
+
+  // Recompute the string + duration fields of a slice after its bounds change
+  _recomputeSlice(slice) {
+    slice.start_str = this.msToStr(slice.start_ms);
+    slice.end_str = this.msToStr(slice.end_ms);
+    slice.duration_ms = slice.end_ms - slice.start_ms;
+    slice.duration_str = this.msToStr(slice.duration_ms);
+  },
+
   deleteSlice(index) {
     const slices = APP_STATE.slicer_slices || [];
     if (index < 0 || index >= slices.length) return;
-    
+
+    this.pushHistory();
+    const removed = slices[index];
     slices.splice(index, 1);
-    
-    // Update end of previous slice if needed
-    if (index > 0 && index < slices.length) {
-      slices[index - 1].end_ms = slices[index].start_ms;
+
+    if (slices.length === 0) {
+      // Nothing left — fall back to one slice spanning the whole file.
+      // History already snapshotted above, so don't record again.
+      this.clearAll(false);
+      return;
     }
-    
+
+    // Absorb the removed span so no audio is silently dropped: the previous
+    // slice extends over it, or (if we removed the first slice) the new first
+    // slice extends back to the removed start. Recompute the merged slice's
+    // end/duration strings — the old code left these stale.
+    if (index > 0) {
+      const prev = slices[index - 1];
+      prev.end_ms = removed.end_ms;
+      this._recomputeSlice(prev);
+    } else {
+      const first = slices[0];
+      first.start_ms = removed.start_ms;
+      this._recomputeSlice(first);
+    }
+
+    if (this.selectedSliceIndex >= slices.length) {
+      this.selectedSliceIndex = slices.length - 1;
+    }
+
     pywebview.api.slicer_set_slices(slices);
     this.render();
   },
@@ -1164,6 +1223,7 @@ const Slicer = {
     // Add a marker at current time (or provided time)
     const slices = APP_STATE.slicer_slices || [];
     if (timeMs === null) timeMs = this.currentTime * 1000;
+    this.pushHistory();
     
     // Find where to insert
     let insertIndex = slices.length;
@@ -1202,7 +1262,8 @@ const Slicer = {
     this.render();
   },
   
-  clearAll() {
+  clearAll(record = true) {
+    if (record) this.pushHistory();
     const durationMs = (this.fileInfo?.duration || 0) * 1000;
     APP_STATE.slicer_slices = [{
       start_ms: 0,
@@ -1227,7 +1288,8 @@ const Slicer = {
   async runAutoSlice() {
     const mode = $('#slicer-mode').value;
     const filepath = APP_STATE.slicer_file;
-    
+
+    this.pushHistory();  // auto-slice replaces all slices — make it undoable
     let result;
     
     switch (mode) {
@@ -1325,10 +1387,29 @@ const Slicer = {
   // Mode control visibility
   updateModeControls() {
     const mode = $('#slicer-mode').value;
-    
+
     ['silence', 'bpm', 'fixed', 'transients'].forEach(m => {
       const el = $(`#${m}-controls`);
       if (el) el.classList.toggle('hidden', m !== mode);
+    });
+    this.updateTargetOverrides();
+  },
+
+  // When a target-slice-count is entered, that count overrides the length /
+  // sensitivity control — dim + disable it so the precedence is visible.
+  updateTargetOverrides() {
+    const pairs = [
+      ['#fixed-target-count', '#fixed-length'],
+      ['#transient-target-count', '#transient-threshold'],
+    ];
+    pairs.forEach(([countSel, ctrlSel]) => {
+      const count = $(countSel);
+      const ctrl = $(ctrlSel);
+      if (!count || !ctrl) return;
+      const overridden = count.value.trim() !== '';
+      ctrl.disabled = overridden;
+      const field = ctrl.closest('.slicer-field');
+      if (field) field.classList.toggle('overridden', overridden);
     });
   },
   
@@ -1397,7 +1478,81 @@ const Slicer = {
     this.viewEnd = Math.min(1, sliceEnd + padding);
     this.drawWaveform();
   },
-  
+
+  // Hit-test a mouse event against slice boundary handles.
+  // Returns {index, edge:'start'|'end'} for the closest handle within
+  // HANDLE_TOL_PX, or null. Used for drag-to-adjust boundaries.
+  hitTestHandle(clientX) {
+    const canvas = $('#slicer-canvas');
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const width = rect.width;
+    const slices = APP_STATE.slicer_slices || [];
+    const TOL = 6;
+    let best = null, bestDist = TOL;
+    slices.forEach((s, i) => {
+      const sx = this.timeToX(s.start_ms / 1000, width);
+      if (Math.abs(x - sx) <= bestDist) { bestDist = Math.abs(x - sx); best = { index: i, edge: 'start' }; }
+      const ex = this.timeToX(s.end_ms / 1000, width);
+      if (Math.abs(x - ex) <= bestDist) { bestDist = Math.abs(x - ex); best = { index: i, edge: 'end' }; }
+    });
+    return best;
+  },
+
+  // Move a boundary to a new time (ms), clamped between neighbours. If the
+  // boundary is shared with an adjacent slice (contiguous partition), move
+  // both sides together so the slices stay edge-to-edge.
+  moveBoundary(handle, ms) {
+    const slices = APP_STATE.slicer_slices || [];
+    const s = slices[handle.index];
+    if (!s) return;
+    const durMs = (this.fileInfo?.duration || 0) * 1000;
+    const MIN = 1;  // ms
+
+    if (handle.edge === 'start') {
+      const prev = handle.index > 0 ? slices[handle.index - 1] : null;
+      const lower = prev ? prev.start_ms + MIN : 0;
+      const upper = s.end_ms - MIN;
+      ms = Math.max(lower, Math.min(upper, ms));
+      const shared = prev && Math.abs(prev.end_ms - s.start_ms) < 1;
+      s.start_ms = ms; this._recomputeSlice(s);
+      if (shared) { prev.end_ms = ms; this._recomputeSlice(prev); }
+    } else {
+      const next = handle.index < slices.length - 1 ? slices[handle.index + 1] : null;
+      const lower = s.start_ms + MIN;
+      const upper = next ? next.end_ms - MIN : durMs;
+      ms = Math.max(lower, Math.min(upper, ms));
+      const shared = next && Math.abs(s.end_ms - next.start_ms) < 1;
+      s.end_ms = ms; this._recomputeSlice(s);
+      if (shared) { next.start_ms = ms; this._recomputeSlice(next); }
+    }
+  },
+
+  // Play from the current playhead position to the end of the file (real seek).
+  // Reuses the slice-extract path so it works on every backend (pygame/NSSound
+  // can't seek directly). Used by the Play button and by click-to-seek.
+  async playFromCurrent() {
+    const file = APP_STATE.slicer_file;
+    if (!file || !this.fileInfo) return;
+    const startMs = Math.max(0, this.currentTime * 1000);
+    const durMs = this.fileInfo.duration * 1000;
+
+    this.playEnd = null;          // play through to the end of the file
+    this._inSlicePreview = false; // this is full playback, not a slice preview
+    this.previewSliceIndex = -1;
+    this.playing = true;
+    $('#slicer-play').textContent = '⏸';
+    this.startPlayheadUpdate();
+
+    if (startMs > 1) {
+      // Extract [startMs, end] to a temp WAV and play it from its start
+      await pywebview.api.slicer_preview_slice(file, startMs, durMs);
+    } else {
+      await pywebview.api.preview_play(file);
+    }
+  },
+
   // Called when external playback state changes
   onPlaybackStopped() {
     this.playing = false;
@@ -1430,7 +1585,11 @@ function setupSlicerEvents() {
     if (!Slicer.isOpen) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); Slicer.selectNextSlice(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); Slicer.selectPrevSlice(); }
+    else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); Slicer.undo(); }
   });
+
+  // Undo button
+  $('#slicer-undo')?.addEventListener('click', () => Slicer.undo());
   
   // Mode selector
   $('#slicer-mode')?.addEventListener('change', () => Slicer.updateModeControls());
@@ -1457,14 +1616,8 @@ function setupSlicerEvents() {
       await pywebview.api.preview_stop();
       Slicer.playing = false;
       $('#slicer-play').textContent = '▶';
-    } else {
-      if (APP_STATE.slicer_file) {
-        await pywebview.api.preview_play(APP_STATE.slicer_file);
-        Slicer.playing = true;
-        $('#slicer-play').textContent = '⏸';
-        Slicer.playEnd = null;
-        Slicer.startPlayheadUpdate();
-      }
+    } else if (APP_STATE.slicer_file) {
+      await Slicer.playFromCurrent();  // honours the current playhead position
     }
   });
   
@@ -1487,6 +1640,7 @@ function setupSlicerEvents() {
   // Canvas click to seek (accounting for viewport)
   $('#slicer-canvas')?.addEventListener('click', (e) => {
     if (Slicer._panMoved) { Slicer._panMoved = false; return; }
+    if (Slicer._dragMoved) { Slicer._dragMoved = false; return; }
     const canvas = e.target;
     const rect = canvas.getBoundingClientRect();
     const pct = (e.clientX - rect.left) / rect.width;
@@ -1494,6 +1648,8 @@ function setupSlicerEvents() {
     Slicer.currentTime = timeFrac * (Slicer.fileInfo?.duration || 0);
     Slicer.updateTimeDisplay();
     Slicer.drawWaveform();
+    // If audio is playing, re-seek it to the clicked position (real seek)
+    if (Slicer.playing) Slicer.playFromCurrent();
   });
   
   // Double-click on canvas to insert slice marker at clicked position
@@ -1544,7 +1700,7 @@ function setupSlicerEvents() {
     Slicer.drawWaveform();
   }, { passive: false });
   
-  // Pan with middle-click or Alt+drag
+  // Pan with middle-click or Alt+drag; left-click on a boundary handle drags it
   $('#slicer-canvas')?.addEventListener('mousedown', (e) => {
     if (e.button === 1 || e.altKey) {  // middle-click or Alt+drag
       Slicer.isPanning = true;
@@ -1552,7 +1708,24 @@ function setupSlicerEvents() {
       Slicer.panStartX = e.clientX;
       Slicer.panStartViewStart = Slicer.viewStart;
       e.preventDefault();
+      return;
     }
+    if (e.button === 0) {  // left-click: grab a boundary handle if one is near
+      const handle = Slicer.hitTestHandle(e.clientX);
+      if (handle) {
+        Slicer.pushHistory();  // snapshot pre-drag state for undo
+        Slicer.draggingMarker = handle;
+        Slicer._dragMoved = false;
+        e.preventDefault();
+      }
+    }
+  });
+
+  // Cursor feedback: ew-resize when hovering a draggable boundary
+  $('#slicer-canvas')?.addEventListener('mousemove', (e) => {
+    if (Slicer.draggingMarker || Slicer.isPanning) return;
+    const canvas = e.currentTarget;
+    canvas.style.cursor = Slicer.hitTestHandle(e.clientX) ? 'ew-resize' : 'default';
   });
   
   // Zoom reset button
@@ -1571,6 +1744,10 @@ function setupSlicerEvents() {
   $('#transient-threshold')?.addEventListener('input', (e) => {
     $('#transient-threshold-val').textContent = e.target.value + '×';
   });
+
+  // Target-count fields override their length/sensitivity control — reflect that
+  $('#fixed-target-count')?.addEventListener('input', () => Slicer.updateTargetOverrides());
+  $('#transient-target-count')?.addEventListener('input', () => Slicer.updateTargetOverrides());
   
   // Window resize - redraw waveform
   window.addEventListener('resize', () => {
@@ -1580,9 +1757,25 @@ function setupSlicerEvents() {
   });
 }
 
-// Global mouse handlers for waveform panning
+// Global mouse handlers for waveform panning + boundary dragging
 window.addEventListener('mousemove', (e) => {
-  if (!Slicer.isPanning || !Slicer.isOpen) return;
+  if (!Slicer.isOpen) return;
+
+  // Dragging a slice boundary takes priority over panning
+  if (Slicer.draggingMarker) {
+    const canvas = $('#slicer-canvas');
+    if (!canvas) return;
+    Slicer._dragMoved = true;
+    const rect = canvas.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const timeFrac = Slicer.viewStart + pct * (Slicer.viewEnd - Slicer.viewStart);
+    const ms = timeFrac * (Slicer.fileInfo?.duration || 0) * 1000;
+    Slicer.moveBoundary(Slicer.draggingMarker, ms);
+    Slicer.drawWaveform();  // live waveform feedback; table updates on release
+    return;
+  }
+
+  if (!Slicer.isPanning) return;
   Slicer._panMoved = true;
   const canvas = $('#slicer-canvas');
   if (!canvas) return;
@@ -1597,6 +1790,17 @@ window.addEventListener('mousemove', (e) => {
 
 window.addEventListener('mouseup', () => {
   Slicer.isPanning = false;
+  if (Slicer.draggingMarker) {
+    // Commit the edited slices to the backend + refresh the table once the drag ends
+    if (Slicer._dragMoved) {
+      pywebview.api.slicer_set_slices(APP_STATE.slicer_slices || []);
+      Slicer.renderSliceList();
+    } else {
+      Slicer._history.pop();  // no movement — discard the snapshot taken on mousedown
+      Slicer.updateUndoButton();
+    }
+    Slicer.draggingMarker = null;
+  }
 });
 
 // Update renderPatch to handle slicer state

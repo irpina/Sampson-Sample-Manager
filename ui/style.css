@@ -1140,6 +1140,15 @@ body.light-mode .slicer-slice-row.selected {
   width: 100%;
 }
 
+/* Control overridden by a target-slice-count: dim it so precedence is clear */
+.slicer-field.overridden {
+  opacity: 0.4;
+}
+.slicer-field.overridden label::after {
+  content: " — overridden by target";
+  font-style: italic;
+}
+
 .slicer-mode-controls.hidden {
   display: none;
 }
