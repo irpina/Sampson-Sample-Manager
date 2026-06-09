@@ -36,8 +36,8 @@
   - `MinLength:10` · `MaxLength:90` — duration bounds in seconds
   - Tokens combine freely: `kick BPM:120 MaxLength:5`
 - **Column sorting** — click the **BPM**, **Note**, or **Length** header in Deck B to sort ascending/descending (▲/▼); click again to flip
-- **BPM detection** — automatic tempo analysis using energy-envelope autocorrelation; cached per file, with a **Fresh scan** option to re-detect. Manual override by double-clicking the BPM cell. Optionally append `_120bpm` to output filenames.
-- **Key / Note detection** — automatic root-note detection (C, C#, D … B) using pitch-period autocorrelation; same caching and manual-override system as BPM. Optionally append `_C` to output filenames.
+- **BPM detection** — automatic tempo analysis using onset-novelty autocorrelation with comb-filter octave resolution; cached per file, with a **Fresh scan** option to re-detect. Manual override by double-clicking the BPM cell. Optionally append `_120bpm` to output filenames.
+- **Key / Note detection** — automatic root-note detection (C, C#, D … B) via a Goertzel chroma and Krumhansl-Schmuckler key-profile matching; atonal/percussive samples are left blank rather than mislabelled. Same caching and manual-override system as BPM. Optionally append `_C` to output filenames.
 - **Sync mode** — keep a destination folder (e.g. SD card) in sync with your source library without redundant work:
   - **Additive** — add new files and update changed ones; existing destination files not in the source are left untouched
   - **Mirror** — destination becomes an exact copy of the processed source; files no longer in the source are deleted

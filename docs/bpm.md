@@ -1,6 +1,7 @@
 # bpm.py — BPM Detection + Cache
 
-Energy-envelope autocorrelation BPM detection with persistent cache. No numpy or librosa required.
+Onset-novelty autocorrelation with comb-filter octave resolution and a
+perceptual tempo prior. Persistent cache. No numpy or librosa required.
 
 ## Imports
 - **Imports:** `conversion` (`_find_ffmpeg_path`, pydub lazy), `json`, `math`, `pathlib`
@@ -26,18 +27,27 @@ Energy-envelope autocorrelation BPM detection with persistent cache. No numpy or
 
 ## Algorithm
 
-1. Load audio via pydub (mono, first 60s)
-2. Compute RMS energy envelope (10ms hop)
-3. Normalized autocorrelation of envelope
-4. Find peaks in 60–200 BPM range
-5. Generate candidates with octave variants (half/double tempo, penalized)
-6. Group candidates within 5% tolerance; score each group
-7. Prefer 80–180 BPM range (1.2× score bonus)
-8. Return highest-scoring BPM (clamped to 60–200)
+1. Load audio via pydub (mono, first 60s), downsample to 11025 Hz
+2. Build an **onset-novelty function**: half-wave-rectified flux of log
+   short-time energy (20ms window, 10ms hop), then subtract its mean so the
+   autocorrelation isn't dominated by DC
+3. Normalized autocorrelation of the onset function (out to ~3 beat periods
+   of the slowest tempo, so the comb can use the 2nd/3rd harmonics)
+4. **Comb-filter score** for each candidate beat period: sum the
+   autocorrelation at the period and its 2×/3×/4× multiples (local-max around
+   each, since real beat periods are fractional), weighted by a gentle
+   log-Gaussian **perceptual prior** (centre 120 BPM). This reinforces the
+   fundamental and suppresses spurious half/double tempos.
+5. Parabolic interpolation around the winning lag for sub-frame precision
+6. Return BPM (clamped to 40–220)
 
 ## Critical Rules
 
-- BPM clamped to 60–200 on return; manual override via `set_cached_bpm()` accepts 30–300
+- BPM clamped to 40–220 on return; manual override via `set_cached_bpm()` accepts 30–300
+- The comb naturally blocks tempo *doubling* (the half-beat lag carries no
+  onset); only *halving* is governed by the prior, so very fast tempos
+  (~165+) may be reported at half-time, and sparse/sustained loops can
+  occasionally land on a subdivision
 - `force=True` bypasses cache and re-detects from audio
 - FFmpeg is required (delegated to `conversion._find_ffmpeg_path()`)
 - On Windows: pydub subprocess patched with `CREATE_NO_WINDOW` flag to hide console

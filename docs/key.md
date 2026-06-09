@@ -1,6 +1,7 @@
 # key.py — Musical Key Detection + Cache
 
-Pitch-period autocorrelation key detection (root pitch class only). Mirrors bpm.py architecture exactly.
+Goertzel chroma + Krumhansl-Schmuckler key-profile correlation (root pitch
+class only). Pure Python — no FFT/numpy. Mirrors bpm.py's cache architecture.
 
 ## Imports
 - **Imports:** `conversion` (`_find_ffmpeg_path`, pydub lazy), `json`, `math`, `pathlib`
@@ -25,26 +26,31 @@ Pitch-period autocorrelation key detection (root pitch class only). Mirrors bpm.
 
 ## Algorithm
 
-1. Load audio (mono, downsampled to 8kHz, first 30s)
-2. For each of 12 pitch classes (C, C#, D, ... B):
-   - For each octave (2–5): convert frequency → lag in samples
-   - Compute normalized autocorrelation at that lag
-   - Weight by `1 / sqrt(freq)` (emphasize lower frequencies)
-   - Sum into `chroma[pitch_class]`
-3. Normalize chroma vector
-4. If max chroma value < 0.1 → return `None` (likely percussion/noise)
-5. Return pitch class name with highest chroma value
+1. Load audio (mono, downsampled to 8kHz); skip the first 50ms attack and
+   analyse up to ~10s; remove DC offset
+2. Build a **chroma** vector: for every semitone C2..B5, compute the DFT
+   magnitude at the *exact* note frequency with the **Goertzel algorithm**
+   (no integer-lag rounding error), then fold octaves into 12 pitch classes
+3. Normalize the chroma
+4. Resolve the tonic via **Krumhansl-Schmuckler** correlation — rotate the 12
+   major and 12 minor key profiles against the chroma and take the best
+   (uses the tonal hierarchy, robust on melodic/polyphonic material)
+5. **Confidence gates** — return `None` (atonal/percussive) unless the chroma
+   peak is ≥ 2× a flat distribution AND the best key correlation is ≥ 0.5
+6. Return the tonic pitch-class name
 
 ## Return Values
 
 - `"C"`, `"C#"`, `"D"`, `"D#"`, `"E"`, `"F"`, `"F#"`, `"G"`, `"G#"`, `"A"`, `"A#"`, `"B"`
-- `None` — low signal (percussion, noise, or silent)
+- `None` — atonal/low-confidence (percussion, noise, or silent)
 
 ## Critical Rules
 
 - Detects **root pitch class only** — no major/minor distinction
 - Audio downsampled to 8kHz before analysis (speed optimization)
-- Requires at least 250ms of audio after downsampling
+- Requires at least 250ms of audio
+- Confidence-gated: percussion and noise return `None` rather than a
+  meaningless key (`KEY_DEBUG=1` env var prints the gate metrics)
 - Enharmonic normalization in `set_cached_key()`: `Db→C#`, `Eb→D#`, `Gb→F#`, `Ab→G#`, `Bb→A#`
 - FFmpeg required (delegated to `conversion._find_ffmpeg_path()`)
 - Logs prefixed with `[KEY]`; retrieve with `get_log_messages()`
