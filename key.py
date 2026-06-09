@@ -92,6 +92,11 @@ _KEY_MIDI_LO = 36   # C2 (~65.4 Hz)
 _KEY_MIDI_HI = 83   # B5 (~987.8 Hz)
 _KEY_MAX_SECONDS = 10.0
 
+# Confidence gates — reject atonal/percussive content (flat chroma, weak key
+# correlation) rather than assigning it a meaningless key.
+_KEY_MIN_PEAK_RATIO = 2.0   # top pitch class must be >= 2x a flat distribution
+_KEY_MIN_CORR = 0.5         # best Krumhansl-Schmuckler correlation
+
 # Krumhansl-Kessler key profiles (major / minor). Correlating the chroma
 # against all 24 rotations recovers the tonic via the tonal hierarchy, which
 # is far more robust for melodic/polyphonic material than picking the single
@@ -114,7 +119,7 @@ def _pearson(a, b):
 
 
 def _best_tonic(chroma):
-    """Return the tonic pitch class via Krumhansl-Schmuckler correlation."""
+    """Return (tonic pitch class, correlation) via Krumhansl-Schmuckler."""
     best_pc, best_corr = 0, -2.0
     for tonic in range(12):
         for profile in (_KS_MAJOR, _KS_MINOR):
@@ -123,7 +128,7 @@ def _best_tonic(chroma):
             if corr > best_corr:
                 best_corr = corr
                 best_pc = tonic
-    return best_pc
+    return best_pc, best_corr
 
 
 def _goertzel_mag(samples, sr, freq):
@@ -180,12 +185,20 @@ def _detect_key_algorithm(audio) -> Optional[str]:
     chroma = [c / total for c in chroma]
 
     peak = max(chroma)
-    # Reject flat / atonal content (uniform chroma ≈ 1/12 ≈ 0.083 per bin)
-    if peak < 0.13:
+    peak_over_mean = peak / (1.0 / 12.0)   # 1.0 = perfectly flat (atonal)
+    tonic_pc, ks_corr = _best_tonic(chroma)
+
+    if os.environ.get("KEY_DEBUG"):
+        print(f"[KEY] p/mean={peak_over_mean:.2f} ks_corr={ks_corr:.3f} "
+              f"-> {NOTE_NAMES[tonic_pc]}")
+
+    # Gate out atonal / percussive content: it produces a flat chroma (low
+    # peak-over-mean) and correlates poorly with any key profile. Clearly
+    # tonal material is peaky and correlates strongly.
+    if peak_over_mean < _KEY_MIN_PEAK_RATIO or ks_corr < _KEY_MIN_CORR:
         return None
 
-    # Resolve the tonic from the tonal hierarchy (robust for melodic material)
-    return NOTE_NAMES[_best_tonic(chroma)]
+    return NOTE_NAMES[tonic_pc]
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
