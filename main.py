@@ -83,12 +83,15 @@ def main():
     base_dir = sys._MEIPASS if getattr(sys, 'frozen', False) \
         else os.path.dirname(os.path.abspath(__file__))
     ui_path = os.path.join(base_dir, 'ui', 'index.html')
-    # Runtime window icon: only the Qt/GTK (Linux) backend takes a PNG safely.
-    # The Windows EdgeChromium backend feeds the path to System.Drawing.Icon,
-    # which rejects PNGs (and only an .ico would work) — so we skip it there;
-    # the packaged .exe already carries the icon (SAMPSON.spec). macOS uses the
-    # .app bundle icon. This avoids a hard crash at window start.
-    icon_path = os.path.join(base_dir, 'ui', 'icon.png') if sys.platform == 'linux' else None
+    # Runtime window icon, by backend: the Windows EdgeChromium backend feeds
+    # the path to System.Drawing.Icon (needs an .ico — a PNG throws); Qt/GTK
+    # (Linux) takes a PNG; macOS uses the .app bundle icon, so skip it there.
+    if sys.platform == 'win32':
+        icon_path = os.path.join(base_dir, 'ui', 'icon.ico')
+    elif sys.platform == 'linux':
+        icon_path = os.path.join(base_dir, 'ui', 'icon.png')
+    else:
+        icon_path = None
     
     # Create window
     window = webview.create_window(
