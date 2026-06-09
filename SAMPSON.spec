@@ -56,12 +56,13 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='ui/icon.ico',
 )
 
 app = BUNDLE(
     exe,
     name='SAMPSON.app',
-    icon=None,
+    icon='ui/icon.icns',
     bundle_identifier='com.zacharylouden.sampson',
     info_plist={
         'CFBundleShortVersionString': '0.9.0',

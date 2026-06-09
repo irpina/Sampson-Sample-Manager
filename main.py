@@ -84,10 +84,12 @@ def main():
         # Running in PyInstaller bundle
         bundle_dir = sys._MEIPASS
         ui_path = os.path.join(bundle_dir, 'ui', 'index.html')
+        icon_path = os.path.join(bundle_dir, 'ui', 'icon.png')
     else:
         # Running in dev
         script_dir = os.path.dirname(os.path.abspath(__file__))
         ui_path = os.path.join(script_dir, 'ui', 'index.html')
+        icon_path = os.path.join(script_dir, 'ui', 'icon.png')
     
     # Create window
     window = webview.create_window(
@@ -114,12 +116,21 @@ def main():
         import threading
         threading.Timer(0.5, activate).start()
     
-    # Start webview
-    webview.start(
+    # Start webview. icon is honoured by the Qt/GTK backends (Linux); on
+    # Windows the taskbar icon comes from the bundled .exe (SAMPSON.spec).
+    start_kwargs = dict(
         debug=False,  # Set to True for dev
         http_server=False,
         gui='edgechromium' if sys.platform == 'win32' else ('qt' if sys.platform == 'linux' else 'cocoa'),
     )
+    if os.path.exists(icon_path):
+        start_kwargs['icon'] = icon_path
+    try:
+        webview.start(**start_kwargs)
+    except TypeError:
+        # Older pywebview without the icon kwarg
+        start_kwargs.pop('icon', None)
+        webview.start(**start_kwargs)
 
 
 if __name__ == "__main__":
