@@ -232,6 +232,7 @@ def apply_filter(text: str = ""):
         "preview_entries": display_rows,
         "preview_count": len(display_rows),
         "src_count": len(_preview_rows),
+        "preview_collisions": state.get("preview_collisions", 0),
     })
     
     # Update status message
@@ -316,6 +317,7 @@ def refresh():
             "preview_entries": [],
             "preview_count": 0,
             "src_count": 0,
+            "preview_collisions": 0,
         })
         state.set_status("Navigate source to see preview")
         return
@@ -376,6 +378,7 @@ def _populate_preview(files: list[Path], source_root: Path, durations: dict):
             "preview_entries": [],
             "preview_count": 0,
             "src_count": 0,
+            "preview_collisions": 0,
         })
         state.set_status("No folders selected")
         return
@@ -466,11 +469,26 @@ def _populate_preview(files: list[Path], source_root: Path, durations: dict):
             "length": _fmt_duration(duration_sec),
             "duration_sec": duration_sec,
             "srcpath": str(f),
+            # True output identity (dest subfolder + final filename) for
+            # collision detection — files landing on the same path overwrite.
+            "_outkey": rel_sub + "\x00" + new_name,
         }
         rows.append(row)
-    
+
+    # Flag name collisions: 2+ source files producing the same output path.
+    # The second would silently overwrite the first on a real run.
+    from collections import Counter
+    key_counts = Counter(r["_outkey"] for r in rows)
+    collision_count = 0
+    for r in rows:
+        r["collision"] = key_counts[r["_outkey"]] > 1
+        if r["collision"]:
+            collision_count += 1
+        del r["_outkey"]
+    state.set("preview_collisions", collision_count, push=False)
+
     _preview_rows = rows
-    
+
     # Apply sort if active
     _apply_sort()
     

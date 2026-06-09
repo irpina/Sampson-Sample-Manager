@@ -370,9 +370,20 @@ function renderDeckB() {
     table.classList.remove('sync-mode');
     
     const count = APP_STATE.preview_count || 0;
-    $('#preview-label').textContent = count > 0 
-      ? `${count} files in preview` 
-      : 'Navigate source to see preview';
+    const collisions = APP_STATE.preview_collisions || 0;
+    const label = $('#preview-label');
+    if (count > 0) {
+      label.textContent = `${count} files in preview`;
+      if (collisions > 0) {
+        const warn = document.createElement('span');
+        warn.className = 'collision-warning';
+        warn.title = 'Two or more files produce the same output name — later ones will overwrite earlier ones.';
+        warn.textContent = `  ⚠ ${collisions} name collision${collisions === 1 ? '' : 's'} (will overwrite)`;
+        label.appendChild(warn);
+      }
+    } else {
+      label.textContent = 'Navigate source to see preview';
+    }
     
     // Restore original table header
     tableHead.innerHTML = `
@@ -413,7 +424,7 @@ function renderDeckB() {
       tr.innerHTML = `
         <td class="col-stack">${stackIndicator}</td>
         <td class="col-src" title="${escapeHtml(entry.src_name)}">${escapeHtml(entry.src_name)}</td>
-        <td class="col-dest${entry.name_manual ? ' overridden' : ''}" title="${entry.dest_name ? escapeHtml(entry.dest_name) : ''}">${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
+        <td class="col-dest${entry.name_manual ? ' overridden' : ''}${entry.collision ? ' collision' : ''}" title="${entry.collision ? 'Name collision — will overwrite/be overwritten' : (entry.dest_name ? escapeHtml(entry.dest_name) : '')}">${entry.collision ? '⚠ ' : ''}${entry.dest_name ? escapeHtml(entry.dest_name) : '—'}</td>
         <td class="col-bpm editable" data-field="bpm">${entry.bpm || '—'}</td>
         <td class="col-key editable" data-field="key">${entry.key || '—'}</td>
         <td class="col-length">${entry.length || '—'}</td>

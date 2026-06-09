@@ -680,6 +680,18 @@ body.light-mode #logo-img {
   color: var(--amber);
 }
 
+/* Name collision — this output path is shared by 2+ files (will overwrite) */
+.preview-table td.col-dest.collision {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.collision-warning {
+  color: #ff6b6b;
+  font-style: normal;
+  font-weight: 600;
+}
+
 /* Selected row highlighting */
 #preview-list tr.selected {
   background: rgba(244, 162, 97, 0.2) !important;
