@@ -1,4 +1,4 @@
-# Core dependencies for SAMPSON v0.8.0
+# Core dependencies for SAMPSON v1.0.0
 pygame-ce>=2.5.0
 pydub>=0.25.1
 static-ffmpeg>=2.5.0

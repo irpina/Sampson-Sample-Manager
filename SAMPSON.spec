@@ -65,8 +65,8 @@ app = BUNDLE(
     icon='ui/icon.icns',
     bundle_identifier='com.zacharylouden.sampson',
     info_plist={
-        'CFBundleShortVersionString': '0.9.0',
-        'CFBundleVersion': '0.9.0',
+        'CFBundleShortVersionString': '1.0.0',
+        'CFBundleVersion': '1.0.0',
         'NSHighResolutionCapable': True,
     },
 )
