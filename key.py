@@ -23,23 +23,6 @@ _log_messages: list = []
 
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
-# Standard pitch frequencies for octaves 2-5 (approximate)
-# C2 = 65.41 Hz, C3 = 130.81 Hz, C4 = 261.63 Hz, C5 = 523.25 Hz
-_PITCH_FREQUENCIES = {
-    0: [65.41, 130.81, 261.63, 523.25],   # C
-    1: [69.30, 138.59, 277.18, 554.37],   # C#
-    2: [73.42, 146.83, 293.66, 587.33],   # D
-    3: [77.78, 155.56, 311.13, 622.25],   # D#
-    4: [82.41, 164.81, 329.63, 659.25],   # E
-    5: [87.31, 174.61, 349.23, 698.46],   # F
-    6: [92.50, 185.00, 369.99, 739.99],   # F#
-    7: [98.00, 196.00, 392.00, 783.99],   # G
-    8: [103.83, 207.65, 415.30, 830.61],  # G#
-    9: [110.00, 220.00, 440.00, 880.00],  # A
-    10: [116.54, 233.08, 466.16, 932.33], # A#
-    11: [123.47, 246.94, 493.88, 987.77], # B
-}
-
 
 def _log(msg):
     _log_messages.append(msg)
@@ -99,70 +82,110 @@ def _get_pydub():
 
 
 # ── Detection Algorithm ───────────────────────────────────────────────────────
+#
+# Build a chroma vector with the Goertzel algorithm: for each semitone from
+# C2..B5 we evaluate the DFT magnitude at the *exact* note frequency (no
+# integer-lag rounding error), then fold octaves into 12 pitch classes. The
+# argmax is the root pitch class. Pure Python — no FFT/numpy.
 
-def _calculate_autocorrelation_at_lag(samples, lag):
-    """Calculate autocorrelation at a specific lag."""
-    if lag <= 0 or lag >= len(samples):
+_KEY_MIDI_LO = 36   # C2 (~65.4 Hz)
+_KEY_MIDI_HI = 83   # B5 (~987.8 Hz)
+_KEY_MAX_SECONDS = 10.0
+
+# Krumhansl-Kessler key profiles (major / minor). Correlating the chroma
+# against all 24 rotations recovers the tonic via the tonal hierarchy, which
+# is far more robust for melodic/polyphonic material than picking the single
+# loudest pitch class.
+_KS_MAJOR = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
+_KS_MINOR = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+
+
+def _pearson(a, b):
+    """Pearson correlation between two equal-length sequences."""
+    n = len(a)
+    ma = sum(a) / n
+    mb = sum(b) / n
+    num = sum((a[i] - ma) * (b[i] - mb) for i in range(n))
+    da = math.sqrt(sum((x - ma) ** 2 for x in a))
+    db = math.sqrt(sum((x - mb) ** 2 for x in b))
+    if da == 0 or db == 0:
         return 0.0
-    
-    n = len(samples) - lag
-    if n <= 0:
+    return num / (da * db)
+
+
+def _best_tonic(chroma):
+    """Return the tonic pitch class via Krumhansl-Schmuckler correlation."""
+    best_pc, best_corr = 0, -2.0
+    for tonic in range(12):
+        for profile in (_KS_MAJOR, _KS_MINOR):
+            rotated = [profile[(i - tonic) % 12] for i in range(12)]
+            corr = _pearson(chroma, rotated)
+            if corr > best_corr:
+                best_corr = corr
+                best_pc = tonic
+    return best_pc
+
+
+def _goertzel_mag(samples, sr, freq):
+    """DFT magnitude at `freq` via the Goertzel algorithm (normalized by N)."""
+    n = len(samples)
+    if n == 0:
         return 0.0
-    
-    # Sum of products
-    corr = sum(samples[i] * samples[i + lag] for i in range(n))
-    
-    # Normalize
-    sum_sq = sum(s * s for s in samples[:n])
-    if sum_sq > 0:
-        corr = corr / sum_sq
-    
-    return corr
+    coeff = 2.0 * math.cos(2.0 * math.pi * freq / sr)
+    prev1 = 0.0
+    prev2 = 0.0
+    for x in samples:
+        s = x + coeff * prev1 - prev2
+        prev2 = prev1
+        prev1 = s
+    power = prev1 * prev1 + prev2 * prev2 - coeff * prev1 * prev2
+    if power <= 0.0:
+        return 0.0
+    return math.sqrt(power) / n
 
 
 def _detect_key_algorithm(audio) -> Optional[str]:
-    """
-    Detect musical key using pitch-period autocorrelation.
-    
-    For each of the 12 pitch classes, compute autocorrelation at lags
-    corresponding to that pitch across octaves 2-5, then take argmax.
-    """
-    samples = audio.get_array_of_samples()
-    sample_rate = audio.frame_rate
-    
-    if len(samples) < sample_rate // 4:   # need at least 0.25s at 8000 Hz
+    """Detect the root pitch class from a Goertzel chroma (octave-folded)."""
+    sr = audio.frame_rate
+    raw = audio.get_array_of_samples()
+    n = len(raw)
+    if n < sr // 4:                       # need >= 0.25s
         return None
-    
-    # Calculate chroma vector (12 pitch classes)
+    max_val = float(2 ** (audio.sample_width * 8 - 1)) or 1.0
+
+    # Stable window: skip the first 50ms (attack transient) and analyse up to
+    # _KEY_MAX_SECONDS — long enough for a stable pitch, fast enough per file.
+    start = min(int(0.05 * sr), n - 1)
+    end = min(n, start + int(_KEY_MAX_SECONDS * sr))
+    samples = [raw[i] / max_val for i in range(start, end)]
+    N = len(samples)
+    if N < sr // 4:
+        return None
+
+    # Remove DC offset
+    mean = sum(samples) / N
+    samples = [s - mean for s in samples]
+
+    nyquist = sr * 0.45
     chroma = [0.0] * 12
-    
-    for pitch_class in range(12):
-        total_energy = 0.0
-        
-        # Sum autocorrelation energies across octaves 2-5
-        for freq in _PITCH_FREQUENCIES[pitch_class]:
-            # Convert frequency to lag in samples
-            period = sample_rate / freq
-            lag = int(round(period))
-            
-            if lag > 0 and lag < len(samples) // 2:
-                energy = _calculate_autocorrelation_at_lag(samples, lag)
-                # Weight by inverse frequency (lower frequencies often stronger)
-                total_energy += max(0, energy) * (1.0 / math.sqrt(freq))
-        
-        chroma[pitch_class] = total_energy
-    
-    # Normalize chroma vector
-    max_val = max(chroma) if chroma else 0
-    if max_val > 0:
-        chroma = [c / max_val for c in chroma]
-    
-    # Find argmax
-    if max(chroma) < 0.1:  # Too weak signal
+    for midi in range(_KEY_MIDI_LO, _KEY_MIDI_HI + 1):
+        freq = 440.0 * (2.0 ** ((midi - 69) / 12.0))
+        if freq >= nyquist:
+            continue
+        chroma[midi % 12] += _goertzel_mag(samples, sr, freq)
+
+    total = sum(chroma)
+    if total <= 0.0:
         return None
-    
-    best_pitch = chroma.index(max(chroma))
-    return NOTE_NAMES[best_pitch]
+    chroma = [c / total for c in chroma]
+
+    peak = max(chroma)
+    # Reject flat / atonal content (uniform chroma ≈ 1/12 ≈ 0.083 per bin)
+    if peak < 0.13:
+        return None
+
+    # Resolve the tonic from the tonal hierarchy (robust for melodic material)
+    return NOTE_NAMES[_best_tonic(chroma)]
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────

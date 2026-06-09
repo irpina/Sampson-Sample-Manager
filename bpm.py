@@ -82,148 +82,149 @@ def _get_pydub():
 
 
 # ── Detection Algorithm ───────────────────────────────────────────────────────
+#
+# Pipeline: downsample → onset-novelty function (half-wave-rectified flux of
+# log short-time energy) → mean-removed autocorrelation → comb-filter scoring
+# with a gentle perceptual tempo prior to resolve the octave → parabolic
+# interpolation for sub-frame precision. Pure Python, no numpy.
 
-def _calculate_energy_envelope(samples, sample_rate, hop_ms=10):
-    """Calculate RMS energy envelope."""
-    hop = int(hop_ms * sample_rate / 1000)
-    envelope = []
-    for i in range(0, len(samples) - hop, hop):
-        frame = samples[i:i+hop]
-        rms = math.sqrt(sum(s * s for s in frame) / len(frame))
-        envelope.append(rms)
-    return envelope
+_BPM_SR = 11025          # analysis sample rate (plenty for tempo)
+_BPM_HOP_MS = 10.0       # onset-envelope hop
+_BPM_WIN_MS = 20.0       # onset-envelope window (overlapping)
+_BPM_MIN = 55.0          # fundamental search bounds
+_BPM_MAX = 210.0
+_BPM_PRIOR_CENTER = 120.0  # perceptual tempo prior (log-Gaussian)
+_BPM_PRIOR_SIGMA = 0.9     # octaves
+# The comb score already prevents tempo *doubling* (the half-beat lag carries
+# no onset); only *halving* needs the prior. Centre 120 favours the common
+# 70-140 BPM range. Trade-off: very fast tempos (~165+) may be reported at
+# half-time, and sparse/sustained loops can occasionally land on a subdivision.
 
 
-def _autocorrelation(signal, max_lag):
-    """Calculate autocorrelation."""
+def _onset_envelope(samples, sr, max_val):
+    """Half-wave-rectified flux of log short-time energy (onset novelty)."""
+    hop = max(1, int(_BPM_HOP_MS * sr / 1000.0))
+    win = max(hop, int(_BPM_WIN_MS * sr / 1000.0))
+    n = len(samples)
+    n_frames = (n - win) // hop + 1
+    if n_frames < 64:
+        return [], 0.0
+
+    log_energy = [0.0] * n_frames
+    inv = 1.0 / max_val
+    for f in range(n_frames):
+        start = f * hop
+        e = 0.0
+        for j in range(win):
+            v = samples[start + j] * inv
+            e += v * v
+        log_energy[f] = math.log1p(1000.0 * (e / win))
+
+    # Half-wave-rectified first difference = onset detection function
+    odf = [0.0] * n_frames
+    for f in range(1, n_frames):
+        d = log_energy[f] - log_energy[f - 1]
+        if d > 0.0:
+            odf[f] = d
+
+    # Remove mean so autocorrelation isn't dominated by DC
+    mean = sum(odf) / n_frames
+    odf = [v - mean for v in odf]
+    fps = sr / hop
+    return odf, fps
+
+
+def _autocorr_full(signal, max_lag):
+    """Normalized autocorrelation 0..max_lag (A[0] == 1.0)."""
     n = len(signal)
-    if n == 0:
-        return []
-    
-    result = []
-    for lag in range(max_lag + 1):
-        if lag >= n:
-            result.append(0.0)
-            continue
-        corr = sum(signal[i] * signal[i + lag] for i in range(n - lag))
-        result.append(corr)
-    
-    # Normalize
-    if result[0] > 0:
-        result = [r / result[0] for r in result]
-    
-    return result
+    a0 = sum(v * v for v in signal)
+    if a0 <= 0:
+        return [0.0] * (max_lag + 1)
+    out = [0.0] * (max_lag + 1)
+    out[0] = 1.0
+    for lag in range(1, max_lag + 1):
+        s = 0.0
+        for i in range(n - lag):
+            s += signal[i] * signal[i + lag]
+        out[lag] = s / a0
+    return out
 
 
-def _find_local_maxima(signal, min_distance=5):
-    """Find local maxima."""
-    peaks = []
-    for i in range(1, len(signal) - 1):
-        if signal[i] > signal[i-1] and signal[i] > signal[i+1]:
-            if not peaks or i - peaks[-1][0] >= min_distance:
-                peaks.append((i, signal[i]))
-    return peaks
-
-
-def _lag_to_bpm(lag, hop_ms):
-    if lag <= 0:
-        return 0
-    return 60000.0 / (lag * hop_ms)
+def _tempo_prior(bpm):
+    """Gentle log-Gaussian preference around a typical tempo."""
+    return math.exp(-0.5 * (math.log2(bpm / _BPM_PRIOR_CENTER) / _BPM_PRIOR_SIGMA) ** 2)
 
 
 def _detect_bpm_algorithm(audio) -> Optional[float]:
-    """Detect BPM using energy envelope autocorrelation."""
+    """Detect BPM from an onset-novelty autocorrelation with comb scoring."""
+    if audio.frame_rate != _BPM_SR:
+        audio = audio.set_frame_rate(_BPM_SR)
+    sr = audio.frame_rate
     samples = audio.get_array_of_samples()
-    sample_rate = audio.frame_rate
-    hop_ms = 10
-    
-    if len(samples) < sample_rate:
+    if len(samples) < sr:          # need >= 1s
         return None
-    
-    envelope = _calculate_energy_envelope(samples, sample_rate, hop_ms)
-    
-    if len(envelope) < 100:
+    max_val = float(2 ** (audio.sample_width * 8 - 1)) or 1.0
+
+    odf, fps = _onset_envelope(samples, sr, max_val)
+    if not odf:
         return None
-    
-    # Calculate autocorrelation
-    max_lag = min(int(2000 / hop_ms), len(envelope) // 2)
-    acorr = _autocorrelation(envelope, max_lag)
-    
-    # Find peaks in valid tempo range (60-200 BPM)
-    min_lag = int(60000 / 200 / hop_ms)  # 30 frames
-    max_lag_range = int(60000 / 60 / hop_ms)  # 100 frames
-    
-    min_lag = max(min_lag, 5)
-    max_lag_range = min(max_lag_range, len(acorr) - 1)
-    
-    if max_lag_range <= min_lag:
+    n_frames = len(odf)
+
+    # Cover up to ~3 beat periods of the slowest tempo so the comb can use
+    # the 2nd/3rd autocorrelation harmonics of the fundamental beat.
+    max_lag = min(n_frames - 1, int(fps * 60.0 / _BPM_MIN * 3.2))
+    if max_lag < 4:
         return None
-    
-    # Find peaks
-    peaks = _find_local_maxima(acorr[min_lag:max_lag_range+1], min_distance=3)
-    peaks = [(lag + min_lag, acorr[lag + min_lag]) for lag, _ in peaks]
-    
-    if not peaks:
+    acorr = _autocorr_full(odf, max_lag)
+
+    lag_lo = max(2, int(fps * 60.0 / _BPM_MAX))
+    lag_hi = min(max_lag, int(fps * 60.0 / _BPM_MIN))
+    if lag_hi <= lag_lo:
         return None
-    
-    # Generate candidates with octave variants
-    candidates = []
-    for lag, strength in peaks:
-        bpm = _lag_to_bpm(lag, hop_ms)
-        
-        # Original
-        if 60 <= bpm <= 200:
-            candidates.append((bpm, strength, 'orig'))
-        
-        # Half tempo
-        if bpm / 2 >= 60:
-            candidates.append((bpm / 2, strength * 0.85, 'half'))
-        
-        # Double tempo
-        if bpm * 2 <= 200:
-            candidates.append((bpm * 2, strength * 0.75, 'double'))
-    
-    if not candidates:
+
+    # Comb-filter score: a true beat period L shows autocorrelation peaks at
+    # L, 2L, 3L… Summing them reinforces the fundamental and suppresses
+    # spurious double/half-tempo candidates. Weighted by the perceptual prior.
+    comb_weights = ((1, 1.0), (2, 0.8), (3, 0.6), (4, 0.4))
+    best_lag, best_score = None, -1.0
+    for lag in range(lag_lo, lag_hi + 1):
+        comb = 0.0
+        wsum = 0.0
+        for k, wk in comb_weights:
+            kl = lag * k
+            if kl <= max_lag:
+                # Local max around k*lag: a true beat period is often fractional
+                # (e.g. 160 BPM ≈ lag 37.5), so its autocorrelation peak falls
+                # between integer lags. Sampling the neighbours avoids penalising
+                # fast tempos and prevents systematic half-tempo errors.
+                lo = max(1, kl - 1)
+                hi = min(max_lag, kl + 1)
+                comb += wk * max(acorr[lo:hi + 1])
+                wsum += wk
+        if wsum <= 0:
+            continue
+        bpm_here = 60.0 * fps / lag
+        score = (comb / wsum) * _tempo_prior(bpm_here)
+        if score > best_score:
+            best_score = score
+            best_lag = lag
+
+    if best_lag is None:
         return None
-    
-    # Group by similar tempo (within 5%)
-    groups = []
-    for bpm, strength, source in candidates:
-        found = False
-        for group in groups:
-            ref_bpm = group[0][0]
-            if abs(bpm - ref_bpm) / ref_bpm < 0.05 or abs(bpm*2 - ref_bpm) / ref_bpm < 0.05 or abs(bpm/2 - ref_bpm) / ref_bpm < 0.05:
-                group.append((bpm, strength, source))
-                found = True
-                break
-        if not found:
-            groups.append([(bpm, strength, source)])
-    
-    # Score groups
-    group_scores = []
-    for group in groups:
-        # Sort by BPM descending (prefer faster)
-        group.sort(key=lambda x: x[0], reverse=True)
-        best_bpm = group[0][0]
-        total_strength = sum(s for _, s, _ in group)
-        
-        # Strong bonus for 80-180 range
-        if 80 <= best_bpm <= 180:
-            bonus = 1.2
-        elif 70 <= best_bpm <= 190:
-            bonus = 1.0
-        else:
-            bonus = 0.8
-        
-        group_scores.append((best_bpm, total_strength * bonus))
-    
-    # Sort by score
-    group_scores.sort(key=lambda x: x[1], reverse=True)
-    
-    best_bpm = group_scores[0][0]
-    best_bpm = max(60.0, min(200.0, best_bpm))
-    
-    return round(best_bpm, 1)
+
+    # Parabolic interpolation around the chosen lag for sub-frame precision
+    lag = float(best_lag)
+    if 1 <= best_lag < max_lag:
+        y0, y1, y2 = acorr[best_lag - 1], acorr[best_lag], acorr[best_lag + 1]
+        denom = y0 - 2.0 * y1 + y2
+        if denom != 0.0:
+            delta = 0.5 * (y0 - y2) / denom
+            if -1.0 < delta < 1.0:
+                lag = best_lag + delta
+
+    bpm_val = 60.0 * fps / lag
+    bpm_val = max(40.0, min(220.0, bpm_val))
+    return round(bpm_val, 1)
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
