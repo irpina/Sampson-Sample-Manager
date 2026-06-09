@@ -421,7 +421,9 @@ class SampsonAPI:
             return {"success": False, "error": str(e)}
 
     def slicer_close(self) -> dict:
-        """Close the slicer modal."""
+        """Close the slicer modal: stop playback and clean up the preview temp."""
+        playback.stop()
+        slicer.cleanup_preview_temp()
         state.set("slicer_open", False)
         return {"success": True}
 

@@ -22,6 +22,18 @@ from conversion import _find_ffmpeg_path
 _last_preview_temp: str | None = None
 
 
+def cleanup_preview_temp() -> None:
+    """Delete the last slice-preview temp WAV. Called when the slicer closes so
+    the file doesn't linger in the temp dir."""
+    global _last_preview_temp
+    if _last_preview_temp and os.path.exists(_last_preview_temp):
+        try:
+            os.unlink(_last_preview_temp)
+        except Exception:
+            pass
+    _last_preview_temp = None
+
+
 def get_audio_samples(path: str, n_points: int = 4000) -> dict[str, Any]:
     """Extract downsampled waveform data for visualization.
     
