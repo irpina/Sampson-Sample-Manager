@@ -6,9 +6,22 @@
   </picture>
 </p>
 
-**Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux, macOS) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, convert formats for specific devices, preview exactly how they'll be renamed and structured, then copy or move them in one click.
+**Universal Audio Sample Manager** — a cross-platform desktop app (Windows, Linux, macOS) for organising audio sample libraries for hardware samplers. Browse a source library, hear files before you move them, convert formats on the fly, preview exactly how everything will be renamed and structured, then copy or move it all in one click.
 
 > Pre-built binaries for **Windows** (`.exe`), **macOS** (`.app`), and **Linux** available on the [Releases](https://github.com/irpina/Sampson-Sample-Manager/releases) page — no Python required.
+
+---
+
+## What's new in v1.0
+
+| | |
+|---|---|
+| **Sample Slicer** | Visual waveform editor — chop loops into slices by transient, BPM, fixed length, or manually. Drag boundaries, undo edits, real seek, playhead tracking. |
+| **Audition Stack** | Layer up to 4 samples and preview the mix. Per-track pitch shift, BPM stretch, volume, and offset before you commit. |
+| **Sync System** | Keep a destination (SD card, folder) in sync with your processed source — additive or mirror mode, full diff preview before writing. Auto-detects previously synced destinations. |
+| **Duplicate detection** | SHA-256 content hashing catches identical files across any filename. Skips re-copies and cleans up existing duplicates in the destination. |
+| **BPM & Key — rewritten** | Onset-novelty autocorrelation (BPM) and Goertzel chroma + Krumhansl-Schmuckler matching (Key). Validated against synthetic ground truth — atonal/percussive samples no longer get a random key label. |
+| **New UI** | Rebuilt on PyWebView + HTML/CSS/JS. Bundled Inter + JetBrains Mono fonts for consistent cross-platform rendering. Native app icon on all platforms. |
 
 ---
 
@@ -199,7 +212,7 @@ SAMPSON/
 ├── operations.py        # file copy/move/conversion worker
 ├── browser.py           # Deck A file browser — navigation and browse dialogs
 ├── preview.py           # Deck B rename preview, hover tooltip, background scan
-├── bpm.py               # BPM detection engine (energy-envelope autocorrelation)
+├── bpm.py               # BPM detection engine (onset-novelty autocorrelation + comb filter)
 ├── key.py               # Musical key / root-note detection
 ├── playback.py          # audio playback via pygame-ce (Linux) or NSSound (macOS)
 ├── settings.py          # Persistent app settings (last source + destination)
