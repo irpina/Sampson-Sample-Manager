@@ -950,13 +950,17 @@ body.light-mode .sync-action-skip { color: var(--text-muted) !important; }
   position: relative;
   width: 90%;
   max-width: 1200px;
-  height: 85%;
+  height: 90%;
+  max-height: 96vh;
   background: var(--bg-root);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Scroll the whole modal as a last resort on very short (high-DPI) viewports
+     so the Auto Slice / Export controls are never unreachable. */
+  overflow-x: hidden;
+  overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
@@ -968,6 +972,7 @@ body.light-mode .sync-action-skip { color: var(--text-muted) !important; }
   padding: 0.75rem 1rem;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .slicer-title {
@@ -993,7 +998,10 @@ body.light-mode .sync-action-skip { color: var(--text-muted) !important; }
 /* Waveform */
 .slicer-waveform-container {
   position: relative;
-  height: 180px;
+  /* Shrink on short viewports (high-DPI scaling) so the controls below
+     keep usable height; never below 110px or above 180px. */
+  height: clamp(110px, 20vh, 180px);
+  flex-shrink: 0;
   background: var(--bg-surface);
   margin: 0.75rem;
   border: 1px solid var(--border);
@@ -1062,6 +1070,7 @@ body.light-mode .slicer-slice-row.selected {
   align-items: center;
   gap: 0.75rem;
   padding: 0 0.75rem 0.5rem;
+  flex-shrink: 0;
 }
 
 .slicer-time {
@@ -1081,7 +1090,9 @@ body.light-mode .slicer-slice-row.selected {
   flex: 1;
   gap: 0.75rem;
   padding: 0 0.75rem;
-  min-height: 0;
+  /* Keep a usable height instead of collapsing to ~0 when space is tight;
+     the panels inside scroll internally. */
+  min-height: 160px;
   overflow: hidden;
 }
 
@@ -1106,6 +1117,8 @@ body.light-mode .slicer-slice-row.selected {
 
 .slicer-panel:first-child {
   flex: 0 0 280px;
+  /* Auto Slice panel scrolls internally so its fields + button stay reachable */
+  overflow-y: auto;
 }
 
 .slicer-slice-list {
@@ -1203,6 +1216,8 @@ body.light-mode .slicer-slice-row.selected {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  /* Always keep the export row (incl. Export All) visible */
+  flex-shrink: 0;
 }
 
 .slicer-export-row {
@@ -1246,6 +1261,7 @@ body.light-mode .slicer-slice-row.selected {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   align-items: center;
+  flex-shrink: 0;
 }
 
 /* Light mode adjustments */
