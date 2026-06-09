@@ -80,16 +80,15 @@ def main():
     api = SampsonAPI()
     
     # Determine UI path (works both in dev and PyInstaller bundle)
-    if getattr(sys, 'frozen', False):
-        # Running in PyInstaller bundle
-        bundle_dir = sys._MEIPASS
-        ui_path = os.path.join(bundle_dir, 'ui', 'index.html')
-        icon_path = os.path.join(bundle_dir, 'ui', 'icon.png')
-    else:
-        # Running in dev
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        ui_path = os.path.join(script_dir, 'ui', 'index.html')
-        icon_path = os.path.join(script_dir, 'ui', 'icon.png')
+    base_dir = sys._MEIPASS if getattr(sys, 'frozen', False) \
+        else os.path.dirname(os.path.abspath(__file__))
+    ui_path = os.path.join(base_dir, 'ui', 'index.html')
+    # Runtime window icon: only the Qt/GTK (Linux) backend takes a PNG safely.
+    # The Windows EdgeChromium backend feeds the path to System.Drawing.Icon,
+    # which rejects PNGs (and only an .ico would work) — so we skip it there;
+    # the packaged .exe already carries the icon (SAMPSON.spec). macOS uses the
+    # .app bundle icon. This avoids a hard crash at window start.
+    icon_path = os.path.join(base_dir, 'ui', 'icon.png') if sys.platform == 'linux' else None
     
     # Create window
     window = webview.create_window(
@@ -123,7 +122,7 @@ def main():
         http_server=False,
         gui='edgechromium' if sys.platform == 'win32' else ('qt' if sys.platform == 'linux' else 'cocoa'),
     )
-    if os.path.exists(icon_path):
+    if icon_path and os.path.exists(icon_path):
         start_kwargs['icon'] = icon_path
     try:
         webview.start(**start_kwargs)
