@@ -91,11 +91,13 @@ def navigate_to(path_str: str) -> dict[str, any]:
     except PermissionError:
         pass
 
-    # Update state
+    # Update state. Note: src_count (Deck A's "N audio files" label) is the
+    # recursive total of audio files under the source, owned + pushed by the
+    # preview scan — not the current folder's direct file count, which would
+    # read "0 audio files" whenever the source's files live in subfolders.
     state._state["dir_entries"] = entries
-    state._state["src_count"] = audio_count
     state._sync_selected_folders()
-    state.push_keys(["dir_entries", "src_count", "selected_folders", "active_dir"])
+    state.push_keys(["dir_entries", "selected_folders", "active_dir"])
     
     # Trigger preview refresh
     preview.refresh()

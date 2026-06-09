@@ -225,8 +225,14 @@ def apply_filter(text: str = ""):
     # Apply max preview rows limit when no query
     display_rows = matched if has_query else matched[:constants.MAX_PREVIEW_ROWS]
     
-    # Push to state (both together to ensure sync)
-    state.update({"preview_entries": display_rows, "preview_count": len(display_rows)})
+    # Push to state (together to ensure sync). src_count is the recursive total
+    # of audio files found under the source (Deck A's "N audio files" label) —
+    # the preview owns it, since Deck A alone only sees the current folder.
+    state.update({
+        "preview_entries": display_rows,
+        "preview_count": len(display_rows),
+        "src_count": len(_preview_rows),
+    })
     
     # Update status message
     total_cached = len(_preview_rows)
