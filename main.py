@@ -1,4 +1,4 @@
-"""SAMPSON v1.0.0 — PyWebView entry point."""
+"""SAMPSON — PyWebView entry point. Version lives in constants.VERSION."""
 
 from __future__ import annotations
 

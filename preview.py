@@ -19,7 +19,11 @@ from conversion import get_target_extension
 # ── Module state ─────────────────────────────────────────────────────────────
 
 _preview_rows: list = []   # All row data for filtering/sorting
-_duration_cache: dict = {}  # str(path) → float | None
+# str(path) → (mtime, duration | None). Persists across scans — MP3/FLAC/OGG
+# durations cost an ffprobe subprocess each, so re-navigating a big folder
+# should not repay them. Invalidated per-file by mtime.
+_duration_cache: dict[str, tuple[float, float | None]] = {}
+_DURATION_CACHE_MAX = 50000
 _sort_col: str | None = None  # "bpm" | "key" | "duration" | None
 _sort_asc: bool = True
 _name_overrides: dict[str, str] = {}  # srcpath → manual dest stem
@@ -28,12 +32,50 @@ _scan_gen: int = 0  # Generation counter to cancel stale scans
 
 # ── Duration & helpers ───────────────────────────────────────────────────────
 
+def _aiff_duration(path: Path) -> float | None:
+    """Read duration from an AIFF/AIFC COMM chunk.
+
+    Hand-rolled because the stdlib aifc module was removed in Python 3.13.
+    """
+    import struct
+    with open(path, 'rb') as fh:
+        if fh.read(4) != b'FORM':
+            return None
+        fh.read(4)  # FORM size
+        if fh.read(4) not in (b'AIFF', b'AIFC'):
+            return None
+        while True:
+            head = fh.read(8)
+            if len(head) < 8:
+                return None
+            ck_id, ck_size = head[:4], struct.unpack('>I', head[4:])[0]
+            if ck_id == b'COMM':
+                data = fh.read(18)
+                if len(data) < 18:
+                    return None
+                frames = struct.unpack('>I', data[2:6])[0]
+                # Sample rate is an 80-bit IEEE 754 extended float
+                exp = struct.unpack('>H', data[8:10])[0] & 0x7FFF
+                mantissa = struct.unpack('>Q', data[10:18])[0]
+                if exp == 0 and mantissa == 0:
+                    return None
+                rate = mantissa * 2.0 ** (exp - 16383 - 63)
+                return frames / rate if rate > 0 else None
+            fh.seek(ck_size + (ck_size & 1), 1)  # chunks are word-aligned
+
+
 def _get_duration(path: Path) -> float | None:
     """Return duration in seconds from file metadata."""
     key = str(path)
-    if key in _duration_cache:
-        return _duration_cache[key]
-    
+    try:
+        mtime = path.stat().st_mtime
+    except OSError:
+        return None
+
+    hit = _duration_cache.get(key)
+    if hit is not None and hit[0] == mtime:
+        return hit[1]
+
     val = None
     try:
         ext = path.suffix.lower()
@@ -41,9 +83,7 @@ def _get_duration(path: Path) -> float | None:
             with contextlib.closing(wave.open(str(path))) as wf:
                 val = wf.getnframes() / wf.getframerate()
         elif ext in ('.aif', '.aiff'):
-            import aifc
-            with contextlib.closing(aifc.open(str(path))) as af:
-                val = af.getnframes() / af.getframerate()
+            val = _aiff_duration(path)
         else:
             # Windows: Patch pydub's subprocess calls
             if sys.platform == "win32":
@@ -66,8 +106,10 @@ def _get_duration(path: Path) -> float | None:
             val = float(dur) if dur else None
     except Exception:
         val = None
-    
-    _duration_cache[key] = val
+
+    if len(_duration_cache) >= _DURATION_CACHE_MAX:
+        _duration_cache.clear()
+    _duration_cache[key] = (mtime, val)
     return val
 
 
@@ -330,11 +372,10 @@ def refresh():
 
 def _scan_thread(path_str: str, gen: int):
     """Background thread to scan files and compute preview."""
-    global _duration_cache, _preview_rows
+    global _preview_rows
     if gen != _scan_gen:
         return
-    _duration_cache = {}
-    
+
     source_root = Path(path_str)
     selected = state.get("selected_folders", [])
     
