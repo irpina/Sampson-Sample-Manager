@@ -201,25 +201,38 @@ class SampsonAPI:
     def run(self) -> dict:
         """Start the file operation in a background thread."""
         try:
-            # Validate
-            source = state.get("source")
+            if state.get("is_running") or state.get("sync_in_progress"):
+                return {"success": False, "error": "An operation is already running"}
+
+            # Validate against active_dir — the directory run_tool operates on
+            source = state.get("active_dir") or state.get("source")
             dest = state.get("dest")
-            
+
             if not source or not Path(source).is_dir():
                 return {"success": False, "error": "Please select a valid source folder"}
-            
+
             if not dest or not Path(dest).is_dir():
                 return {"success": False, "error": "Please select a valid destination folder"}
-            
-            if source == dest:
+
+            dest_res = Path(dest).resolve()
+            if Path(source).resolve() == dest_res:
                 return {"success": False, "error": "Source and destination cannot be the same"}
-            
+
+            # Destination inside a selected folder would copy files onto themselves
+            for folder in state.get("selected_folders", []):
+                f_res = Path(folder).resolve()
+                if f_res == dest_res or f_res in dest_res.parents:
+                    return {"success": False,
+                            "error": "Destination cannot be inside a selected source folder"}
+
             # Check ffmpeg if conversion enabled
             if state.get("convert_enabled") and not check_ffmpeg():
                 return {"success": False, "error": "FFmpeg not found. Conversion requires FFmpeg."}
-            
-            # Start in thread
+
+            # Start in thread. Claim is_running here (not in the thread) so a
+            # second call cannot slip through before the worker starts.
             import threading
+            state.set("is_running", True)
             state.set_status("Running...", 0)
             thread = threading.Thread(target=operations.run_tool, daemon=True)
             thread.start()

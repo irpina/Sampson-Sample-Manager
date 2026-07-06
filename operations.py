@@ -99,20 +99,22 @@ def run_tool():
     """Main entry point — validates inputs and starts worker thread."""
     state.set("is_running", True)
     
-    source_str = state.get("active_dir", "").strip()
+    source_str = (state.get("active_dir", "") or state.get("source", "")).strip()
     dest_str = state.get("dest", "").strip()
-    
+
     source = Path(source_str) if source_str else None
     dest = Path(dest_str) if dest_str else None
 
     if not source or not source.is_dir():
         state.add_log("Error: Please navigate to a source directory in Deck A", "error")
         state.set_status("Error: No source directory", 0)
+        state.set("is_running", False)
         return
-    
+
     if not dest or not dest.is_dir():
         state.add_log("Error: Please select a valid destination folder in Deck B", "error")
         state.set_status("Error: No destination directory", 0)
+        state.set("is_running", False)
         return
 
     selected_folders = state.get("selected_folders", [])
@@ -186,9 +188,20 @@ def _hash_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mode,
-                convert_options=None, bpm_enabled=False, bpm_append=False, bpm_fresh=False,
-                key_enabled=False, key_append=False, key_fresh=False, custom_prefix=""):
+def _run_worker(*args, **kwargs):
+    """Background worker wrapper — guarantees is_running is reset on any exit."""
+    try:
+        _run_worker_impl(*args, **kwargs)
+    except Exception as e:
+        state.add_log(f"Operation error: {e}", "error")
+        state.set_status(f"Operation failed: {e}", 0)
+    finally:
+        state.set("is_running", False)
+
+
+def _run_worker_impl(source, dest, move_files, dry, path_limit, no_rename, struct_mode,
+                     convert_options=None, bpm_enabled=False, bpm_append=False, bpm_fresh=False,
+                     key_enabled=False, key_append=False, key_fresh=False, custom_prefix=""):
     """Background worker for file operations."""
     files = []
     selected_folders = state.get("selected_folders", [])
@@ -368,8 +381,7 @@ def _run_worker(source, dest, move_files, dry, path_limit, no_rename, struct_mod
     
     state.add_log("Done.", "success")
     state.set_status(f"Complete — {total} file{s} processed.", 100)
-    state.set("is_running", False)
-    
+
     # Refresh preview if BPM was detected
     if bpm_enabled and state._refresh_preview_cb:
         state._refresh_preview_cb()
@@ -449,7 +461,7 @@ def auto_sync_check(dest: Path):
 
 def compute_sync_plan():
     """Public entry point — validates inputs and starts plan computation thread."""
-    source_str = state.get("active_dir", "").strip()
+    source_str = (state.get("active_dir", "") or state.get("source", "")).strip()
     dest_str = state.get("dest", "").strip()
     
     source = Path(source_str) if source_str else None
@@ -547,8 +559,10 @@ def _sync_plan_worker(source: Path, dest: Path):
         plan = []
         expected_dest_files = set()  # Track expected files for mirror mode
         
-        # Destination flat dedup: scan top level for duplicates, add DELETE entries
-        if dedup_enabled and dest and dest.is_dir():
+        # Destination flat dedup: scan top level for duplicates, add DELETE entries.
+        # Mirror mode only — additive mode promises to leave existing
+        # destination files untouched.
+        if dedup_enabled and sync_mode == "mirror" and dest and dest.is_dir():
             dest_files = [f for f in dest.iterdir()
                           if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS]
             
@@ -749,6 +763,9 @@ def run_sync():
     
     if state.get("sync_in_progress", False):
         return {"success": False, "error": "Sync already in progress."}
+
+    if state.get("is_running", False):
+        return {"success": False, "error": "An operation is already running."}
     
     plan = state.get("sync_plan", [])
     if not plan:
@@ -790,45 +807,58 @@ def _run_sync_worker(plan: list):
             }
         
         move_files = state.get("move", False)
-        
+        dry = state.get("dry", True)
+        dry_prefix = "[DRY] " if dry else ""
+
         # Filter to only actionable items
         actionable = [p for p in plan if p["action"] in ("add", "update", "delete")]
         total = len(actionable)
-        
+
         if total == 0:
             state.add_log("Sync: Nothing to do — all files up to date.", "success")
             state.set_status("Sync complete — nothing to do", 100)
             state.set("sync_in_progress", False)
             return
-        
+
         processed = 0
-        
+
         for entry in actionable:
             action = entry["action"]
             dest_path = Path(entry["dest_path"])
-            
+
             if action == "delete":
-                try:
-                    dest_path.unlink()
-                    state.add_log(f"DELETE: {entry['dest_display']}")
-                except Exception as e:
-                    state.add_log(f"ERROR: Failed to delete {entry['dest_display']}: {e}", "error")
-                
+                if dry:
+                    state.add_log(f"{dry_prefix}DELETE: {entry['dest_display']}")
+                else:
+                    try:
+                        dest_path.unlink()
+                        state.add_log(f"DELETE: {entry['dest_display']}")
+                    except Exception as e:
+                        state.add_log(f"ERROR: Failed to delete {entry['dest_display']}: {e}", "error")
+
                 processed += 1
                 progress_pct = int(processed / total * 100)
                 state.set_status(f"Syncing... {processed}/{total}", progress_pct)
                 continue
-            
+
             # Add or Update
             srcpath = Path(entry["srcpath"]) if entry["srcpath"] else None
             if not srcpath or not srcpath.exists():
                 state.add_log(f"ERROR: Source file not found: {entry['src_name']}", "error")
                 processed += 1
                 continue
-            
+
+            if dry:
+                action_label = "ADD" if action == "add" else "UPDATE"
+                state.add_log(f"{dry_prefix}{action_label}: {entry['src_name']} → {entry['dest_display']}")
+                processed += 1
+                progress_pct = int(processed / total * 100)
+                state.set_status(f"Syncing... {processed}/{total}", progress_pct)
+                continue
+
             # Ensure parent directory exists
             dest_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             if convert_options:
                 try:
                     success = convert_file(srcpath, dest_path, **convert_options)
@@ -857,15 +887,22 @@ def _run_sync_worker(plan: list):
             progress_pct = int(processed / total * 100)
             state.set_status(f"Syncing... {processed}/{total}", progress_pct)
         
+        if dry:
+            # Keep the plan so the user can turn off Dry run and execute it
+            state.add_log("Sync dry run complete — no files were written or deleted. "
+                          "Turn off Dry run to execute.", "success")
+            state.set_status(f"Sync dry run — {processed} actions previewed", 100)
+            return
+
         # Clean up empty directories in mirror mode
         if state.get("sync_mode") == "mirror":
             dest = Path(state.get("dest", ""))
             if dest and dest.is_dir():
                 _cleanup_empty_dirs(dest)
-        
+
         state.add_log("Sync complete.", "success")
         state.set_status(f"Sync complete — {processed} files processed", 100)
-        
+
         # Clear plan after successful execution
         state.update({
             "sync_plan": [],
