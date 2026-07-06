@@ -59,6 +59,8 @@ def _entry_valid(path):
 
 
 def _store(path, key_val):
+    """Cache a result. key_val may be None — a cached negative ("atonal /
+    percussive") stops every later run from re-decoding and re-analysing."""
     global _cache_dirty
     try:
         _cache[str(path)] = {"mtime": path.stat().st_mtime, "key": key_val}
@@ -212,12 +214,15 @@ def get_cached_key(path):
 
 def detect_key(path, force=False):
     _load_cache()
-    if not force:
-        cached = get_cached_key(path)
+    if not force and _entry_valid(path):
+        cached = _cache[str(path)]["key"]
         if cached is not None:
             _log(f"[KEY] CACHE: {path.name} = {cached}")
             return cached
-    
+        # Cached negative: analysis already ran and found no clear pitch
+        _log(f"[KEY] CACHE: {path.name} = atonal/percussive (cached)")
+        return None
+
     _log(f"[KEY] Analyzing: {path.name}")
     
     if not _find_ffmpeg_path():
@@ -250,12 +255,16 @@ def detect_key(path, force=False):
 
         if len(audio) < 250:   # < 250 ms after downsampling
             _log(f"[KEY] {path.name}: too short ({len(audio)} ms), skipping")
+            _store(path, None)
             return None
 
         key_val = _detect_key_algorithm(audio)
 
         if key_val is None:
+            # Deterministic for this content — cache the negative so re-runs
+            # skip the (expensive) re-decode and chroma analysis.
             _log(f"[KEY] {path.name}: no clear pitch detected (likely percussion)")
+            _store(path, None)
             return None
         
         _log(f"[KEY] DETECTED: {key_val}")

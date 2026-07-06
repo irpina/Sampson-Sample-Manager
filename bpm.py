@@ -59,9 +59,14 @@ def _entry_valid(path):
 
 
 def _store(path, bpm_val):
+    """Cache a result. bpm_val may be None — a cached negative ("no reliable
+    tempo") stops every later run from re-decoding and re-analysing the file."""
     global _cache_dirty
     try:
-        _cache[str(path)] = {"mtime": path.stat().st_mtime, "bpm": float(bpm_val)}
+        _cache[str(path)] = {
+            "mtime": path.stat().st_mtime,
+            "bpm": float(bpm_val) if bpm_val is not None else None,
+        }
         _cache_dirty = True
     except Exception:
         pass
@@ -99,6 +104,14 @@ _BPM_PRIOR_SIGMA = 0.9     # octaves
 # no onset); only *halving* needs the prior. Centre 120 favours the common
 # 70-140 BPM range. Trade-off: very fast tempos (~165+) may be reported at
 # half-time, and sparse/sustained loops can occasionally land on a subdivision.
+
+# Confidence gates — reject non-rhythmic content (pads, drones, noise) rather
+# than assigning it a meaningless tempo. Validated on synthetic ground truth:
+# rhythmic material combs >= ~0.7 with a near-zero median across the lag
+# range; white noise maxes ~0.04; sustained drones sit flat at 0.17-0.52
+# median. BPM_DEBUG=1 prints the gate metrics.
+_BPM_MIN_COMB = 0.25        # peak comb score below this = no beat structure
+_BPM_MAX_FLAT_MEDIAN = 0.12  # median comb above this = flat landscape (drone)
 
 
 def _onset_envelope(samples, sr, max_val):
@@ -184,9 +197,9 @@ def _detect_bpm_algorithm(audio) -> Optional[float]:
 
     # Comb-filter score: a true beat period L shows autocorrelation peaks at
     # L, 2L, 3L… Summing them reinforces the fundamental and suppresses
-    # spurious double/half-tempo candidates. Weighted by the perceptual prior.
+    # spurious double/half-tempo candidates.
     comb_weights = ((1, 1.0), (2, 0.8), (3, 0.6), (4, 0.4))
-    best_lag, best_score = None, -1.0
+    comb_scores = []  # (lag, prior-free comb score)
     for lag in range(lag_lo, lag_hi + 1):
         comb = 0.0
         wsum = 0.0
@@ -201,10 +214,27 @@ def _detect_bpm_algorithm(audio) -> Optional[float]:
                 hi = min(max_lag, kl + 1)
                 comb += wk * max(acorr[lo:hi + 1])
                 wsum += wk
-        if wsum <= 0:
-            continue
-        bpm_here = 60.0 * fps / lag
-        score = (comb / wsum) * _tempo_prior(bpm_here)
+        if wsum > 0:
+            comb_scores.append((lag, comb / wsum))
+
+    if not comb_scores:
+        return None
+
+    # Confidence gate: rhythmic material shows one strong comb peak over a
+    # near-zero median; noise combs weakly everywhere; sustained drones comb
+    # strongly *everywhere* (flat landscape). Reject both rather than
+    # labelling a pad "146 BPM".
+    max_comb = max(c for _, c in comb_scores)
+    median_comb = statistics.median(c for _, c in comb_scores)
+    if os.environ.get("BPM_DEBUG"):
+        print(f"[BPM] max_comb={max_comb:.3f} median_comb={median_comb:.3f}")
+    if max_comb < _BPM_MIN_COMB or median_comb > _BPM_MAX_FLAT_MEDIAN:
+        return None
+
+    # Pick the best lag, weighted by the perceptual tempo prior
+    best_lag, best_score = None, -1.0
+    for lag, comb in comb_scores:
+        score = comb * _tempo_prior(60.0 * fps / lag)
         if score > best_score:
             best_score = score
             best_lag = lag
@@ -232,18 +262,22 @@ def _detect_bpm_algorithm(audio) -> Optional[float]:
 def get_cached_bpm(path):
     _load_cache()
     if _entry_valid(path):
-        return float(_cache[str(path)]["bpm"])
+        val = _cache[str(path)]["bpm"]
+        return float(val) if val is not None else None
     return None
 
 
 def detect_bpm(path, force=False):
     _load_cache()
-    if not force:
-        cached = get_cached_bpm(path)
+    if not force and _entry_valid(path):
+        cached = _cache[str(path)]["bpm"]
         if cached is not None:
-            _log(f"[BPM] CACHE: {path.name} = {cached:.1f} BPM")
-            return cached
-    
+            _log(f"[BPM] CACHE: {path.name} = {float(cached):.1f} BPM")
+            return float(cached)
+        # Cached negative: analysis already ran and found no reliable tempo
+        _log(f"[BPM] CACHE: {path.name} = no reliable tempo (cached)")
+        return None
+
     _log(f"[BPM] Analyzing: {path.name}")
     
     if not _find_ffmpeg_path():
@@ -265,18 +299,23 @@ def detect_bpm(path, force=False):
         
         audio = audio.set_channels(1)
         
-        # Skip files too short for reliable BPM detection
+        # Skip files too short for reliable BPM detection. Deterministic for
+        # this file content, so cache the negative.
         if len(audio) < MIN_BPM_DURATION_MS:
             _log(f"[BPM] SKIP: {path.name} too short ({len(audio)}ms < {MIN_BPM_DURATION_MS}ms)")
+            _store(path, None)
             return None
-        
+
         if len(audio) > 60000:
             audio = audio[:60000]
-        
+
         bpm_val = _detect_bpm_algorithm(audio)
-        
+
         if bpm_val is None:
-            _log(f"[BPM] ERROR: Detection failed")
+            # No beat structure found (gated pad/drone/noise, or too sparse).
+            # Deterministic — cache the negative so re-runs skip the analysis.
+            _log(f"[BPM] {path.name}: no reliable tempo (non-rhythmic content)")
+            _store(path, None)
             return None
         
         _log(f"[BPM] DETECTED: {bpm_val:.1f} BPM")

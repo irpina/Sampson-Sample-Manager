@@ -154,7 +154,8 @@ Wraps **pydub** with **ffmpeg** as backend:
 Onset-novelty autocorrelation — no `numpy`/`librosa`. Delegates ffmpeg discovery to `conversion._find_ffmpeg_path()`.
 - Pipeline: downsample to 11025 Hz → half-wave-rectified log-energy flux (onset function, mean-removed) → autocorrelation → comb-filter score (period + 2×/3×/4× harmonics) weighted by a log-Gaussian tempo prior (centre 120) → parabolic interpolation. Returns BPM clamped 40–220.
 - The comb blocks tempo *doubling*; only *halving* is governed by the prior (so ~165+ BPM may read at half-time). Tuning constants: `_BPM_PRIOR_CENTER`, `_BPM_PRIOR_SIGMA`.
-- Cache: `~/.sampson/bpm_cache.json` (keyed by path + mtime)
+- Confidence gate (`_BPM_MIN_COMB`, `_BPM_MAX_FLAT_MEDIAN`): non-rhythmic content (pads/drones/noise) returns `None` instead of a bogus tempo. `BPM_DEBUG=1` prints gate metrics.
+- Cache: `~/.sampson/bpm_cache.json` (keyed by path + mtime). Negative results (`bpm: null`) are cached too, so re-runs skip re-decoding non-rhythmic files.
 - Files shorter than `MIN_BPM_DURATION_MS` (3000ms default, in `constants.py`) are skipped — one-shots too short for reliable detection
 - API: `detect_bpm(path, force=False)`, `get_cached_bpm()`, `set_cached_bpm()`, `flush_cache()`
 - Manual override: double-click BPM cell in Deck B
@@ -163,7 +164,7 @@ Onset-novelty autocorrelation — no `numpy`/`librosa`. Delegates ffmpeg discove
 
 Goertzel chroma + Krumhansl-Schmuckler key-profile correlation. Pure Python (no FFT/numpy).
 - Pipeline: downsample to 8 kHz → Goertzel DFT magnitude at every semitone C2–B5 (exact frequency, no integer-lag error) → octave-fold into a 12-bin chroma → correlate against the 24 major/minor key profiles → tonic = best match. Confidence-gated (`_KEY_MIN_PEAK_RATIO`, `_KEY_MIN_CORR`): atonal/percussive content returns `None` rather than a bogus key. `KEY_DEBUG=1` prints gate metrics.
-- Cache: `~/.sampson/key_cache.json`
+- Cache: `~/.sampson/key_cache.json` — negative results (`key: null`) are cached, so re-runs skip re-analysing percussive files
 - API: `detect_key(path, force=False)`, `get_cached_key()`, `set_cached_key()`, `flush_cache()`
 
 ### Audition Stack (`audition.py`)
