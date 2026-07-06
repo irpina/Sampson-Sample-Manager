@@ -155,7 +155,13 @@ def stop() -> None:
         _ns_sound = None
     else:
         _mixer.music.stop()
-    
+        # Release the file handle — on Windows, a loaded file stays locked
+        # and can't be moved/deleted by a subsequent run
+        try:
+            _mixer.music.unload()
+        except Exception:
+            pass
+
     state._state["is_playing"] = False
     state._is_playing = False
     state.push_keys(["is_playing"])

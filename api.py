@@ -1,4 +1,4 @@
-"""PyWebView API bridge — Python ↔ JS interface for SAMPSON v0.10.0"""
+"""PyWebView API bridge — Python ↔ JS interface for SAMPSON."""
 
 from __future__ import annotations
 

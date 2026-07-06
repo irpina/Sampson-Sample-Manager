@@ -13,7 +13,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-There is no test suite. Per-module developer reference docs live in `docs/` (state.md, api.md, browser.md, preview.md, operations.md, bpm.md, key.md, conversion.md, playback.md, ui.md, constants.md).
+Run the test suite with `python -m pytest tests/` (pure-logic tests — only pytest needed, no app dependencies). CI runs it on Ubuntu + Windows (`.github/workflows/test.yml`). Per-module developer reference docs live in `docs/` (state.md, api.md, browser.md, preview.md, operations.md, bpm.md, key.md, conversion.md, playback.md, ui.md, constants.md).
 
 ## Build
 
@@ -65,14 +65,14 @@ Linux runtime deps for audio: `libsdl2-2.0-0 libsdl2-mixer-2.0-0` (apt) or `SDL2
 
 ```
 constants.py   ← no imports
-state.py       ← no app imports
+state.py       → constants (only)
 settings.py    ← stdlib only
 conversion.py  → state
 slicer.py      → state, conversion
 bpm.py         → conversion
 key.py         → conversion
 audition.py    → state, bpm
-operations.py  → state, constants, conversion, bpm, key
+operations.py  → state, constants, conversion, bpm, key (preview imported lazily — never at module level, it would be circular)
 preview.py     → state, constants, operations, bpm, key, conversion
 browser.py     → state, constants, preview
 playback.py    → state
@@ -85,9 +85,10 @@ main.py        → state, api
 All shared mutable state lives in a single Python dict in `state.py`. **Never** scatter state across modules.
 
 - **Sync to JS:** call `state.push_keys(['key1', 'key2'])` (or `state.push_keys()` for all) — this calls `window.evaluate_js('window._onStateUpdate(...)')` to patch the JS `APP_STATE`.
-- **Reading state in Python:** `state.get('key')` or `state._store['key']`
-- **Setting state in Python:** `state.set('key', value)` — does NOT auto-push to JS; caller must push.
-- **Compatibility shim:** `state._VarCompat` allows legacy `.get()/.set()` call patterns.
+- **Reading state in Python:** `state.get('key')`
+- **Setting state in Python:** `state.set('key', value)` — pushes to JS by default; pass `push=False` to batch, then `state.push_keys([...])` once.
+- **Thread safety:** all state access goes through an RLock in `state.py`; workers in daemon threads can call `get`/`set`/`update`/`add_log` freely.
+- **Log lines:** `state.add_log()` pushes only the new entry as `{log_append: entry}`; `app.js` appends it to the DOM without re-rendering the panel.
 
 Key state fields: `source`, `dest`, `active_dir`, `selected_folders`, `move`, `dry`, `modify_names`, `custom_prefix`, `profile`, `struct_mode`, `convert_*`, `bpm_*`, `key_*`, `dedup_enabled`, `status`, `progress`, `is_running`, `is_dark`, `dir_entries`, `preview_entries`, `log_lines`, `sync_mode`, `sync_plan`, `sync_plan_ready`, `sync_plan_counts`, `sync_in_progress`, `sync_show_plan`, `sync_auto_detected`.
 

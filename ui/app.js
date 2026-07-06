@@ -1,4 +1,4 @@
-/* SAMPSON v1.0.0 — Frontend controller */
+/* SAMPSON — Frontend controller. Version comes from Python via APP_STATE.app_version. */
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -46,7 +46,10 @@ async function init() {
   Object.assign(APP_STATE, initialState);
   
   renderAll();
-  log("SAMPSON v1.0.0 ready", "info");
+  const version = APP_STATE.app_version ? `v${APP_STATE.app_version}` : '';
+  const versionEl = $('.version');
+  if (versionEl && version) versionEl.textContent = version;
+  log(`SAMPSON ${version} ready`, "info");
   pywebview.api.on_ready();
 }
 
@@ -54,6 +57,11 @@ async function init() {
 // State sync from Python
 // ---------------------------------------------------------------------------
 window._onStateUpdate = function(patch) {
+  if (patch.log_append) {
+    appendLog(patch.log_append);
+    delete patch.log_append;
+    if (Object.keys(patch).length === 0) return;
+  }
   Object.assign(APP_STATE, patch);
   renderPatch(patch);
 };
@@ -295,21 +303,40 @@ function renderStatus() {
 // ---------------------------------------------------------------------------
 // Log Panel
 // ---------------------------------------------------------------------------
+function logLineHtml(line) {
+  const time = new Date(line.time).toLocaleTimeString();
+  return `<div class="log-line ${line.type}">[${time}] ${escapeHtml(line.message)}</div>`;
+}
+
 function renderLog() {
   const output = $('#log-output');
   const lines = APP_STATE.log_lines || [];
-  
+
   // Only update if changed (simple check)
   const currentHtml = output.innerHTML;
-  const newHtml = lines.map(line => {
-    const time = new Date(line.time).toLocaleTimeString();
-    return `<div class="log-line ${line.type}">[${time}] ${escapeHtml(line.message)}</div>`;
-  }).join('');
-  
+  const newHtml = lines.map(logLineHtml).join('');
+
   if (currentHtml !== newHtml) {
     output.innerHTML = newHtml;
     output.scrollTop = output.scrollHeight;
   }
+}
+
+// Append a single log entry without re-rendering the whole panel —
+// Python pushes {log_append: entry} for each new line.
+function appendLog(entry) {
+  APP_STATE.log_lines = APP_STATE.log_lines || [];
+  APP_STATE.log_lines.push(entry);
+  if (APP_STATE.log_lines.length > 500) {
+    APP_STATE.log_lines = APP_STATE.log_lines.slice(-500);
+  }
+  const output = $('#log-output');
+  if (!output) return;
+  output.insertAdjacentHTML('beforeend', logLineHtml(entry));
+  while (output.children.length > 500) {
+    output.removeChild(output.firstChild);
+  }
+  output.scrollTop = output.scrollHeight;
 }
 
 // ---------------------------------------------------------------------------

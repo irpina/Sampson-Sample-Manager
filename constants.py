@@ -1,3 +1,4 @@
+VERSION          = "1.0.0"  # Single source of truth — UI reads it via app_version state
 AUDIO_EXTS       = {".wav", ".aiff", ".aif", ".flac", ".mp3", ".ogg"}
 MAX_PREVIEW_ROWS = 500
 MIN_BPM_DURATION_MS = 3000  # Skip BPM detection on files shorter than this

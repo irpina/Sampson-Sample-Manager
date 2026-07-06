@@ -1,6 +1,8 @@
 """Persistent app settings — stored in ~/.sampson/settings.json"""
 
 import json
+import os
+import sys
 from pathlib import Path
 
 _SETTINGS_DIR  = Path.home() / ".sampson"
@@ -24,9 +26,12 @@ def _load():
 def _save():
     try:
         _SETTINGS_DIR.mkdir(parents=True, exist_ok=True)
-        _SETTINGS_FILE.write_text(json.dumps(_settings, indent=2), encoding="utf-8")
-    except Exception:
-        pass
+        # Write-then-rename so a crash mid-write can't corrupt the file
+        tmp = _SETTINGS_FILE.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(_settings, indent=2), encoding="utf-8")
+        os.replace(tmp, _SETTINGS_FILE)
+    except Exception as e:
+        print(f"Settings save failed: {e}", file=sys.stderr)
 
 
 def get_last_source() -> str | None:

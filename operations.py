@@ -4,17 +4,19 @@ from __future__ import annotations
 
 import shutil
 import threading
+import time
 from pathlib import Path
 
 import state
 import constants
 import bpm as bpm_module
 import key as key_module
-import preview
 from conversion import (
     check_ffmpeg, convert_file, get_target_extension,
     parse_sample_rate, parse_bit_depth, parse_channels
 )
+# NOTE: preview is imported lazily inside functions — importing it at module
+# level creates a circular import (preview imports _compute_output from here).
 
 
 def _apply_path_limit(new_name: str, dest_path_str: str, limit: int,
@@ -135,29 +137,21 @@ def run_tool():
     custom_prefix = state.get("custom_prefix", "")
     
     # Conversion options
-    convert_options = None
-    if state.get("convert_enabled", False):
-        if not check_ffmpeg():
-            state.add_log(
-                "Conversion Error: ffmpeg is required for audio conversion.\n\n"
-                "Install:\n"
-                "- Windows: Download from ffmpeg.org and add to PATH\n"
-                "- macOS: brew install ffmpeg\n"
-                "- Linux: sudo apt install ffmpeg",
-                "error"
-            )
-            state.set_status("Error: FFmpeg not found", 0)
-            state.set("is_running", False)
-            return
-        
-        convert_options = {
-            "output_format": state.get("convert_format", "wav"),
-            "sample_rate": parse_sample_rate(state.get("convert_sample_rate", "keep")),
-            "bit_depth": parse_bit_depth(state.get("convert_bit_depth", "keep")),
-            "channels": parse_channels(state.get("convert_channels", "keep")),
-            "normalize": state.get("convert_normalize", False),
-        }
-    
+    convert_options = _gather_convert_options()
+    if convert_options and not check_ffmpeg():
+        state.add_log(
+            "Conversion Error: ffmpeg is required for audio conversion.\n\n"
+            "Install:\n"
+            "- Windows: Download from ffmpeg.org and add to PATH\n"
+            "- macOS: brew install ffmpeg\n"
+            "- Linux: sudo apt install ffmpeg",
+            "error"
+        )
+        state.set_status("Error: FFmpeg not found", 0)
+        state.set("is_running", False)
+        return
+
+
     bpm_enabled = state.get("bpm_enabled", False)
     bpm_append = state.get("bpm_append", False)
     bpm_fresh = state.get("bpm_fresh", False)
@@ -188,6 +182,156 @@ def _hash_file(path: Path) -> str:
     return h.hexdigest()
 
 
+class _StatusThrottle:
+    """Rate-limit per-file status pushes — each one is an IPC round trip."""
+
+    def __init__(self, interval: float = 0.1):
+        self._interval = interval
+        self._last = 0.0
+
+    def update(self, text: str, progress: int, force: bool = False) -> None:
+        now = time.monotonic()
+        if force or now - self._last >= self._interval:
+            state.set_status(text, progress)
+            self._last = now
+
+
+def _gather_audio_files(selected_folders: list) -> list[Path]:
+    """Collect audio files (recursively) from the selected Deck A entries."""
+    files: list[Path] = []
+    seen: set[Path] = set()
+    for folder_path in selected_folders:
+        p = Path(folder_path)
+        if p.is_dir():
+            for f in p.rglob("*"):
+                if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file() and f not in seen:
+                    files.append(f)
+                    seen.add(f)
+        elif p.is_file() and p.suffix.lower() in constants.AUDIO_EXTS and p not in seen:
+            files.append(p)
+            seen.add(p)
+    return files
+
+
+def _gather_convert_options() -> dict | None:
+    """Read conversion settings from state as convert_file() kwargs, or None."""
+    if not state.get("convert_enabled", False):
+        return None
+    return {
+        "output_format": state.get("convert_format", "wav"),
+        "sample_rate": parse_sample_rate(state.get("convert_sample_rate", "keep")),
+        "bit_depth": parse_bit_depth(state.get("convert_bit_depth", "keep")),
+        "channels": parse_channels(state.get("convert_channels", "keep")),
+        "normalize": state.get("convert_normalize", False),
+    }
+
+
+class _DedupChecker:
+    """SHA-256 content-duplicate detection with size prefiltering.
+
+    Checks each source file against the destination tree (unless conversion
+    is active — converting changes the bytes) and against files already seen
+    in the current run.
+    """
+
+    def __init__(self, dest: Path | None, check_dest: bool):
+        self._dest_size_index: dict[int, list[Path]] = {}
+        self._dest_hash_cache: dict[str, str] = {}
+        self._seen_hashes: set[str] = set()
+        self._seen_sizes: set[int] = set()
+        if check_dest and dest and dest.is_dir():
+            for dest_file in dest.rglob("*"):
+                if dest_file.suffix.lower() in constants.AUDIO_EXTS and dest_file.is_file():
+                    size = dest_file.stat().st_size
+                    self._dest_size_index.setdefault(size, []).append(dest_file)
+
+    def check(self, f: Path) -> str | None:
+        """Return the name of an existing content-duplicate, or None.
+
+        Also remembers f so later files in the run are checked against it.
+        """
+        try:
+            src_size = f.stat().st_size
+        except OSError as e:
+            state.add_log(f"WARN: Could not stat {f.name}: {e} — duplicate check skipped", "warn")
+            return None
+
+        src_hash = None
+
+        # Source-to-dest check
+        for candidate in self._dest_size_index.get(src_size, []):
+            dest_hash = self._dest_hash_cache.get(str(candidate))
+            if dest_hash is None:
+                try:
+                    dest_hash = _hash_file(candidate)
+                    self._dest_hash_cache[str(candidate)] = dest_hash
+                except Exception as e:
+                    state.add_log(f"WARN: Could not hash {candidate.name}: {e}", "warn")
+                    continue
+            if src_hash is None:
+                src_hash = self._safe_hash(f)
+                if src_hash is None:
+                    return None
+            if src_hash == dest_hash:
+                return candidate.name
+
+        # Source-to-source check (within this run)
+        if src_size in self._seen_sizes:
+            if src_hash is None:
+                src_hash = self._safe_hash(f)
+            if src_hash and src_hash in self._seen_hashes:
+                return "earlier file in this run"
+
+        # Remember this file for later source-to-source checks
+        if src_hash is None:
+            src_hash = self._safe_hash(f)
+        if src_hash:
+            self._seen_hashes.add(src_hash)
+            self._seen_sizes.add(src_size)
+        return None
+
+    @staticmethod
+    def _safe_hash(f: Path) -> str | None:
+        try:
+            return _hash_file(f)
+        except Exception as e:
+            state.add_log(f"WARN: Could not hash {f.name}: {e} — duplicate check skipped", "warn")
+            return None
+
+
+def _find_dest_duplicates(dest: Path) -> list[tuple[Path, str]]:
+    """Find content-duplicate audio files at the top level of dest.
+
+    Returns (duplicate_file, kept_original_name) pairs; the alphabetically
+    first file in each duplicate group is the one kept.
+    """
+    files = [f for f in dest.iterdir()
+             if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS]
+    if len(files) < 2:
+        return []
+
+    size_groups: dict[int, list[Path]] = {}
+    for f in files:
+        size_groups.setdefault(f.stat().st_size, []).append(f)
+
+    result = []
+    for group in size_groups.values():
+        if len(group) < 2:
+            continue
+        seen: dict[str, Path] = {}
+        for f in sorted(group):  # alphabetical — keep first
+            try:
+                h = _hash_file(f)
+            except Exception as e:
+                state.add_log(f"WARN: Could not hash {f.name}: {e} — skipped in dedup", "warn")
+                continue
+            if h in seen:
+                result.append((f, seen[h].name))
+            else:
+                seen[h] = f
+    return result
+
+
 def _run_worker(*args, **kwargs):
     """Background worker wrapper — guarantees is_running is reset on any exit."""
     try:
@@ -203,15 +347,9 @@ def _run_worker_impl(source, dest, move_files, dry, path_limit, no_rename, struc
                      convert_options=None, bpm_enabled=False, bpm_append=False, bpm_fresh=False,
                      key_enabled=False, key_append=False, key_fresh=False, custom_prefix=""):
     """Background worker for file operations."""
-    files = []
-    selected_folders = state.get("selected_folders", [])
-    
-    for folder_path in selected_folders:
-        p = Path(folder_path)
-        if p.is_dir():
-            files += [f for f in p.rglob("*")
-                      if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
-    
+    import preview
+
+    files = _gather_audio_files(state.get("selected_folders", []))
     total = len(files)
 
     if total == 0:
@@ -221,22 +359,15 @@ def _run_worker_impl(source, dest, move_files, dry, path_limit, no_rename, struc
     label = "MOVE" if move_files else "COPY"
     prefix = "[DRY] " if dry else ""
     conv_label = " [convert]" if convert_options else ""
-    
-    # Duplicate detection setup
+
+    # Duplicate detection — dest comparison is skipped when converting, since
+    # conversion changes the file content.
     dedup_enabled = state.get("dedup_enabled", True)
-    dest_size_index = {}
-    dest_hash_cache = {}
-    seen_hashes = set()
-    seen_hashes_by_size = set()
-    
-    if dedup_enabled and dest and dest.is_dir():
-        # Pre-scan destination: build size -> [paths] index
-        for dest_file in dest.rglob("*"):
-            if dest_file.suffix.lower() in constants.AUDIO_EXTS and dest_file.is_file():
-                size = dest_file.stat().st_size
-                if size not in dest_size_index:
-                    dest_size_index[size] = []
-                dest_size_index[size].append(dest_file)
+    dedup = _DedupChecker(dest, check_dest=not convert_options) if dedup_enabled else None
+
+    skipped = 0
+    errors = 0
+    status = _StatusThrottle()
 
     for i, f in enumerate(files, 1):
         bpm_val = bpm_module.detect_bpm(f, force=bpm_fresh) if bpm_enabled else None
@@ -277,61 +408,18 @@ def _run_worker_impl(source, dest, move_files, dry, path_limit, no_rename, struc
         dest_display = f"{rel_sub}/{new_name}" if rel_sub else new_name
         
         # Duplicate detection check
-        if dedup_enabled:
-            src_size = f.stat().st_size
-            src_hash = None
-            duplicate_of = None
-            
-            # Source-to-dest check (only if not converting, since format changes hash)
-            if not convert_options and src_size in dest_size_index:
-                for candidate in dest_size_index[src_size]:
-                    # Lazy hash computation with cache
-                    dest_hash = dest_hash_cache.get(str(candidate))
-                    if dest_hash is None:
-                        try:
-                            dest_hash = _hash_file(candidate)
-                            dest_hash_cache[str(candidate)] = dest_hash
-                        except Exception:
-                            continue
-                    if src_hash is None:
-                        try:
-                            src_hash = _hash_file(f)
-                        except Exception:
-                            break
-                    if src_hash == dest_hash:
-                        duplicate_of = candidate.name
-                        break
-            
-            # Source-to-source check (within this run)
-            if duplicate_of is None:
-                if src_size in seen_hashes_by_size:
-                    if src_hash is None:
-                        try:
-                            src_hash = _hash_file(f)
-                        except Exception:
-                            pass
-                    if src_hash and src_hash in seen_hashes:
-                        duplicate_of = "earlier file in this run"
-            
+        if dedup:
+            duplicate_of = dedup.check(f)
             if duplicate_of:
                 state.add_log(f"SKIP (duplicate): {f.name} — content already exists as {duplicate_of}")
+                skipped += 1
                 continue
-            
-            # Track this file's hash for future source-to-source checks
-            if src_hash is None:
-                try:
-                    src_hash = _hash_file(f)
-                except Exception:
-                    pass
-            if src_hash:
-                seen_hashes.add(src_hash)
-                seen_hashes_by_size.add(src_size)
-        
+
         msg = f"{prefix}{label}{conv_label}: {f.name}  →  {dest_display}"
         state.add_log(msg)
-        
+
         progress_pct = int(i / total * 100)
-        state.set_status(f"Processing {i} / {total}...", progress_pct)
+        status.update(f"Processing {i} / {total}...", progress_pct, force=(i == total))
 
         if not dry:
             sub_dir.mkdir(parents=True, exist_ok=True)
@@ -343,11 +431,13 @@ def _run_worker_impl(source, dest, move_files, dry, path_limit, no_rename, struc
                         error_detail = state._last_conversion_error if state._last_conversion_error else "Unknown error"
                         state.add_log(f"ERROR: Failed to convert {f.name}: {error_detail[:200]}", "error")
                         state._last_conversion_error = None
+                        errors += 1
                         continue
                     if move_files:
                         f.unlink()
                 except Exception as e:
                     state.add_log(f"ERROR: Failed to convert {f.name}: {e}", "error")
+                    errors += 1
                     continue
             else:
                 if move_files:
@@ -379,8 +469,14 @@ def _run_worker_impl(source, dest, move_files, dry, path_limit, no_rename, struc
     if dedup_enabled and dest and dest.is_dir():
         _dedup_dest_flat(dest, dry)
     
+    done = total - skipped - errors
+    summary = f"Complete — {done} of {total} file{s} processed"
+    if skipped:
+        summary += f", {skipped} duplicate{'s' if skipped != 1 else ''} skipped"
+    if errors:
+        summary += f", {errors} error{'s' if errors != 1 else ''}"
     state.add_log("Done.", "success")
-    state.set_status(f"Complete — {total} file{s} processed.", 100)
+    state.set_status(summary + ".", 100)
 
     # Refresh preview if BPM was detected
     if bpm_enabled and state._refresh_preview_cb:
@@ -389,44 +485,24 @@ def _run_worker_impl(source, dest, move_files, dry, path_limit, no_rename, struc
 
 def _dedup_dest_flat(dest: Path, dry: bool) -> int:
     """Remove content-duplicate audio files from the top level of dest only.
-    
+
     Keeps the alphabetically first file among duplicates. Returns count removed.
     """
     if not dest or not dest.is_dir():
         return 0
-    
-    # Get only top-level audio files
-    files = [f for f in dest.iterdir()
-             if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS]
-    
-    if len(files) < 2:
-        return 0
-    
-    # Group by size
-    size_groups = {}
-    for f in files:
-        size_groups.setdefault(f.stat().st_size, []).append(f)
-    
+
     removed = 0
-    for group in size_groups.values():
-        if len(group) < 2:
-            continue
-        
-        seen = {}  # hash -> file path (first occurrence)
-        for f in sorted(group):  # alphabetical — keep first
+    prefix = "[DRY] " if dry else ""
+    for dup, kept_name in _find_dest_duplicates(dest):
+        state.add_log(f"{prefix}DEDUP: {dup.name} — duplicate of {kept_name}, removed from destination")
+        if not dry:
             try:
-                h = _hash_file(f)
-                if h in seen:
-                    prefix = "[DRY] " if dry else ""
-                    state.add_log(f"{prefix}DEDUP: {f.name} — duplicate of {seen[h].name}, removed from destination")
-                    if not dry:
-                        f.unlink()
-                    removed += 1
-                else:
-                    seen[h] = f
-            except Exception:
-                pass
-    
+                dup.unlink()
+            except Exception as e:
+                state.add_log(f"WARN: Could not remove duplicate {dup.name}: {e}", "warn")
+                continue
+        removed += 1
+
     return removed
 
 # =============================================================================
@@ -504,6 +580,7 @@ def compute_sync_plan():
 
 def _sync_plan_worker(source: Path, dest: Path):
     """Background worker to build the sync plan."""
+    import preview
     try:
         # Gather options
         profile = state.get("profile", "Generic")
@@ -523,33 +600,13 @@ def _sync_plan_worker(source: Path, dest: Path):
         # Conversion options
         convert_enabled = state.get("convert_enabled", False)
         convert_format = state.get("convert_format", "wav")
-        
-        # Duplicate detection setup
+
+        # Duplicate detection — dest comparison is skipped when converting
         dedup_enabled = state.get("dedup_enabled", True)
-        dest_size_index = {}
-        dest_hash_cache = {}
-        seen_hashes = set()
-        seen_hashes_by_size = set()
-        
-        if dedup_enabled and dest and dest.is_dir():
-            # Pre-scan destination: build size -> [paths] index
-            for dest_file in dest.rglob("*"):
-                if dest_file.suffix.lower() in constants.AUDIO_EXTS and dest_file.is_file():
-                    size = dest_file.stat().st_size
-                    if size not in dest_size_index:
-                        dest_size_index[size] = []
-                    dest_size_index[size].append(dest_file)
-        
+        dedup = _DedupChecker(dest, check_dest=not convert_enabled) if dedup_enabled else None
+
         # Gather source files
-        files = []
-        selected_folders = state.get("selected_folders", [])
-        
-        for folder_path in selected_folders:
-            p = Path(folder_path)
-            if p.is_dir():
-                files += [f for f in p.rglob("*")
-                          if f.suffix.lower() in constants.AUDIO_EXTS and f.is_file()]
-        
+        files = _gather_audio_files(state.get("selected_folders", []))
         total = len(files)
         if total == 0:
             state.set_status("No audio files found.", 0)
@@ -558,42 +615,24 @@ def _sync_plan_worker(source: Path, dest: Path):
         
         plan = []
         expected_dest_files = set()  # Track expected files for mirror mode
+        status = _StatusThrottle()
         
         # Destination flat dedup: scan top level for duplicates, add DELETE entries.
         # Mirror mode only — additive mode promises to leave existing
         # destination files untouched.
         if dedup_enabled and sync_mode == "mirror" and dest and dest.is_dir():
-            dest_files = [f for f in dest.iterdir()
-                          if f.is_file() and f.suffix.lower() in constants.AUDIO_EXTS]
-            
-            if len(dest_files) >= 2:
-                # Group by size
-                dest_size_groups = {}
-                for f in dest_files:
-                    dest_size_groups.setdefault(f.stat().st_size, []).append(f)
-                
-                dest_seen_hashes = {}
-                for group in dest_size_groups.values():
-                    if len(group) < 2:
-                        continue
-                    for f in sorted(group):  # alphabetical — keep first
-                        try:
-                            h = _hash_file(f)
-                            if h in dest_seen_hashes:
-                                plan.append({
-                                    "action": "delete",
-                                    "src_name": "",
-                                    "srcpath": None,
-                                    "dest_path": str(f),
-                                    "dest_display": f.name,
-                                    "rel_sub": "",
-                                    "new_name": "",
-                                    "duplicate_of": dest_seen_hashes[h].name,
-                                })
-                            else:
-                                dest_seen_hashes[h] = f
-                        except Exception:
-                            pass
+            for dup, kept_name in _find_dest_duplicates(dest):
+                plan.append({
+                    "action": "delete",
+                    "src_name": "",
+                    "srcpath": None,
+                    "dest_path": str(dup),
+                    "dest_display": dup.name,
+                    "rel_sub": "",
+                    "new_name": "",
+                    "duplicate_of": kept_name,
+                    "dest_size": dup.stat().st_size,
+                })
         
         for i, f in enumerate(files, 1):
             # Get BPM/Key values
@@ -627,55 +666,9 @@ def _sync_plan_worker(source: Path, dest: Path):
             expected_dest_files.add(dest_path_str)
             
             # Duplicate detection check
-            is_duplicate = False
-            duplicate_of = None
-            
-            if dedup_enabled:
-                src_size = f.stat().st_size
-                src_hash = None
-                
-                # Source-to-dest check (only if not converting)
-                if not convert_enabled and src_size in dest_size_index:
-                    for candidate in dest_size_index[src_size]:
-                        # Lazy hash computation with cache
-                        dest_hash = dest_hash_cache.get(str(candidate))
-                        if dest_hash is None:
-                            try:
-                                dest_hash = _hash_file(candidate)
-                                dest_hash_cache[str(candidate)] = dest_hash
-                            except Exception:
-                                continue
-                        if src_hash is None:
-                            try:
-                                src_hash = _hash_file(f)
-                            except Exception:
-                                break
-                        if src_hash == dest_hash:
-                            is_duplicate = True
-                            duplicate_of = str(candidate.name)
-                            break
-                
-                # Source-to-source check (within this run)
-                if not is_duplicate and src_size in seen_hashes_by_size:
-                    if src_hash is None:
-                        try:
-                            src_hash = _hash_file(f)
-                        except Exception:
-                            pass
-                    if src_hash and src_hash in seen_hashes:
-                        is_duplicate = True
-                        duplicate_of = "earlier file in this run"
-                
-                # Track this file's hash
-                if src_hash is None and not is_duplicate:
-                    try:
-                        src_hash = _hash_file(f)
-                    except Exception:
-                        pass
-                if src_hash:
-                    seen_hashes.add(src_hash)
-                    seen_hashes_by_size.add(src_size)
-            
+            duplicate_of = dedup.check(f) if dedup else None
+            is_duplicate = duplicate_of is not None
+
             # Determine action
             if is_duplicate:
                 action = "skip"
@@ -705,7 +698,7 @@ def _sync_plan_worker(source: Path, dest: Path):
             })
             
             progress_pct = int(i / total * 100)
-            state.set_status(f"Computing sync plan... {i}/{total}", progress_pct)
+            status.update(f"Computing sync plan... {i}/{total}", progress_pct, force=(i == total))
         
         # Mirror mode: find orphan files to delete
         if sync_mode == "mirror":
@@ -726,6 +719,7 @@ def _sync_plan_worker(source: Path, dest: Path):
                                 "dest_display": str(rel_to_dest),
                                 "rel_sub": "",
                                 "new_name": "",
+                                "dest_size": dest_file.stat().st_size,
                             })
                             delete_count += 1
                         except ValueError:
@@ -787,25 +781,17 @@ def _run_sync_worker(plan: list):
     """Background worker to execute the sync plan."""
     try:
         # Gather conversion options
-        convert_options = None
-        if state.get("convert_enabled", False):
-            if not check_ffmpeg():
-                state.add_log(
-                    "Sync Error: ffmpeg is required for audio conversion.",
-                    "error"
-                )
-                state.set_status("Error: FFmpeg not found", 0)
-                state.set("sync_in_progress", False)
-                return
-            
-            convert_options = {
-                "output_format": state.get("convert_format", "wav"),
-                "sample_rate": parse_sample_rate(state.get("convert_sample_rate", "keep")),
-                "bit_depth": parse_bit_depth(state.get("convert_bit_depth", "keep")),
-                "channels": parse_channels(state.get("convert_channels", "keep")),
-                "normalize": state.get("convert_normalize", False),
-            }
-        
+        convert_options = _gather_convert_options()
+        if convert_options and not check_ffmpeg():
+            state.add_log(
+                "Sync Error: ffmpeg is required for audio conversion.",
+                "error"
+            )
+            state.set_status("Error: FFmpeg not found", 0)
+            state.set("sync_in_progress", False)
+            return
+
+
         move_files = state.get("move", False)
         dry = state.get("dry", True)
         dry_prefix = "[DRY] " if dry else ""
@@ -821,6 +807,7 @@ def _run_sync_worker(plan: list):
             return
 
         processed = 0
+        status = _StatusThrottle()
 
         for entry in actionable:
             action = entry["action"]
@@ -831,14 +818,24 @@ def _run_sync_worker(plan: list):
                     state.add_log(f"{dry_prefix}DELETE: {entry['dest_display']}")
                 else:
                     try:
-                        dest_path.unlink()
-                        state.add_log(f"DELETE: {entry['dest_display']}")
+                        # Guard against a stale plan: skip if the file vanished
+                        # or changed since the plan was computed.
+                        expected_size = entry.get("dest_size")
+                        if not dest_path.exists():
+                            state.add_log(f"SKIP: {entry['dest_display']} already gone", "warn")
+                        elif expected_size is not None and dest_path.stat().st_size != expected_size:
+                            state.add_log(
+                                f"SKIP: {entry['dest_display']} changed since the plan was "
+                                "computed — delete skipped, recompute the sync plan", "warn")
+                        else:
+                            dest_path.unlink()
+                            state.add_log(f"DELETE: {entry['dest_display']}")
                     except Exception as e:
                         state.add_log(f"ERROR: Failed to delete {entry['dest_display']}: {e}", "error")
 
                 processed += 1
                 progress_pct = int(processed / total * 100)
-                state.set_status(f"Syncing... {processed}/{total}", progress_pct)
+                status.update(f"Syncing... {processed}/{total}", progress_pct, force=(processed == total))
                 continue
 
             # Add or Update
@@ -853,7 +850,7 @@ def _run_sync_worker(plan: list):
                 state.add_log(f"{dry_prefix}{action_label}: {entry['src_name']} → {entry['dest_display']}")
                 processed += 1
                 progress_pct = int(processed / total * 100)
-                state.set_status(f"Syncing... {processed}/{total}", progress_pct)
+                status.update(f"Syncing... {processed}/{total}", progress_pct, force=(processed == total))
                 continue
 
             # Ensure parent directory exists
@@ -885,7 +882,7 @@ def _run_sync_worker(plan: list):
             
             processed += 1
             progress_pct = int(processed / total * 100)
-            state.set_status(f"Syncing... {processed}/{total}", progress_pct)
+            status.update(f"Syncing... {processed}/{total}", progress_pct, force=(processed == total))
         
         if dry:
             # Keep the plan so the user can turn off Dry run and execute it
